@@ -49,12 +49,19 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\EasyDrv_2_DLL.dll"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Копирование в папку драйверов</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -64,17 +71,21 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Message>Копирование в папку драйверов + сжатие  Upx'ом.</Message>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv.dll"
+"p:\Monitor\drivers\upx" -9 "p:\Monitor\drivers\PAC_easy_drv.dll"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\common\lua\lapi.h" />
     <ClInclude Include="..\..\..\common\lua\lauxlib.h" />
@@ -99,7 +110,33 @@
     <ClInclude Include="..\..\..\common\lua\lundump.h" />
     <ClInclude Include="..\..\..\common\lua\lvm.h" />
     <ClInclude Include="..\..\..\common\lua\lzio.h" />
-    <ClInclude Include="..\tag_info.h" />
+    <ClInclude Include="..\..\..\common\util\snprintf.h" />
+    <ClInclude Include="..\..\..\common\win_util\CmnHdr.h" />
+    <ClInclude Include="..\..\..\common\win_util\SWMRG.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlapp.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlcrack.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrls.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrlw.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrlx.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlddx.h" />
+    <ClInclude Include="..\..\..\common\WTL\atldlgs.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlfind.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlframe.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlgdi.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlmisc.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlprint.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlres.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlresce.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlscrl.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlsplit.h" />
+    <ClInclude Include="..\..\..\common\WTL\atltheme.h" />
+    <ClInclude Include="..\..\..\common\WTL\atluser.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlwince.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlwinx.h" />
+    <ClInclude Include="..\bug_log.h" />
+    <ClInclude Include="..\exchange_data.h" />
+    <ClInclude Include="..\PAC_cmmctr.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -285,6 +322,13 @@
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\util\snprintf.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp" />
+    <ClCompile Include="..\bug_log.cpp" />
+    <ClCompile Include="..\PAC_cmmctr.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -298,6 +342,15 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="easy_drv.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\divider.cur" />
+    <None Include="res\hand.cur" />
+    <None Include="res\ListItems.bmp" />
+    <None Include="res\message_images.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

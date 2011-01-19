@@ -1,8 +1,16 @@
-// stdafx.h : include file for standard system include files,
-// or project specific include files that are used frequently, but
-// are changed infrequently
-//
-
+/// @file stdafx.h
+/// @brief  Include file for standard system include files,
+/// or project specific include files that are used frequently, but
+/// are changed infrequently. For using precompiled headers.
+/// 
+/// @author  Иванюк Дмитрий Сергеевич.
+///
+/// @par Описание директив препроцессора:
+/// 
+/// @par Текущая версия:
+/// @$Rev: 153 $.\n
+/// @$Author: id $.\n
+/// @$Date:: 2010-10-14 12:46:29#$.
 #pragma once
 
 #include "targetver.h"
@@ -13,5 +21,11 @@
 
 
 
-// TODO: reference additional headers your program requires here
-#include "tag_info.h"
+// Additional headers program requires.
+#include <string>
+
+#include "CmnHdr.h"
+
+#include "exchange_data.h"
+#include "bug_log.h"
+#include "PAC_cmmctr.h"

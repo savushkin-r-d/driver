@@ -19,9 +19,27 @@
     <Filter Include="Source Files\Lua">
       <UniqueIdentifier>{7e111be6-a6e8-492a-9a74-5742b3e61d3f}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
+    <Filter Include="Header Files\WTL">
+      <UniqueIdentifier>{25781ebc-a0d0-461a-a0bc-36eb91ab3026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win_util">
+      <UniqueIdentifier>{42ff92e5-26b0-4cc0-9e54-bc6caecabf8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\bmp">
+      <UniqueIdentifier>{3963af74-24f9-4068-af41-a1c69c81bb2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\cursors">
+      <UniqueIdentifier>{19d17e1e-0928-47bd-8e68-482873ecaccd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\util">
+      <UniqueIdentifier>{b8df07f4-a9a9-47b5-b8e3-0283bd1bc031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{8c9d6b6d-fa7a-42b2-8c26-1d3eb3a34630}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\win_util">
+      <UniqueIdentifier>{41493a9a-9516-4375-a87d-cfe5e6657bd7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -99,8 +117,86 @@
     <ClInclude Include="..\..\..\common\lua\lzio.h">
       <Filter>Header Files\Lua</Filter>
     </ClInclude>
-    <ClInclude Include="..\tag_info.h">
+    <ClInclude Include="..\bug_log.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlapp.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlcrack.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrls.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlw.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlddx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atldlgs.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlfind.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlframe.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlgdi.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlmisc.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlprint.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlres.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlresce.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlscrl.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlsplit.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atltheme.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atluser.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwince.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwinx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\exchange_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PAC_cmmctr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\util\snprintf.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\SWMRG.h">
+      <Filter>Header Files\win_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\CmnHdr.h">
+      <Filter>Header Files\win_util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -203,5 +299,36 @@
     <ClCompile Include="..\..\..\common\lua\print.c">
       <Filter>Source Files\Lua</Filter>
     </ClCompile>
+    <ClCompile Include="..\bug_log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PAC_cmmctr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\util\snprintf.c">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp">
+      <Filter>win_util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="easy_drv.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\ListItems.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </None>
+    <None Include="res\message_images.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </None>
+    <None Include="res\divider.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
+    <None Include="res\hand.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
   </ItemGroup>
 </Project>

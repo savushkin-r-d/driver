@@ -39,6 +39,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <ReferencePath />
+    <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
+    <SourcePath />
+    <ExcludePath />
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -48,8 +54,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;DRIVER;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;..\..\..\common\PAC-driver;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -57,7 +63,7 @@
       <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\EasyDrv_2_DLL.dll"</Command>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv.dll"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Копирование в папку драйверов</Message>
@@ -110,9 +116,11 @@
     <ClInclude Include="..\..\..\common\lua\lundump.h" />
     <ClInclude Include="..\..\..\common\lua\lvm.h" />
     <ClInclude Include="..\..\..\common\lua\lzio.h" />
+    <ClInclude Include="..\..\..\common\PAC-driver\g_device.h" />
     <ClInclude Include="..\..\..\common\util\snprintf.h" />
     <ClInclude Include="..\..\..\common\win_util\CmnHdr.h" />
     <ClInclude Include="..\..\..\common\win_util\SWMRG.h" />
+    <ClInclude Include="..\..\..\common\win_util\WSA_err_decode.h" />
     <ClInclude Include="..\..\..\common\WTL\atlapp.h" />
     <ClInclude Include="..\..\..\common\WTL\atlcrack.h" />
     <ClInclude Include="..\..\..\common\WTL\atlctrls.h" />
@@ -327,6 +335,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp" />
+    <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp" />
     <ClCompile Include="..\bug_log.cpp" />
     <ClCompile Include="..\PAC_cmmctr.cpp" />
     <ClCompile Include="dllmain.cpp">

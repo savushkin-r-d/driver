@@ -22,8 +22,11 @@
 
 #include "bug_log.h"
 #include "SWMRG.h"
+#include "WSA_err_decode.h"
 
-typedef unsigned short int      u_int_2;
+#include "g_device.h"
+
+typedef unsigned short int u_int_2;
 
 class abstract_cmmctr;
 
@@ -57,7 +60,7 @@ class PAC_cmmctr
 
         const char*  get_address() const;
         const char*  get_name() const;
-        char         get_description_id() const;
+        UINT         get_description_id() const;
 
         abstract_cmmctr  *get_cmmctr();
 
@@ -66,6 +69,15 @@ class PAC_cmmctr
             UCHAR PAC_descr_id, 
             int port = 10000,
             int timeout = 1500 );
+
+        int clear_tags() 
+            {
+            //-Инициализация таблицы тегов.
+            const char *init_tags_cmd = "tags = {}";
+            int res = exec_Lua_str( PAC_Lua_state, init_tags_cmd,
+                "clear_tags" );
+            return res;
+            }
 
         ~PAC_cmmctr();
 
@@ -91,37 +103,59 @@ class PAC_cmmctr
 
         void print();
 
+		void send_PAC_cmd( char *cmd, int count );
+
         //Получает версию ПО контроллера.
         //ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ.
         // >  0 - версия.
         // =< 0 - ошибка:
         int get_PAC_info();
 
-    private: 
-        enum CMD
+        char* get_tag_str_value( int tag_id, bool &is_exist_tag );
+        char* get_tag_str_value( const char *tag_name, bool &is_exist_tag );
+
+        double get_tag_value( int tag_id, bool &is_exist_tag );
+        double get_tag_value( const char *tag_name, bool &is_exist_tag );
+        int add_nill_tag( int tag_id );
+        int add_exist_tag( const char *tag_name, int tag_id );
+
+        CSWMRG* get_dev_synch_access() const
             {
-            CMD_GET_INFO_ON_CONNECT = 10,   //Запрос инф. о PAC перед дальнейшей работой.
+            return dev_synch_access;
+            }
 
-            GET_DEVICES = 100,
-            GET_DEVICES_STATES,
-            GET_DEVICES_CHANGED_STATES,
-            EXEC_DEVICE_CMD,
+        //- Lua.      
+        int exec_Lua_str( const char *Lua_str,
+            const char *error_str, bool is_print_error_msg = true ) const;
 
-            GET_PAC_ERRORS,
-            SET_PAC_ERROR_CMD,
-            };
+        const char* get_str_param_from_Lua( const char *param_name, 
+            const char *c_function_name ) const;
+        //-Lua.-!>
+
+    private: 
+        //- Lua.
+        double get_double_param_from_Lua( lua_State *L, const char *param_name, 
+            const char *c_function_name, bool &is_exist ) const;
+        int get_int_param_from_Lua( lua_State *L, const char *param_name, 
+            const char *c_function_name ) const;
+        const char* get_str_param_from_Lua( lua_State *L, const char *param_name, 
+            const char *c_function_name ) const;
+        
+        int exec_Lua_str( lua_State* L, const char *Lua_str,
+            const char *error_str, bool is_print_error_msg = true ) const;
+        //-Lua.-!>
 
         enum PM_CONST
             {
             // Максимальное число ошибок обмена с PAC для установления ошибки связи.
-            PM_MAX_ERRORS_COUNT = 1,
+            PM_MAX_ERRORS_COUNT = 2,
             };
 
         lua_State *PAC_Lua_state;    ///< Экземпляр Lua для PAC.
         CSWMRG    *dev_synch_access; ///< Синхронизация обращений к Lua.
 
-        char *is_connected;
-        char *prev_connected_state;
+        bool *is_connected;
+        bool *prev_connected_state;
 
         // 1 - номер запроса устройств в контроллере. Устанавливается в 0 при загрузке контроллера.
         u_int_2 devices_request_id;             //1
@@ -143,10 +177,10 @@ class PAC_cmmctr
         abstract_cmmctr *cmmctr;      //1       
         std::string     PAC_address;  //2
 
-        char *has_got_PAC_devices;  
-        UINT PAC_descr_id;         // Уникальный номер описания контроллера.
+        bool *has_got_PAC_devices;  
+        UINT  PAC_descr_id;         // Уникальный номер описания контроллера.
 
-        std::string    PAC_name;   // Имя контроллера.
+        std::string    PAC_name;    // Имя контроллера.
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -209,7 +243,7 @@ class abstract_cmmctr
             return timeout;
             }
 
-        abstract_cmmctr( char* PAC_name, int timeout );
+        abstract_cmmctr( const char* PAC_name, int timeout );
 
         // Посылает заданный массив контроллеру.
         virtual int send_2_PAC( UCHAR service_ID, char *buff, UINT length ) = 0;
@@ -240,7 +274,7 @@ class abstract_cmmctr
 class tcp_cmmctr : public abstract_cmmctr 
     {
     public:
-        tcp_cmmctr( char *PAC_name, char* sIP, 
+        tcp_cmmctr( const char *PAC_name, const char* sIP, 
             int iSocket = 10000, int timeout = 1500 );
         virtual ~tcp_cmmctr();
 

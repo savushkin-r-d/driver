@@ -19,7 +19,7 @@ extern "C" {
 int tcp_cmmctr::instancesCount = 0;
 int tcp_cmmctr::isInitialized = 0;
 
-extern u_int_2 G_PROTOCOL_VERSION;
+u_int_2 G_PROTOCOL_VERSION = 1;
 
 int abstract_cmmctr::count = 0;
 //-----------------------------------------------------------------------------
@@ -27,8 +27,17 @@ int abstract_cmmctr::count = 0;
 PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name, 
     UCHAR PAC_descr_id, int port /*= 10000*/, 
     int timeout /*= 1500 */ ): PAC_name( PAC_name ),
-    PAC_descr_id( PAC_descr_id ), PAC_address( PAC_address )
+    PAC_descr_id( PAC_descr_id ), PAC_address( PAC_address ),
+    dev_synch_access( new CSWMRG ),
+    has_got_PAC_devices( new bool ),
+    devices_request_id( 1000 ),
+    is_connected( new bool ),
+    prev_connected_state( new bool )
     {
+    *is_connected         = false;
+    *prev_connected_state = true;
+    *has_got_PAC_devices  = false;
+
     PAC_Lua_state = lua_open();  /* create state */
     if ( PAC_Lua_state == NULL )
         {
@@ -45,21 +54,67 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     lua_gc( PAC_Lua_state, LUA_GCSTOP, 0 );  /* stop collector during initialization */
     luaL_openlibs( PAC_Lua_state );          /* open libraries */
     lua_gc( PAC_Lua_state, LUA_GCRESTART, 0 );    
+
+    const char* Lua_F =
+        "function make_lua_str( str, val )\n"
+        "	local DEB = 0\n"
+        "\n"
+        "	str =  str or ''\n"
+        "	val =  val or 0\n"
+        "\n"
+        "	if DEB then print( '\"'..str..'\"' ) end\n"
+        "	str = string.gsub( str, '%s*%-%-.*', '' ) --Удаляем комментарий.\n"
+        "	str = string.gsub( str, '%s*', '' )		  --Удаляем пробелы.\n"
+        "	if DEB then print( '\"'..str..'\"' ) end\n"
+        "\n"
+        "	--Выделяем объект, свойство и номер.\n"
+        "	local obj_name, prop, n = string.match( str,\n"
+        "		'(.*)%.([%a_]+)%[*(%d*)%]*$' );	 \n"
+        "	obj_name = obj_name or ''\n"
+        "	prop 	 =  prop or ''\n"
+        "	n    	 =  n or ''\n"
+        "	if n == '' then n = '0' end\n"
+        "\n"
+        "	if 	obj_name == '' or prop == '' then return '' end\n"
+        "\n"
+        "	if DEB then \n"
+        "		print( string.format('\"%s\" -> \"%s\", n = \"%s\"', obj_name, prop, n ) )\n"
+        "	end\n"
+        "\n"
+        "local cmd\n"
+        "if type( val ) == 'string' then\n"
+        "    cmd = string.format( 'sys.%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
+        "        obj_name, prop, n, val )\n"
+        "else\n"
+        "    cmd = string.format( 'sys.%s:set_cmd( \"%s\", %s, %s )',\n" 
+        "        obj_name, prop, n, val )\n"
+        "end\n"
+        "\n"
+        "	if DEB then print( 'cmd = '..cmd ) end\n"
+        "	if DEB then print( '' ) end\n"
+        "	return cmd\n"
+        "end\n";
+    exec_Lua_str( PAC_Lua_state, Lua_F, "PAC_cmmctr(...)" );
+
+    cmmctr = new tcp_cmmctr( PAC_name, 
+        this->PAC_address.c_str() + 2 /*Пропускаем IP в адресе - IP10.0.1.23*/ );
+
+    clear_tags();
     }
 //-----------------------------------------------------------------------------
 const char* PAC_cmmctr::get_address() const
     {
-    return 0;
+    return PAC_address.c_str();
     }
 //-----------------------------------------------------------------------------
 const char*  PAC_cmmctr::get_name() const
     {
-    return 0;
+    return PAC_name.c_str();
     }
 //-----------------------------------------------------------------------------
-char PAC_cmmctr::get_description_id() const
+UINT PAC_cmmctr::get_description_id() const
     {
-    return 0;
+    return PAC_descr_id;
     }
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::get_PAC_info()
@@ -67,7 +122,7 @@ int PAC_cmmctr::get_PAC_info()
     if ( !cmmctr ) return -1;
 
     char buff[ 1 ];
-    buff[ 0 ] = CMD_GET_INFO_ON_CONNECT;
+    buff[ 0 ] = device_communicator::CMD_GET_INFO_ON_CONNECT;
     const int cmd_length = 1;
     int res = cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, cmd_length );
     if ( res != 0 ) // Не успешная операция обмена данными с контроллером.
@@ -91,34 +146,45 @@ int PAC_cmmctr::get_PAC_info()
     char *answer = cmmctr->get_out_data( answer_size );
     if ( answer_size > 0 )
         { 
-        PAC_protocol_version = ( ( u_int_2* ) answer )[ 0 ]; 
-        if ( ( PAC_protocol_version != G_PROTOCOL_VERSION ) &&
-            !( 1 == PAC_protocol_version ||
-            2 == PAC_protocol_version ) ) //Совместимость с версиями 1 и 2.
+        int res = exec_Lua_str( PAC_Lua_state, answer,
+            "Ошибка получения данных о PAC" );
+            
+        if( res != 0 )
             {
-            sprintf_s( bug_log::msg, bug_log::msg_size, 
+            return -1;
+            }
+
+        PAC_protocol_version = get_int_param_from_Lua( PAC_Lua_state, 
+            "protocol_version", "int PAC_cmmctr::get_PAC_info()" );
+
+        if ( PAC_protocol_version != G_PROTOCOL_VERSION )
+            {
+            snprintf( bug_log::msg, bug_log::msg_size, 
                 "Протокол PAC имеет более раннюю версию %d - должна быть %d!",
                 PAC_protocol_version, G_PROTOCOL_VERSION );
-            bug_log::add_msg_once( PAC_name, address );
+            bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
             *is_connected = 0;
             return -2;
             }
 
-        char *in_name = answer + 2;
-        if ( strcmp( in_name, PAC_name ) != 0 )
+        const char *in_name = get_str_param_from_Lua( PAC_Lua_state, 
+            "PAC_name", "int PAC_cmmctr::get_PAC_info()" );
+
+        if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
             {
-            sprintf_s( bug_log::msg, bug_log::msg_size, 
+            snprintf( bug_log::msg, bug_log::msg_size, 
                 "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
-                address, in_name, PAC_name );
-            bug_log::add_msg_once( PAC_name, address );
+                PAC_address.c_str(), in_name, PAC_name );
+            bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = 0;
             return -3;
             }
 
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
-            "Версия драйвера - %d.", PAC_protocol_version );
-        bug_log::add_msg( PAC_name, address );
+        snprintf( bug_log::msg, bug_log::msg_size, 
+            "Версия драйвера PAC - %d, имя - \"%s\".",
+            PAC_protocol_version, PAC_name.c_str() );
+        bug_log::add_msg( PAC_name.c_str(), PAC_address.c_str() );
 
         return PAC_protocol_version;
         }    
@@ -144,11 +210,11 @@ PAC_cmmctr* PAC_cmmctr_group::add_PAC( char* const PAC_address,
         PAC_port, timeout );  
 
     snprintf( bug_log::msg, bug_log::msg_size, 
-        "Новый PAC был добавлен. Таймаут опроса - %d мсек.",
-        timeout );
+        "Новое описание PAC (№%d) было добавлено. Таймаут опроса - %d мсек.",
+        res->get_description_id(), timeout );
     bug_log::add_msg( res->get_name(), res->get_address() );
 
-    PAC_descriptions.push_back( res );    
+    PAC_descriptions.at( PAC_descr_id ) = res;    
 
     return get_PAC( PAC_descr_id );  //Возвращаем добавленный контроллер.
     }
@@ -184,7 +250,308 @@ abstract_cmmctr* PAC_cmmctr::get_cmmctr()
     return cmmctr; 
     }
 //-----------------------------------------------------------------------------
-abstract_cmmctr::abstract_cmmctr( char* PAC_name, int timeout ): id( id ),
+int PAC_cmmctr::get_int_param_from_Lua( lua_State *L, const char *param_name,
+    const char *c_function_name ) const
+    {    
+    lua_getfield( L, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        snprintf( bug_log::msg, bug_log::msg_size, 
+            "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
+            c_function_name, param_name );
+        bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+        }
+
+    int res = lua_tointeger( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::exec_Lua_str( lua_State* L, const char *Lua_str, 
+    const char *error_str, bool is_print_error_msg ) const
+    {
+    int res = luaL_dostring( L, Lua_str );
+
+    if( res != 0 && is_print_error_msg )
+        {
+        snprintf( bug_log::msg, bug_log::msg_size, 
+            "%s -> %s!",
+            error_str, lua_tostring( L, -1 ) );
+        bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+        
+        lua_pop( L, 1 );
+        return 1;
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::exec_Lua_str( const char *Lua_str, const char *error_str, 
+    bool is_print_error_msg /*= true */ ) const
+    {
+    int res = luaL_dostring( PAC_Lua_state, Lua_str );
+
+    if( res != 0 && is_print_error_msg )
+        {
+        snprintf( bug_log::msg, bug_log::msg_size, 
+            "%s -> %s!",
+            error_str, lua_tostring( PAC_Lua_state, -1 ) );
+        bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+
+        lua_pop( PAC_Lua_state, 1 );
+        return 1;
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+const char* PAC_cmmctr::get_str_param_from_Lua( lua_State *L, 
+    const char *param_name, const char *c_function_name ) const
+    {    
+    lua_getfield( L, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( L, -1 ) )
+        {
+        //snprintf( bug_log::msg, bug_log::msg_size, 
+        //    "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
+        //    c_function_name, param_name );
+        //bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
+        }
+
+    const char *res = lua_tostring( L, -1 );
+
+    lua_remove( L, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name, 
+    const char *c_function_name ) const
+    {
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        //snprintf( bug_log::msg, bug_log::msg_size, 
+        //    "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
+        //    c_function_name, param_name );
+        //bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
+        }
+
+    const char *res = lua_tostring( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::get_PAC_devices()
+    {
+    if ( !cmmctr ) return -1;
+
+    *has_got_PAC_devices = 0;
+
+    char buff[ 3 ];
+    buff[ 0 ] = device_communicator::CMD_GET_DEVICES;
+    devices_request_id++;
+    ( ( u_int_2* ) ( buff + 1 ) )[ 0 ] = devices_request_id;
+    const int cmd_length = 3;
+    cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, cmd_length );
+
+    unsigned int answer_size;
+    char *answer = cmmctr->get_out_data( answer_size );
+    if ( answer_size > 0 )
+        { 
+        devices_request_id = ( ( u_int_2* ) answer )[ 0 ]; 
+
+        int res = exec_Lua_str( PAC_Lua_state, answer + 2,
+            "Ошибка получения объектов PAC" );
+
+        if( res != 0 )
+            {
+            return -1;
+            }
+
+        *has_got_PAC_devices = 1;
+        return res;
+        }   
+
+    return -1;
+    }
+//-----------------------------------------------------------------------------
+char* PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    const char *res = 0;
+    static char res_str[ 1000 ] = {};
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, sizeof( cmd ), "res = nil; assert( loadstring( tags[ %d ] ) )()", tag_id );    
+    exec_Lua_str( PAC_Lua_state, cmd, "char* PAC_cmmctr::get_tag_str_value", false );
+    
+    res = get_str_param_from_Lua( PAC_Lua_state, "res",
+        "char* PAC_cmmctr::get_tag_str_value" );
+        
+    if ( res )
+    	{
+        is_exist_tag = true;
+
+        strncpy( res_str, res, 1000 );        
+    	}
+
+    return res_str;    
+    }
+//-----------------------------------------------------------------------------
+char* PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    const char *res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );
+    exec_Lua_str( PAC_Lua_state, cmd, "char* PAC_cmmctr::get_tag_str_value", false );
+
+    res = get_str_param_from_Lua( PAC_Lua_state, "res",
+        "PAC_cmmctr::get_tag_str_value" );
+    static char res_str[ 1000 ] = {};
+    if ( res )
+        {
+        is_exist_tag = true;
+        strncpy( res_str, res, sizeof( res_str ) );
+        }
+
+    return res_str;
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    double res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, sizeof( cmd ), "res = nil; assert( loadstring( tags[ %d ] ) )()", tag_id );
+
+    exec_Lua_str( PAC_Lua_state, cmd, "double PAC_cmmctr::get_tag_value", false );
+
+    res = get_double_param_from_Lua( PAC_Lua_state, "res",
+        "double PAC_cmmctr::get_tag_value", is_exist_tag );
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    double res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );
+    exec_Lua_str( PAC_Lua_state, cmd, "double PAC_cmmctr::get_tag_value", false );
+
+    res = get_double_param_from_Lua( PAC_Lua_state, "res",
+        "double PAC_cmmctr::get_tag_value", is_exist_tag );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_double_param_from_Lua( lua_State *L, 
+    const char *param_name, const char *c_function_name, bool &is_exist ) const
+    {
+    is_exist = true;
+    lua_getfield( L, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        is_exist = false;
+        }
+
+    double res = lua_tonumber( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::add_nill_tag( int tag_id )
+    {
+    int res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "tags[ %d ] = 0", tag_id );
+    exec_Lua_str( PAC_Lua_state, cmd, "PAC_cmmctr::add_nill_tag" );
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::get_all_devices_states()
+    {
+    if ( !cmmctr ) return -1;
+
+    char buff[ 1 ] = { device_communicator::CMD_GET_DEVICES_STATES };            
+    int res = cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, sizeof( buff ) );
+    if ( res != 0 ) // Неуспешная операция обмена данными с контроллером.
+        {
+        if ( err_retr_count >= PM_MAX_ERRORS_COUNT )
+            {
+            *is_connected = 0;
+            }
+        else
+            {
+            err_retr_count++;
+            }        
+        }
+    else            // Успешная операция обмена данными с контроллером.
+        {
+        *is_connected = 1;
+        err_retr_count = 0;
+        }
+
+    unsigned int answer_size;
+    char *answer = cmmctr->get_out_data( answer_size );
+    if ( answer_size > 0 )
+        { 
+        if ( ( ( u_int_2* ) answer )[ 0 ] != devices_request_id )
+            {
+            return PAC_DEVICES_CHANGING;
+            }
+
+        int res = exec_Lua_str( PAC_Lua_state, answer + 2,
+            "Ошибка получения объектов PAC" );
+
+        if( res != 0 )
+            {
+            return OTHER_ERROR;
+            }
+
+        return LOAD_OK;
+        }   
+
+    return OTHER_ERROR;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::is_got_PAC_devices()
+    {
+    return *has_got_PAC_devices;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
+    {
+    int res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "tags[ %d ] = \"t.%s\"", tag_id, tag_name );
+    exec_Lua_str( PAC_Lua_state, cmd, "PAC_cmmctr::add_exist_tag" );
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::send_PAC_cmd( char *cmd, int count )
+	{
+	cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, cmd, count );
+	}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+abstract_cmmctr::abstract_cmmctr( const char* PAC_name, int timeout ): id( id ),
     timeout( timeout )
     {
     strcpy_s( this->PAC_name, 20, PAC_name );
@@ -201,8 +568,10 @@ int tcp_cmmctr::InitLib()
         {
         if ( WSAStartup( 0x202, &tmpWSAData ) )
             {
-            sprintf_s( bug_log::msg, bug_log::msg_size,
-                "Ошибка инициализации сетевой библиотеки." );
+            snprintf( bug_log::msg, bug_log::msg_size,
+                "Ошибка инициализации сетевой библиотеки: %s\n",
+                WSA_Err_Decode( WSAGetLastError() ) );
+
             bug_log::add_error_msg( "Driver", "" );            
             return 0;
             }
@@ -211,7 +580,7 @@ int tcp_cmmctr::InitLib()
     return 1;
     }
 //-----------------------------------------------------------------------------
-tcp_cmmctr::tcp_cmmctr( char *PAC_name, char* sIP,
+tcp_cmmctr::tcp_cmmctr( const char *PAC_name, const char* sIP,
     int iSocket /*= 10000*/, 
     int timeout /*=1500*/ ): abstract_cmmctr( PAC_name, timeout ),
     isConnected( 0 ),                       
@@ -462,7 +831,14 @@ int tcp_cmmctr::Connect()
     sock_address.sin_port = htons( ( u_short ) port);
     sock_address.sin_addr.s_addr = inet_addr(ip_address);
 
-    connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
+    res = connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
+    //if ( res == SOCKET_ERROR )
+    //    {
+    //    snprintf( bug_log::msg, bug_log::msg_size,
+    //        "Ошибка подключения - %s", WSA_Err_Decode( WSAGetLastError() ) );        
+    //    bug_log::add_error_msg( PAC_name, ip_address );
+    //    return 0;
+    //    }
 
     fd_set rdevents;
     struct timeval tv;

@@ -85,7 +85,10 @@ void bug_log_wnd::create( CString window_title )
 
     message_list.Create( m_hWnd, rect2, _T( "" ), WS_VISIBLE | WS_CHILD | WS_BORDER );
 
+#ifdef _DEBUG
+#else
     ShowWindow( SW_MINIMIZE );
+#endif // _DEBUG    
     }
 //-----------------------------------------------------------------------------
 void bug_log_wnd::close()

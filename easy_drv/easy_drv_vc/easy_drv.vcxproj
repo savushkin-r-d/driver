@@ -76,8 +76,8 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>DRIVER;WIN32;NDEBUG;_WINDOWS;_USRDLL;EASY_DRV_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;..\..\..\common\PAC-driver;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -335,7 +335,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp" />
-    <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp" />
+    <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\bug_log.cpp" />
     <ClCompile Include="..\PAC_cmmctr.cpp" />
     <ClCompile Include="dllmain.cpp">

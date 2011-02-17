@@ -8,9 +8,9 @@
 /// @c DEBUG - компиляция c дополнительной отладочной информацией.
 /// 
 /// @par Текущая версия:
-/// @$Rev: 198 $.\n
-/// @$Author: id $.\n
-/// @$Date:: 2010-12-20 18:18:47#$.
+/// @$Rev$.\n
+/// @$Author$.\n
+/// @$Date::                     $.
 
 #ifndef _PAC_CMMCTR_H
 #define _PAC_CMMCTR_H
@@ -54,100 +54,191 @@ class PAC_cmmctr
         enum LOAD_RESULTS
             {
             LOAD_OK              = 0,
-            PAC_DEVICES_CHANGING = -1,  //Устройство изменило конфигурацию.
+            PAC_DEVICES_CHANGING = -1,  ///< Устройство изменило конфигурацию.
             OTHER_ERROR          = -2,
             };
 
+        /// @brief Получение IP-адреса PAC.
+        ///
+        /// @return IP-адрес PAC.
         const char*  get_address() const;
+
+        /// @brief Получение имени PAC.
+        ///
+        /// @return Имя PAC.
         const char*  get_name() const;
-        UINT         get_description_id() const;
+
+        /// @brief Получение номера описания PAC.
+        ///
+        /// @return Номер описания PAC.
+        UINT get_description_id() const;
 
         abstract_cmmctr  *get_cmmctr();
 
+        /// @brief Получение номера описания PAC.
+        ///
+        /// @param PAC_address [ in ]  - IP-адрес PAC.
+        /// @param PAC_name [ in ]     - имя PAC.
+        /// @param PAC_descr_id [ in ] - номер описания PAC.
+        /// @param port [ in ]         - порт.
+        /// @param timeout [ out ]     - время ожидания ответа от PAC.
         PAC_cmmctr( const char* PAC_address, 
             char *PAC_name, 
             UCHAR PAC_descr_id, 
             int port = 10000,
             int timeout = 1500 );
 
-        int clear_tags() 
-            {
-            //-Инициализация таблицы тегов.
-            const char *init_tags_cmd = "tags = {}";
-            int res = exec_Lua_str( PAC_Lua_state, init_tags_cmd,
-                "clear_tags" );
-            return res;
-            }
+         ~PAC_cmmctr();
 
-        ~PAC_cmmctr();
+        /// @brief Очистка таблицы тегов.
+        ///
+        /// @return 0 - ок.
+        int clear_tags();
+               
 
-        //Обновляет состояние всех объектов для данного контроллера.
-        //ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ.
-        //   0 - OK.
-        // < 0 - ошибка:
-        //        -1 - устройства контроллера изменились.
-        //        -2 - ошибка получения состояния устройств.
-        int get_all_devices_states();
+        /// @brief Обновление состояния всех объектов для данного контроллера.
+        ///
+        /// @return   0 - ок.
+        /// @return > 0 - ошибка.
+        LOAD_RESULTS get_PAC_all_devices_states();
 
-        //Получение объектов для данного контроллера.
-        //ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ.
-        //   0 - OK.
-        // < 0 - ошибка.
-        //ОПИСАНИЕ
-        //  Дополнительно формируется номер запроса устройств в контроллере, который в 
-        //  дальнейшем служит для сопоставления данных о состоянии устройств.
+        /// @brief Получение объектов для данного контроллера.
+        ///
+        ///  Дополнительно формируется номер запроса устройств в контроллере, который в 
+        ///  дальнейшем служит для сопоставления данных о состоянии устройств.
+        ///
+        /// @return  0  - ок.
+        /// @return > 0 - ошибка.
         int get_PAC_devices( );
 
-        //Возвращает 1, если получены устройства контроллера. 0 -  в противном случае.
-        int is_got_PAC_devices();
-
-        void print();
-
-		void send_PAC_cmd( char *cmd, int count );
-
-        //Получает версию ПО контроллера.
-        //ВОЗВРАЩАЕМОЕ ЗНАЧЕНИЕ.
-        // >  0 - версия.
-        // =< 0 - ошибка:
+        /// @brief Получение версии ПО контроллера.
+        ///
+        /// @return  > 0 - версия.
+        /// @return <= 0 - ошибка.
         int get_PAC_info();
 
-        char* get_tag_str_value( int tag_id, bool &is_exist_tag );
-        char* get_tag_str_value( const char *tag_name, bool &is_exist_tag );
+        /// @brief Получение информации о получении устройств для данного 
+        /// контроллера.
+        ///
+        /// @return true  - получены устройства контроллера.
+        /// @return false - устройства контроллера не получены.
+        bool is_got_PAC_devices();
 
+        //- Получение значений тегов через Lua.
+
+        /// @brief Получение строкового значения тега на основе номер тега.
+        ///
+        /// @param tag_id [ in ]        - номер тега.
+        /// @param is_exist_tag [ out ] - найден ли данный тег.
+        /// @param str_value [ out ]    - строковое значение тега.
+        /// @param max_length [ in ]    - максимальная длина значение тега.
+        void get_tag_str_value( int tag_id, bool &is_exist_tag, char *str_value,
+            int max_length );
+
+        /// @brief Получение строкового значения тега на основе имени тега.
+        ///
+        /// @param tag_name [ in ]      - имя тега.
+        /// @param is_exist_tag [ out ] - найден ли данный тег.
+        /// @param str_value [ out ]    - строковое значение тега.
+        /// @param max_length [ in ]    - максимальная длина значение тега.
+        void get_tag_str_value( const char *tag_name, bool &is_exist_tag, 
+            char *str_value, int max_length );
+
+        /// @brief Получение числового значения тега на основе номера тега.
+        ///
+        /// @param tag_id [ in ]        - номер тега.
+        /// @param is_exist_tag [ out ] - найден ли данный тег.
+        ///
+        /// @return Числовое значение тега.
         double get_tag_value( int tag_id, bool &is_exist_tag );
+
+        /// @brief Получение числового значения тега на основе имени тега.
+        ///
+        /// @param tag_name [ in ]      - имя тега.
+        /// @param is_exist_tag [ out ] - найден ли данный тег.
+        ///
+        /// @return Числовое значение тега.
         double get_tag_value( const char *tag_name, bool &is_exist_tag );
-        int add_nill_tag( int tag_id );
-        int add_exist_tag( const char *tag_name, int tag_id );
 
-        CSWMRG* get_dev_synch_access() const
-            {
-            return dev_synch_access;
-            }
+        /// @brief Добавление тега, которого нет в PAC, в Lua.
+        ///
+        /// @param tag_id [ in ] - номер тега.
+        void add_nill_tag( int tag_id );
 
-        //- Lua.      
-        int exec_Lua_str( const char *Lua_str,
-            const char *error_str, bool is_print_error_msg = true ) const;
+        /// @brief Добавление тега в Lua для быстрого доступа через номер тега.
+        ///
+        /// @param tag_name [ in ] - имя тега.
+        /// @param tag_id [ in ]   - номер тега.
+        void add_exist_tag( const char *tag_name, int tag_id );
+        //- Получение значений тегов через Lua.
 
-        const char* get_str_param_from_Lua( const char *param_name, 
-            const char *c_function_name ) const;
-        //-Lua.-!>
+
+        /// @brief Получение объекта синхронизации.
+        ///
+        /// Объект синхронизации используется для разделяемого доступа к
+        /// экземпляру интерпретатора Lua.
+        ///
+        /// @return Объект синхронизации.
+        CSWMRG* get_dev_synch_access() const;
+
+        /// @brief Отсылка команды в PAC через интерпретатор Lua.
+        ///
+        /// @param cmd [ in ] - строка скрипта для обработки Lua.
+        void set_tag_Lua_cmd( const char *cmd );
 
     private: 
         //- Lua.
-        double get_double_param_from_Lua( lua_State *L, const char *param_name, 
+
+        /// @brief Получение числового значения переменной из машины Lua.
+        ///
+        /// @param param_name [ in ]      - имя переменной.
+        /// @param c_function_name [ in ] - имя функции, для вывода сообщения
+        /// об ошибке.
+        /// @param is_exist [ out ]       - найдена ли данная переменная.
+        ///
+        /// @return Числовое значение переменной из машины Lua.
+        double get_double_param_from_Lua( const char *param_name, 
             const char *c_function_name, bool &is_exist ) const;
-        int get_int_param_from_Lua( lua_State *L, const char *param_name, 
+
+        /// @brief Получение числового значения переменной из машины Lua.
+        ///
+        /// @param param_name [ in ]      - имя переменной.
+        /// @param c_function_name [ in ] - имя функции, для вывода сообщения
+        /// об ошибке.
+        ///
+        /// @return Числовое значение переменной из машины Lua.
+        int get_int_param_from_Lua( const char *param_name, 
             const char *c_function_name ) const;
-        const char* get_str_param_from_Lua( lua_State *L, const char *param_name, 
+
+        /// @brief Получение строкового значения переменной из машины Lua.
+        ///
+        /// @param param_name [ in ]      - имя переменной.
+        /// @param c_function_name [ in ] - имя функции, для вывода сообщения
+        /// об ошибке.
+        ///
+        /// @return Строковое значение переменной из машины Lua.
+        const char* get_str_param_from_Lua( const char *param_name, 
             const char *c_function_name ) const;
-        
-        int exec_Lua_str( lua_State* L, const char *Lua_str,
+
+        /// @brief Выполнение строки Lua.
+        ///
+        /// @param Lua_str [ in ]   - строка для выполнения.
+        /// @param error_str [ in ] - строка для вывода сообщения
+        /// об ошибке.
+        /// @param is_print_error_msg [ in ] - выводить ли строки с описанием 
+        /// при ошибке.
+        ///
+        /// @return 0 - ок.
+        /// @return 1 - ошибка выполнения строки.
+        int exec_Lua_str( const char *Lua_str,
             const char *error_str, bool is_print_error_msg = true ) const;
+        
         //-Lua.-!>
 
         enum PM_CONST
             {
-            // Максимальное число ошибок обмена с PAC для установления ошибки связи.
+            /// @brief Максимальное число ошибок обмена с PAC для возникновения
+            /// ошибки связи.
             PM_MAX_ERRORS_COUNT = 2,
             };
 
@@ -157,8 +248,9 @@ class PAC_cmmctr
         bool *is_connected;
         bool *prev_connected_state;
 
-        // 1 - номер запроса устройств в контроллере. Устанавливается в 0 при загрузке контроллера.
-        u_int_2 devices_request_id;             //1
+        /// @brief Номер запроса устройств в PAC. Устанавливается в 0 при
+        /// загрузке PAC.
+        u_int_2 devices_request_id;            
 
         UCHAR err_retr_count;
 
@@ -169,108 +261,88 @@ class PAC_cmmctr
             PAC_CMMCTR_SERVICE_ID = 1,
             };
 
+        abstract_cmmctr *cmmctr;    ///< Коммуникатор для обмена данными с PAC.       
+        std::string     PAC_address;///< IP-адрес PAC.
 
-        // 1 - указатель на коммуникатор, который непосредственно обеспечивает 
-        //     обмен данными с PAC.
-        // 2 - строка с ID контроллера - 'COM1' (для COM) или '192.200.0.0' (для IP).        
-        // 3 - устройства контроллера.
-        abstract_cmmctr *cmmctr;      //1       
-        std::string     PAC_address;  //2
+        bool *has_got_PAC_devices;  ///< Флаг получения устройств от PAC.
+        UINT  PAC_descr_id;         ///< Уникальный номер описания PAC.
 
-        bool *has_got_PAC_devices;  
-        UINT  PAC_descr_id;         // Уникальный номер описания контроллера.
-
-        std::string    PAC_name;    // Имя контроллера.
+        std::string    PAC_name;    ///< Имя PAC.
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-//ОПИСАНИЕ
-//  Служит для представления информации обо всех контроллерах. 
+/// @brief Представление информации обо всех контроллерах. 
 class PAC_cmmctr_group
     {
     public:         
         PAC_cmmctr_group();
 
-        static int get_max_PAC_number() 
-            {
-            return MAX_PAC_DESCR_NUMBER;
-            }
+        /// @brief 
+        static int get_max_PAC_number();
 
-        //  Добавляет контроллер в группу контроллеров сервера.
+        /// @brief Добавление описания PAC в группу описаний сервера.
         PAC_cmmctr* add_PAC( char* const PAC_address, 
             char* const PAC_name, UCHAR PAC_descr_id, 
             int PAC_port, int timeout );
-
-        //  Получение объектов контроллера.
-        int get_PAC_devices( char* const PAC_address );
-
-        //  Обновляет состояние всех объектов всех контроллеров.
-        int refresh_all_devices_states();
-
-        //  Посылает команду для выполнения в PAC.
-        int send_cmd_to_PAC_device( char* const PAC_addres, 
-            char* const tag_name, char* const cmd, int cmd_size );
-
-        //Для получения ошибок связи с контроллерами.
-        //Возвращает количество PAC.
+                
+        /// @brief Получение количества описаний PAC.
+        ///
+        /// Для получения ошибок связи с контроллерами.
         unsigned int get_PAC_count() const;
 
-        //Возвращает PAC с индексом idx.
+        /// @brief Получение описания PAC с заданным номером.
         PAC_cmmctr* get_PAC( int descr_id );
-
-        void print();
 
     private:          
         enum CONSTANTS
             {
-            MAX_PAC_DESCR_NUMBER = 100, ///< Максимальный номер описания PAC.
+            MAX_PAC_DESCR_NUMBER = 255, ///< Максимальный номер описания PAC.
             };
 
         vector< PAC_cmmctr* > PAC_descriptions; ///< Все описания PAC сервера.
     };
 //-----------------------------------------------------------------------------
-//ОПИСАНИЕ
-//  Базовый класс. Служит для передачи\получения данных. 
+/// @brief Базовый класс. Служит для передачи\получения данных. 
 class abstract_cmmctr
     {
     public:
-        // Возвращает указатель на полученные от контроллера данные, количество 
-        //полученных байт.
+        /// @brief Получение данных от контроллера.
         virtual char* get_out_data( UINT &cnt );
 
-        int get_timeout() const
-            {
-            return timeout;
-            }
+        /// @brief 
+        int get_timeout() const;
 
+        /// @brief 
         abstract_cmmctr( const char* PAC_name, int timeout );
 
-        // Посылает заданный массив контроллеру.
-        virtual int send_2_PAC( UCHAR service_ID, char *buff, UINT length ) = 0;
+        /// @brief Отсылка заданного массива PAC.
+        virtual int send_2_PAC( UCHAR service_ID, const char *buff,
+            UINT length ) = 0;
 
     protected:        
-        int id;         //Номер.
+        int id;         ///< Номер.
 
         static int count;
 
-        int  timeout;        //Время ожидания ответа, мсек.
-        char PAC_name[ 20 ]; // Имя контроллера.
+        int  timeout;        ///< Время ожидания ответа, мсек.
+        char PAC_name[ 20 ]; ///< Имя PAC.
 
         enum PARAMS
             {
             P_MAX_BUFFER_SIZE = 20*1024,
             };
 
-        //1 - буфер для обмена данными с контроллером.
-        //2 - буфер для обмена данными с контроллером. 
-        //3 - количество полученных от контроллера байт в ответе.
-        char in_buff[ P_MAX_BUFFER_SIZE ];  //1
-        char buff[ P_MAX_BUFFER_SIZE ];     //2
-        UINT answer_size;                   //3
+        /// @brief Буфер для обмена данными с контроллером.
+        char in_buff[ P_MAX_BUFFER_SIZE ];
+
+        /// @brief Буфер для обмена данными с контроллером. 
+        char buff[ P_MAX_BUFFER_SIZE ];
+        
+        /// @brief Количество полученных от контроллера байт в ответе.
+        UINT answer_size;
     };
 //-----------------------------------------------------------------------------
-//ОПИСАНИЕ
-//  TCP\IP коммуникатор.
+/// @brief TCP\IP коммуникатор.
 class tcp_cmmctr : public abstract_cmmctr 
     {
     public:
@@ -280,7 +352,7 @@ class tcp_cmmctr : public abstract_cmmctr
 
         char* get_out_data( UINT &cnt );
 
-        int send_2_PAC( UCHAR Service_ID, char *data, UINT length );
+        int send_2_PAC( UCHAR Service_ID, const char *data, UINT length );
 
     private:
         CRITICAL_SECTION m_cs;
@@ -295,7 +367,8 @@ class tcp_cmmctr : public abstract_cmmctr
             {
             C_ERRORS_SIZE = 100,
             };
-        char        is_errors[ C_ERRORS_SIZE ]; //Флаги ошибок.
+        char is_errors[ C_ERRORS_SIZE ]; ///< Флаги ошибок.
+
         enum ERRORS_FLAGS_NUMBER
             {
             EF_NO_CONNECTION,

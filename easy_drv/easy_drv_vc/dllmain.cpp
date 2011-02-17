@@ -7,9 +7,9 @@
 /// @c DEBUG - компиляция с выводом отладочной информации в консоль.@n
 /// 
 /// @par Текущая версия:
-/// @$Rev: 153 $.\n
-/// @$Author: id $.\n
-/// @$Date:: 2010-10-14 12:46:29#$.
+/// @$Rev$.\n
+/// @$Author$.\n
+/// @$Date::                     $.
 
 #include "stdafx.h"
 
@@ -46,9 +46,6 @@ int    g_commctr_threads_count = 0;
 /// @brief Типы значения тега.
 enum TAG_VAL_TYPE
     {
-    T_ULONG, ///< Беззнаковое целое (unsigned int, 32 бита).
-    T_FLOAT, ///< Вещественное (float, 32 бита).
-
     T_NUMBER,///< Вещественное (float, 32 бита).
     T_STRING,///< Строка.
     };
@@ -80,22 +77,20 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 /// @param [in] lpParameter - экземпляр @ref PAC_cmmctr, с которым будет 
 /// работать поток.
 ///
-/// @return - код завершения потока.
+/// @return Код завершения потока.
 DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
     {		        
 #pragma chMSG( Тестирование комментария! )
 
     PAC_cmmctr *PAC_com = ( PAC_cmmctr* ) lpParameter;
     int res;
-
-    // 1 - интервал опроса контроллера.
-    // 2 - пороговое значение таймаута получения ответа.
-    int sleep_time = 510;                            //1
-    if ( PAC_com->get_cmmctr()->get_timeout() > 2000 /*2*/ )
+        
+    int sleep_time = 510; // Интервал опроса контроллера.
+    if ( PAC_com->get_cmmctr()->get_timeout() > 2000 )
         {
         sleep_time *= 2;
         }
-    if ( PAC_com->get_cmmctr()->get_timeout() > 4000 /*2*/ )
+    if ( PAC_com->get_cmmctr()->get_timeout() > 4000 )
         {
         sleep_time *= 3;
         }
@@ -114,7 +109,6 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
 
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
-
         snprintf( bug_log::msg, bug_log::msg_size, 
             "Устройства PAC изменились." );
         bug_log::add_msg( PAC_com->get_name(), PAC_com->get_address() );
@@ -123,7 +117,8 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
         PAC_com->clear_tags(); // Очищаем все теги проекта.
         PAC_com->get_dev_synch_access()->Done();
 
-        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   //Пытаемся получить все устройства контроллера.
+        //Пытаемся получить все устройства контроллера.
+        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
             {            
             PAC_com->get_dev_synch_access()->WaitToWrite();
             res = PAC_com->get_PAC_devices();
@@ -140,11 +135,12 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
             Sleep( sleep_time );
             }
 
-        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   //Пытаемся получить состояния всех устройств контроллера.
+        //Пытаемся получить состояния всех устройств контроллера.
+        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
             {
             Sleep( sleep_time );
             PAC_com->get_dev_synch_access()->WaitToWrite();
-            res = PAC_com->get_all_devices_states();
+            res = PAC_com->get_PAC_all_devices_states();
             PAC_com->get_dev_synch_access()->Done();
 
             if ( PAC_cmmctr::PAC_DEVICES_CHANGING == res )     
@@ -159,13 +155,8 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
         //            PAC_com->get_PAC_errors();
         //            }                
         //        }              
-        } // while ( !*g_is_terminated )
-
-    //if ( 1 == synch_access_needs_done )
-    //    {
-    //    g_server_tags[ PAC_com->get_prj_id() ].synch_access->Done();         
-    //    }
-
+        } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
+    
     _endthreadex( 0 );
     return 0;
     }
@@ -174,10 +165,13 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
 ///
 /// Внутренняя функция библиотеки.
 ///
-/// @param [in] tag - полное описание тега.
+/// @param [in] tag             - полное описание тега.
+/// @param [in] tag_type        - тип значения тега.
+/// @param [in] use_only_tag_id - использовать только номер тега.
 ///
-/// @return - значение тега.
-void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
+/// @return Значение тега.
+void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
+    bool use_only_tag_id = false )
     {
     // Проверяется, не превышает ли номер описания PAC максимальный (1). Далее
     // есть ли описание данного PAC (2). Если нет, то тогда он добавляется в 
@@ -201,9 +195,11 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
         }
 
     PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( tag.PAC_descr_id );
-    if ( 0 == current_PAC_cmmctr )                                      //2
+    if ( 0 == current_PAC_cmmctr )                                     //2
         {
-        current_PAC_cmmctr = g_PAC_descriptions->add_PAC(               //3
+        if ( use_only_tag_id ) return 0;
+
+        current_PAC_cmmctr = g_PAC_descriptions->add_PAC(              //3
             tag.PAC_address,
             tag.PAC_name, tag.PAC_descr_id, 
             tag.PAC_port, tag.timeout );     
@@ -218,7 +214,7 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
 
         g_commctr_threads_array[ g_commctr_threads_count ] = 
             chBEGINTHREADEX( 0, 0, PAC_communication_thread, 
-            current_PAC_cmmctr, 0, 0 );						            //4
+            current_PAC_cmmctr, 0, 0 );						           //4
         }
 
     //-Получены ли устройства контроллера.
@@ -230,27 +226,29 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
     current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
     bool   is_exist_tag = false;
 
-    static double tag_val;    
-    static char   str_tag_val[ 500 ] = {};
-    tag_val     = 0;
+    static double tag_val            = 0;    
+    static char   str_tag_val[ 500 ] = { 0 };    
+    tag_val          = 0;
     str_tag_val[ 0 ] = 0;
 
     switch ( tag_type )
         {
     case T_NUMBER:
-        tag_val = current_PAC_cmmctr->get_tag_value(                 //5
+        tag_val = current_PAC_cmmctr->get_tag_value(                   //5
             tag.tag_id, is_exist_tag );
         break;
 
     case T_STRING:
-        strncpy( str_tag_val, current_PAC_cmmctr->get_tag_str_value(          //5
-            tag.tag_id, is_exist_tag ), 500 );
+        current_PAC_cmmctr->get_tag_str_value(                         //5
+            tag.tag_id, is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
         break;
         }
     current_PAC_cmmctr->get_dev_synch_access()->Done();
 
-    if ( false == is_exist_tag )                                        //7
+    if ( false == is_exist_tag )                                       //7
         {
+        if ( use_only_tag_id ) return 0;
+
         current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
 
         switch ( tag_type )
@@ -261,19 +259,19 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
             break;
 
         case T_STRING:
-            strncpy( str_tag_val, current_PAC_cmmctr->get_tag_str_value(          
-                tag.tag_name, is_exist_tag ), 500 );
+            current_PAC_cmmctr->get_tag_str_value(          
+                tag.tag_name, is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
             break;
             }
 
         current_PAC_cmmctr->get_dev_synch_access()->Done();
 
-        if ( true == is_exist_tag )                                     //8
+        if ( true == is_exist_tag )                                    //8
             {
             current_PAC_cmmctr->add_exist_tag( tag.tag_name, tag.tag_id );
             }
 
-        if ( false == is_exist_tag )                                    //9
+        if ( false == is_exist_tag )                                   //9
             {
             snprintf( bug_log::msg, bug_log::msg_size,
                 "Тег \"%s\" не найден!", 
@@ -292,14 +290,54 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type )
 
     case T_STRING:
         return ( void* ) &str_tag_val;    
-        }   
+        }  
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+/// @brief Запись в тег.
+///
+/// Внутренняя функция библиотеки.
+///
+/// @param [in] tag_name            - имя тега.
+/// @param [in] PAC_description_id  - номер описания PAC.
+/// @param [in] value               - новое значение тега.
+/// @param [in] tag_type            - тип значения тега.
+///
+/// @return 0 - ок.
+int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
+    TAG_VAL_TYPE tag_type )
+    {
+    PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( PAC_description_id );
+    if ( current_PAC_cmmctr )
+        {	
+        char cmd[ 1000 ];
+
+        switch ( tag_type )
+            {
+        case T_NUMBER:
+            sprintf( cmd, "res = make_lua_str( \"%s\", %f )", 
+                tag_name, *( double* ) value  );
+            break;
+
+        case T_STRING:
+            snprintf( cmd, sizeof( cmd ), "res = make_lua_str( \"%s\", \"%s\" )", 
+                tag_name, ( char* ) value );
+            break;
+            }      
+
+        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
+        current_PAC_cmmctr->set_tag_Lua_cmd( cmd );
+        current_PAC_cmmctr->get_dev_synch_access()->Done();
+        }
+
     return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief Инициализация библиотеки.
 ///
-/// @return - 1   - ок.
-/// @return - > 0 - ошибка.
+/// @return 1   - ок.
+/// @return > 0 - ошибка.
 EXPORT int __cdecl init()
     {    
     static UCHAR is_got_init = 0;
@@ -350,7 +388,7 @@ EXPORT int __cdecl init()
 ///
 /// @param [in] tag - полное описание тега.
 ///
-/// @return - значение тега.
+/// @return Значение тега.
 EXPORT double __cdecl get_value( in_tag_info &tag )
     {
     return *( double* ) get_tag_value( tag, T_NUMBER );
@@ -366,50 +404,23 @@ EXPORT double __cdecl get_value( in_tag_info &tag )
 /// @param [out] result - признак удачной записи значения тега:
 /// 1 - неудачно, 0 - ок.
 ///
-/// @return - значение тега.
+/// @return Значение тега.
 EXPORT double __cdecl get_value2( UINT tag_id, UCHAR PAC_description_id,
     UCHAR &result )
     {
-    if ( PAC_description_id > g_PAC_descriptions->get_max_PAC_number() ) //1
+    in_tag_info tag;
+    tag.tag_id = tag_id;
+    tag.PAC_descr_id = PAC_description_id;
+
+    void *res = get_tag_value( tag, T_NUMBER, true );
+    if ( res )
         {
-        snprintf( bug_log::msg, bug_log::msg_size, 
-            "Ошибка get_tag_value(...) - номер описания PAC %d превышает допустимый %d!",
-            PAC_description_id, g_PAC_descriptions->get_max_PAC_number() );
-
-        bug_log::add_msg_once( "Driver", "" );
-        return 0;
-        }
-
-    PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( PAC_description_id );
-    if ( current_PAC_cmmctr )                                      //2
-        {
-        //-Получены ли устройства контроллера.
-        if ( current_PAC_cmmctr->is_got_PAC_devices() == 0 ) 
-            {       
-            result = 0;
-            return 0; //Не получены устройства PAC.
-            }
-
-        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
-
-        bool   is_exist_tag = false;
-        double tag_val = current_PAC_cmmctr->get_tag_value(                 //5
-            tag_id, is_exist_tag );
-
-        current_PAC_cmmctr->get_dev_synch_access()->Done();
-
-        if ( false == is_exist_tag )                                        //7
-            {
-            result = 1;
-            return 0;
-            }
-
         result = 0;
-        return tag_val;
+        return *( double* ) res;
         }
 
     result = 1;
-    return 0;
+    return 1;
     }
 //-----------------------------------------------------------------------------
 /// @brief Получение строкового значения тега на основе его полного описания.
@@ -418,7 +429,7 @@ EXPORT double __cdecl get_value2( UINT tag_id, UCHAR PAC_description_id,
 ///
 /// @param [in] tag - полное описание тега.
 ///
-/// @return - значение тега.
+/// @return Значение тега.
 EXPORT char* __cdecl get_str_value( in_tag_info &tag )
     {
     return ( char* ) get_tag_value( tag, T_STRING );
@@ -434,10 +445,22 @@ EXPORT char* __cdecl get_str_value( in_tag_info &tag )
 /// @param [out] result - признак удачной записи значения тега:
 /// 1 - неудачно, 0 - ок.
 ///
-/// @return - значение тега.
+/// @return Значение тега.
 EXPORT char* __cdecl get_str_value2( UINT tag_id, UCHAR PAC_description_id,
     UCHAR &result )
     {
+    in_tag_info tag;
+    tag.tag_id = tag_id;
+    tag.PAC_descr_id = PAC_description_id;
+
+    void *res = get_tag_value( tag, T_STRING, true );
+    if ( res )
+        {
+        result = 0;
+        return ( char* ) res;
+        }
+
+    result = 1;
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -450,27 +473,10 @@ EXPORT char* __cdecl get_str_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @param [in] value - записываемое в тег значение.
 /// @param [in] type - тип значения тега.
 ///
-/// @return - новое значение тега.
+/// @return Новое значение тега.
 EXPORT int __cdecl set_value( in_tag_info &tag, double value, TAG_VAL_TYPE type )
     {
-	PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( tag.PAC_descr_id );
-    if ( current_PAC_cmmctr )
-        {	
-        char cmd[ 1000 ];
-        sprintf( cmd, "res = make_lua_str( \"%s\", %f )", tag.tag_name, value);
-        current_PAC_cmmctr->exec_Lua_str( cmd, "set_value(...)" );
-
-        bool is_exist_tag = false;
-        const char* str_res = current_PAC_cmmctr->get_str_param_from_Lua( "res", "set_value(...)" );
-
-        char buff[ 100 ] = { 0 };
-        buff[ 0 ] = device_communicator::CMD_EXEC_DEVICE_COMMAND;
-        memcpy( buff + 1, str_res, strlen( str_res ) );
-
-        current_PAC_cmmctr->send_PAC_cmd( buff, 1 + strlen( str_res ) );
-        }
-
-    return 0;
+    return set_tag( tag.tag_name, tag.PAC_descr_id, &value, T_NUMBER );    
     }
 //-----------------------------------------------------------------------------
 /// @brief Запись в строковый тег на основе его полного описания.
@@ -480,34 +486,16 @@ EXPORT int __cdecl set_value( in_tag_info &tag, double value, TAG_VAL_TYPE type 
 /// @param [in] tag - полное описание тега.
 /// @param [in] str_value - записываемое в тег значение.
 ///
-/// @return - признак успешной записи: 0 - ок, 1 - ошибка.
+/// @return Признак успешной записи: 0 - ок, 1 - ошибка.
 EXPORT int __cdecl set_str_value( in_tag_info &tag, char *str_value )
     {
-    PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( tag.PAC_descr_id );
-    if ( current_PAC_cmmctr )
-        {	
-        char cmd[ 1000 ];
-        sprintf( cmd, "res = make_lua_str( \"%s\", \"%s\" )", 
-            tag.tag_name, str_value);
-        current_PAC_cmmctr->exec_Lua_str( cmd, "set_value(...)" );
-
-        bool is_exist_tag = false;
-        const char* str_res = current_PAC_cmmctr->get_str_param_from_Lua( "res", "set_value(...)" );
-
-        char buff[ 100 ] = { 0 };
-        buff[ 0 ] = device_communicator::CMD_EXEC_DEVICE_COMMAND;
-        memcpy( buff + 1, str_res, strlen( str_res ) );
-
-        current_PAC_cmmctr->send_PAC_cmd( buff, 1 + strlen( str_res ) );
-        }
-
-    return 0;
+    return set_tag( tag.tag_name, tag.PAC_descr_id, str_value, T_STRING );
     }
 //-----------------------------------------------------------------------------
 /// @brief Завершение работы с библиотекой.
 ///
-/// @return - 1   - ок.
-/// @return - > 0 - ошибка.
+/// @return 1   - ок.
+/// @return > 0 - ошибка.
 EXPORT int __cdecl final()
     {    
     static UCHAR is_got_final = 0;
@@ -541,7 +529,7 @@ EXPORT int __cdecl final()
 /// (узла базы каналов).
 /// @param [out]  alarms - аварии PAC.
 ///
-/// @return - успешность операции: 0 - ок, 1 - ошибка.
+/// @return Успешность операции: 0 - ок, 1 - ошибка.
 EXPORT int __cdecl get_alarms( UCHAR PAC_description_id, all_alarm &alarms )
     {
     return 0;

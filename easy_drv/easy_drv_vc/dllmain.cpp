@@ -358,11 +358,13 @@ EXPORT int __cdecl init()
                 }            
 
             const int MAX_PATH_LENGTH = 500;
-            WCHAR path[ MAX_PATH_LENGTH ];
+            //WCHAR path[ MAX_PATH_LENGTH ];
+            char path[ MAX_PATH_LENGTH ];
             GetCurrentDirectory( MAX_PATH_LENGTH, path );
 
-            std::wstring full_path = path; 
-            full_path += _T( "\\drv_buglog.log" );
+            //std::wstring full_path = path; 
+            std::string full_path = path; 
+            full_path += _T( "\\easydrv_buglog.log" );
 
             bug_log::init( full_path.c_str() );
             }
@@ -391,7 +393,14 @@ EXPORT int __cdecl init()
 /// @return «начение тега.
 EXPORT double __cdecl get_value( in_tag_info &tag )
     {
-    return *( double* ) get_tag_value( tag, T_NUMBER );
+    void *res = get_tag_value( tag, T_NUMBER );
+
+    if ( res )
+        {
+        return *( double* ) res;
+        }
+    
+    return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief ѕолучение значени€ тега на основе его частичного описани€.
@@ -432,7 +441,14 @@ EXPORT double __cdecl get_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @return «начение тега.
 EXPORT char* __cdecl get_str_value( in_tag_info &tag )
     {
-    return ( char* ) get_tag_value( tag, T_STRING );
+    void *res = get_tag_value( tag, T_NUMBER );
+
+    if ( res )
+        {
+        return ( char* ) res;
+        }
+
+    return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief ѕолучение строкового значени€ тега на основе его частичного описани€.

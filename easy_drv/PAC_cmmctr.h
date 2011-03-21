@@ -315,6 +315,10 @@ class abstract_cmmctr
         /// @brief 
         abstract_cmmctr( const char* PAC_name, int timeout );
 
+        virtual ~abstract_cmmctr()
+            {
+            }
+
         /// @brief Отсылка заданного массива PAC.
         virtual int send_2_PAC( UCHAR service_ID, const char *buff,
             UINT length ) = 0;

@@ -167,7 +167,7 @@ class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
         LRESULT on_close(UINT, WPARAM, LPARAM, BOOL& bHandled );
         LRESULT on_size(UINT, WPARAM, LPARAM, BOOL& bHandled );
 
-        void create( CString window_title = "ֻמד הנאיגונא" );  
+        void create( CString window_title = "ֻמד הנאיגונא Easy_drv" );  
         void close();
 
         void clear_log(); 

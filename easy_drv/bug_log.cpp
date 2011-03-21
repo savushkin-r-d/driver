@@ -316,8 +316,8 @@ bug_log_f::bug_log_f()
 //-----------------------------------------------------------------------------
 int bug_log_f::open( CString bug_log_filename )
     {		
-
-    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) // C4996
+    //if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) // C4996
+    if( ( bug_log_stream  = fopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) // C4996
         {        
         return 1;               
         }   
@@ -328,7 +328,8 @@ int bug_log_f::open( CString bug_log_filename )
     if ( file_size > MAX_LOGFILE_SIZE )
         {
         fclose( bug_log_stream );
-        if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "w+" ) ) ) == NULL ) // C4996
+        //if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "w+" ) ) ) == NULL ) // C4996
+        if( ( bug_log_stream  = fopen( bug_log_filename, _T( "w+" ) ) ) == NULL ) // C4996
             {        
             return 1;               
             }   

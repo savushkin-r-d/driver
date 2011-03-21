@@ -49,6 +49,9 @@
     <Filter Include="Header Files\PAC-driver">
       <UniqueIdentifier>{f4cba5fe-1217-4851-ae50-e190e9a664fc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="My Inspector Results">
+      <UniqueIdentifier>{47c6f6b8-2620-4c36-8ab1-8d7ac036371e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

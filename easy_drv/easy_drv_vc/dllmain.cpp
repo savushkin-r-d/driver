@@ -1,47 +1,26 @@
-/// @file dllmain.cpp
-/// @brief Содержит реализацию экспортируемых функций библиотеки.
-/// 
-/// @author  Иванюк Дмитрий Сергеевич.
-///
-/// @par Описание директив препроцессора:
-/// @c DEBUG - компиляция с выводом отладочной информации в консоль.@n
-/// 
-/// @par Текущая версия:
-/// @$Rev$.\n
-/// @$Author$.\n
-/// @$Date::                     $.
-
+// dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
+extern "C" 
+    {
 #include "snprintf.h"
-
-#ifdef  __cplusplus
     };
-#endif
 
-/// @brief Объявление функции как экспортируемой.
-#define EXPORT extern "C" __declspec (dllexport) 
+#pragma comment(linker, "/export:get_alarms=_get_alarms@8")
+#pragma comment(linker, "/export:set_alarm_cmd=_set_alarm_cmd@12")
 
-/// @brief Критическая секция для выполнения единожды инициализации библиотеки.
-CRITICAL_SECTION g_init_cs; 
+#pragma comment(linker, "/export:get_str_value=_get_str_value@4")
+#pragma comment(linker, "/export:get_str_value2=_get_str_value2@12")
+#pragma comment(linker, "/export:set_str_value=_set_str_value@8")
 
-/// @brief Описание всех контроллеров сервера.
-PAC_cmmctr_group *g_PAC_descriptions = 0; 
+#pragma comment(linker, "/export:get_value=_get_value@4")
+#pragma comment(linker, "/export:get_value2=_get_value2@12")
+#pragma comment(linker, "/export:set_value=_set_value@16")
 
-//-Данные для потоков, работающие с контроллерами.
-/// @brief Признак завершения работы потоков обмена с PAC.
-char   *g_thread_is_terminated = new char[ PAC_cmmctr_group::get_max_PAC_number() ];
+#pragma comment(linker, "/export:init_driver_thread=_init_driver_thread@4")
+#pragma comment(linker, "/export:stop_driver_thread=_stop_driver_thread@4")
 
-/// @brief Потоки обмена с PAC.
-HANDLE *g_commctr_threads_array = new HANDLE[ PAC_cmmctr_group::get_max_PAC_number() ];
-
-/// @brief Количество потоков обмена с PAC.
-int    g_commctr_threads_count = 0;
-//-Данные для потоков, работающие с контроллерами.-!>
+#define EXPORT extern "C" __declspec (dllexport)
 
 /// @brief Типы значения тега.
 enum TAG_VAL_TYPE
@@ -50,42 +29,80 @@ enum TAG_VAL_TYPE
     T_STRING,///< Строка.
     };
 //-----------------------------------------------------------------------------
-/// @brief Главная функция библиотеки.
-///
+int final();
+
+//-----------------------------------------------------------------------------
+const int        MAX_PROJECTS_CNT    = 256;
+PAC_cmmctr_group *g_PAC_descriptions = 0;     //Контроллеры сервера.
+
+//-Данные для потоков, работающие с контроллерами.
+bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
+HANDLE g_commctr_threads_array[ MAX_PROJECTS_CNT + 1 ]  = { 0 };
+int    g_chbase_nodes_cont_count                        = 0;
+
+/// @brief Количество потоков обмена с PAC.
+int    g_commctr_threads_count = 0;
+//-----------------------------------------------------------------------------
+// Используется для проверки соответствия DLL и версии в PAC.
+extern u_int_2 G_PROTOCOL_VERSION;
+
+const int VERSION_WITH_ERRORS = 2;
+//-----------------------------------------------------------------------------
 BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,
-    LPVOID lpReserved
-    )
+    LPVOID lpReserved )
     {
-    switch (ul_reason_for_call)
+    switch ( ul_reason_for_call )
         {
-    case DLL_PROCESS_ATTACH:
+    case DLL_PROCESS_ATTACH:  
+        try
+            {
+            BUG_LOG.get_instance();
+
+            g_PAC_descriptions   = new PAC_cmmctr_group; //Контроллеры сервера.
+            }
+        catch (...)
+            {
+            delete g_PAC_descriptions;
+
+            return false;
+            }
+
+        _Module.Init( 0, 0, 0 );            // Инициализируем модуль. 
         break;
 
-    case DLL_THREAD_ATTACH:
+    case DLL_THREAD_ATTACH:  
+        break;
+
     case DLL_THREAD_DETACH:
         break;
 
-    case DLL_PROCESS_DETACH:
+    case DLL_PROCESS_DETACH:        
+        final();
+
+        //_CrtDumpMemoryLeaks();
+
+        _Module.Term(); // Завершаем программу.
+        //MessageBox( 0 , "Final", "Ok", 0 );
         break;
         }
     return TRUE;
     }
 //-----------------------------------------------------------------------------
-/// @brief Потоки обмена с PAC.
-/// 
-/// @param [in] lpParameter - экземпляр @ref PAC_cmmctr, с которым будет 
-/// работать поток.
-///
-/// @return Код завершения потока.
-DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
+uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     {		        
 #pragma chMSG( Тестирование комментария! )
 
     PAC_cmmctr *PAC_com = ( PAC_cmmctr* ) lpParameter;
     int res;
-        
-    int sleep_time = 510; // Интервал опроса контроллера.
+
+    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
+        "Поток работы с описанием PAC [ $%X ] запущен. Таймаут опроса - %d мсек.",
+        PAC_com->get_description_id(), PAC_com->get_cmmctr()->get_timeout() );
+    BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
+
+    // 1 - интервал опроса контроллера.
+    int sleep_time = 510;                            //1
     if ( PAC_com->get_cmmctr()->get_timeout() > 2000 )
         {
         sleep_time *= 2;
@@ -109,9 +126,9 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
 
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
-        snprintf( bug_log::msg, bug_log::msg_size, 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Устройства PAC изменились." );
-        bug_log::add_msg( PAC_com->get_name(), PAC_com->get_address() );
+        BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
         PAC_com->get_dev_synch_access()->WaitToWrite();
         PAC_com->clear_tags(); // Очищаем все теги проекта.
@@ -126,9 +143,9 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
 
             if ( PAC_cmmctr::LOAD_OK == res )
                 {
-                snprintf( bug_log::msg, bug_log::msg_size,
+                snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
                     "Получены устройства PAC." );
-                bug_log::add_msg( PAC_com->get_name(), PAC_com->get_address() );                
+                BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );                
                 break;
                 }  
 
@@ -156,7 +173,7 @@ DWORD WINAPI PAC_communication_thread( LPVOID lpParameter )
         //            }                
         //        }              
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
-    
+
     _endthreadex( 0 );
     return 0;
     }
@@ -186,11 +203,11 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
     if ( tag.PAC_descr_id > g_PAC_descriptions->get_max_PAC_number() ) //1
         {
-        snprintf( bug_log::msg, bug_log::msg_size, 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка get_tag_value(...) - номер описания PAC %d превышает допустимый %d!",
             tag.PAC_descr_id, g_PAC_descriptions->get_max_PAC_number() );
 
-        bug_log::add_msg_once( "Driver", "" );
+        BUG_LOG.add_msg_once( "Driver", "" );
         return 0;
         }
 
@@ -206,9 +223,9 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( 0 == current_PAC_cmmctr )
             {
-            snprintf( bug_log::msg, bug_log::msg_size, 
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "get_tag_value(...) - ошибка добавления new_PAC_cmmctr = 0!" );
-            bug_log::add_msg_once( "Driver", "" );
+            BUG_LOG.add_msg_once( "Driver", "" );
             return 0;
             }
 
@@ -273,10 +290,10 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( false == is_exist_tag )                                   //9
             {
-            snprintf( bug_log::msg, bug_log::msg_size,
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
                 "Тег \"%s\" не найден!", 
                 tag.tag_name );
-            bug_log::add_msg_once( current_PAC_cmmctr->get_name(), 
+            BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
                 current_PAC_cmmctr->get_address() );
 
             current_PAC_cmmctr->add_nill_tag( tag.tag_id );
@@ -294,6 +311,12 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
     return 0;
     }
+//-----------------------------------------------------------------------------
+enum SET_TAG_VAL_TYPE
+    {
+    T_ULONG,
+    T_FLOAT,
+    };
 //-----------------------------------------------------------------------------
 /// @brief Запись в тег.
 ///
@@ -334,54 +357,55 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
     return 0;
     }
 //-----------------------------------------------------------------------------
-/// @brief Инициализация библиотеки.
-///
-/// @return 1   - ок.
-/// @return > 0 - ошибка.
-EXPORT int __cdecl init()
-    {    
-    static UCHAR is_got_init = 0;
-    int init_res = 0;
-
-    is_got_init++;
-    if ( is_got_init == 1 )
+EXPORT int __stdcall stop_driver_thread( int prj_id )
+    {
+    if ( prj_id > MAX_PROJECTS_CNT )
         {
-        InitializeCriticalSection( &g_init_cs );
-        EnterCriticalSection( &g_init_cs );        
-
-        try
-            {
-            g_PAC_descriptions = new PAC_cmmctr_group;
-            for ( int i = 0; i < PAC_cmmctr_group::get_max_PAC_number(); i++ )
-                {
-                g_thread_is_terminated[ i ] = 0;
-                }            
-
-            const int MAX_PATH_LENGTH = 500;
-            //WCHAR path[ MAX_PATH_LENGTH ];
-            char path[ MAX_PATH_LENGTH ];
-            GetCurrentDirectory( MAX_PATH_LENGTH, path );
-
-            //std::wstring full_path = path; 
-            std::string full_path = path; 
-            full_path += _T( "\\easydrv_buglog.log" );
-
-            bug_log::init( full_path.c_str() );
-            }
-        catch (...)
-            {
-            init_res = 1;
-            }
-
-        LeaveCriticalSection( &g_init_cs );
-        }
-    else
-        {
-        EnterCriticalSection( &g_init_cs );
-        LeaveCriticalSection( &g_init_cs );
+        return 1;
         }
 
-    return init_res;
+    g_thread_is_terminated[ prj_id ] = 1;
+    Sleep( 1 );
+
+    const int MAX_THREAD_END_WAIT_TIME = 10000;
+    if (  g_commctr_threads_array[ prj_id ] )
+        {
+        WaitForSingleObject( g_commctr_threads_array[ prj_id ],
+            MAX_THREAD_END_WAIT_TIME );
+        CloseHandle( g_commctr_threads_array[ prj_id ] );
+        g_commctr_threads_array[ prj_id ] = 0;
+        }
+
+    g_thread_is_terminated[ prj_id ] = 0;
+    g_chbase_nodes_cont_count--;
+
+    sprintf( bug_log::msg, "Драйвер для узла базы каналов [ $%X ] выгружен.", 
+        prj_id ); 
+    BUG_LOG.add_msg( "Driver", "" );
+
+    if ( g_chbase_nodes_cont_count <= 0 )
+        {
+        final();
+        BUG_LOG.free_instance();
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+EXPORT int __stdcall init_driver_thread( int prj_id )
+    {     
+    g_thread_is_terminated[ prj_id ] = 0;
+    g_chbase_nodes_cont_count++;
+
+    if ( BUG_LOG.init_window_complete() )
+        {         
+        sprintf( bug_log::msg, "Драйвер для узла базы каналов [ $%X ] загружен.", 
+            prj_id ); 
+        BUG_LOG.add_msg( "Driver", "" );
+        }
+
+    return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief Получение значения тега на основе его полного описания.
@@ -391,7 +415,7 @@ EXPORT int __cdecl init()
 /// @param [in] tag - полное описание тега.
 ///
 /// @return Значение тега.
-EXPORT double __cdecl get_value( in_tag_info &tag )
+EXPORT double __stdcall get_value( in_tag_info &tag )
     {
     void *res = get_tag_value( tag, T_NUMBER );
 
@@ -399,7 +423,7 @@ EXPORT double __cdecl get_value( in_tag_info &tag )
         {
         return *( double* ) res;
         }
-    
+
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -414,7 +438,7 @@ EXPORT double __cdecl get_value( in_tag_info &tag )
 /// 1 - неудачно, 0 - ок.
 ///
 /// @return Значение тега.
-EXPORT double __cdecl get_value2( UINT tag_id, UCHAR PAC_description_id,
+EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
     UCHAR &result )
     {
     in_tag_info tag;
@@ -439,7 +463,7 @@ EXPORT double __cdecl get_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @param [in] tag - полное описание тега.
 ///
 /// @return Значение тега.
-EXPORT char* __cdecl get_str_value( in_tag_info &tag )
+EXPORT char* __stdcall get_str_value( in_tag_info &tag )
     {
     void *res = get_tag_value( tag, T_NUMBER );
 
@@ -462,7 +486,7 @@ EXPORT char* __cdecl get_str_value( in_tag_info &tag )
 /// 1 - неудачно, 0 - ок.
 ///
 /// @return Значение тега.
-EXPORT char* __cdecl get_str_value2( UINT tag_id, UCHAR PAC_description_id,
+EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
     UCHAR &result )
     {
     in_tag_info tag;
@@ -480,7 +504,6 @@ EXPORT char* __cdecl get_str_value2( UINT tag_id, UCHAR PAC_description_id,
     return 0;
     }
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 /// @brief Запись в тег на основе его полного описания.
 ///
 /// Экспортируемая функция библиотеки.
@@ -490,7 +513,7 @@ EXPORT char* __cdecl get_str_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @param [in] type - тип значения тега.
 ///
 /// @return Новое значение тега.
-EXPORT int __cdecl set_value( in_tag_info &tag, double value, TAG_VAL_TYPE type )
+EXPORT int __stdcall set_value( in_tag_info &tag, double value, TAG_VAL_TYPE type )
     {
     return set_tag( tag.tag_name, tag.PAC_descr_id, &value, T_NUMBER );    
     }
@@ -503,68 +526,42 @@ EXPORT int __cdecl set_value( in_tag_info &tag, double value, TAG_VAL_TYPE type 
 /// @param [in] str_value - записываемое в тег значение.
 ///
 /// @return Признак успешной записи: 0 - ок, 1 - ошибка.
-EXPORT int __cdecl set_str_value( in_tag_info &tag, char *str_value )
+EXPORT int __stdcall set_str_value( in_tag_info &tag, char *str_value )
     {
     return set_tag( tag.tag_name, tag.PAC_descr_id, str_value, T_STRING );
     }
 //-----------------------------------------------------------------------------
-/// @brief Завершение работы с библиотекой.
-///
-/// @return 1   - ок.
-/// @return > 0 - ошибка.
-EXPORT int __cdecl final()
-    {    
-    static UCHAR is_got_final = 0;
-    is_got_final++;
+int final()
+    {
+    //-Завершение всех потоков, работающих с контроллерами.
+    memset( g_thread_is_terminated, 1, sizeof( g_thread_is_terminated ) );
 
-    if ( 1 == is_got_final )
-        {     
-        //Останавливаем потоки PAC.
-        for ( int i = 0; i < PAC_cmmctr_group::get_max_PAC_number(); i++ )
+    const int MAX_THREAD_END_WAIT_TIME = 1500;
+    for ( int i = 0; i < MAX_PROJECTS_CNT + 1; i++ )
+        {
+        if (  g_commctr_threads_array[ i ] )
             {
-            g_thread_is_terminated[ i ] = 1;
+            WaitForSingleObject( g_commctr_threads_array[ i ],
+                MAX_THREAD_END_WAIT_TIME );
+            CloseHandle( g_commctr_threads_array[ i ] );
+            g_commctr_threads_array[ i ] = 0;
             }
-        Sleep( 100 );
-
-        DeleteCriticalSection( &g_init_cs );
-
-        delete [] g_commctr_threads_array;
-        g_commctr_threads_array = 0;
-
-        bug_log::close();
         }
 
+    delete g_PAC_descriptions;
+    g_PAC_descriptions = 0;
+
     return 0;
     }
 //-----------------------------------------------------------------------------
-/// @brief Получение аварий.
-///
-/// Экспортируемая функция библиотеки.
-///
-/// @param [in]  PAC_description_id - номер описания контроллера 
-/// (узла базы каналов).
-/// @param [out]  alarms - аварии PAC.
-///
-/// @return Успешность операции: 0 - ок, 1 - ошибка.
-EXPORT int __cdecl get_alarms( UCHAR PAC_description_id, all_alarm &alarms )
-    {
-    return 0;
+EXPORT int __stdcall get_alarms( unsigned char driver_id, all_alarm &alarms )
+    {   
+    return 0;        
     }
 //-----------------------------------------------------------------------------
-/// @brief Обработка аварий PAC.
-///
-/// Экспортируемая функция библиотеки.
-///
-/// @param [in]  PAC_description_id - номер описания контроллера 
-/// (узла базы каналов).
-/// @param [in]  count - количество обрабатываемых аварий PAC.
-/// @param [in]  errors - аварии PAC.
-///
-/// @return успешность операции: 0 - ок, 1 - ошибка.
-EXPORT int __cdecl set_alarm_cmd( UCHAR PAC_description_id, int count, 
+EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
     error_cmd *errors )
-    {
+    {      
     return 0;
     }
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

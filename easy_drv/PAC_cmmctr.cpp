@@ -41,10 +41,10 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     PAC_Lua_state = lua_open();  /* create state */
     if ( PAC_Lua_state == NULL )
         {
-        snprintf( bug_log::msg, bug_log::msg_size, 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Cannot create Lua state: not enough memory!" );
 
-        bug_log::add_error_msg( PAC_name, PAC_address );
+        BUG_LOG.add_error_msg( PAC_name, PAC_address );
 
 #ifdef DEBUG
         DebugBreak();
@@ -160,10 +160,10 @@ int PAC_cmmctr::get_PAC_info()
 
         if ( PAC_protocol_version != G_PROTOCOL_VERSION )
             {
-            snprintf( bug_log::msg, bug_log::msg_size, 
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Протокол PAC имеет более раннюю версию %d - должна быть %d!",
                 PAC_protocol_version, G_PROTOCOL_VERSION );
-            bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
             *is_connected = 0;
             return -2;
@@ -174,18 +174,18 @@ int PAC_cmmctr::get_PAC_info()
 
         if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
             {
-            snprintf( bug_log::msg, bug_log::msg_size, 
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
                 PAC_address.c_str(), in_name, PAC_name );
-            bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = 0;
             return -3;
             }
 
-        snprintf( bug_log::msg, bug_log::msg_size, 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Версия драйвера PAC - %d, имя - \"%s\".",
             PAC_protocol_version, PAC_name.c_str() );
-        bug_log::add_msg( PAC_name.c_str(), PAC_address.c_str() );
+       BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
 
         return PAC_protocol_version;
         }    
@@ -200,10 +200,10 @@ int PAC_cmmctr::get_int_param_from_Lua( const char *param_name,
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
     if ( lua_isnil( PAC_Lua_state, -1 ) )
         {
-        snprintf( bug_log::msg, bug_log::msg_size, 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
             c_function_name, param_name );
-        bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+        BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
         }
 
     int res = lua_tointeger( PAC_Lua_state, -1 );
@@ -221,10 +221,10 @@ int PAC_cmmctr::exec_Lua_str( const char *Lua_str,
         {
         if ( is_print_error_msg )
             {
-            snprintf( bug_log::msg, bug_log::msg_size, 
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "%s -> %s!",
                 error_str, lua_tostring( PAC_Lua_state, -1 ) );
-            bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             }
         
         lua_pop( PAC_Lua_state, 1 );
@@ -240,10 +240,10 @@ const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name,
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
     if ( lua_isnil( PAC_Lua_state, -1 ) )
         {
-        //snprintf( bug_log::msg, bug_log::msg_size, 
+        //snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
         //    "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
         //    c_function_name, param_name );
-        //bug_log::add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
+        //BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
         }
 
     const char *res = lua_tostring( PAC_Lua_state, -1 );
@@ -397,10 +397,10 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     counter++;
     if ( counter > 100 )
         {
-        snprintf( bug_log::msg, bug_log::msg_size, "Lua memory = %d", 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory = %d", 
             lua_gc( PAC_Lua_state, LUA_GCCOUNT, 0 ) * 1024 +
             lua_gc( PAC_Lua_state, LUA_GCCOUNTB, 0 ) );
-        bug_log::add_msg( get_name(), get_address() );
+       BUG_LOG.add_msg( get_name(), get_address() );
 
         counter = 0;
         }
@@ -520,10 +520,10 @@ PAC_cmmctr* PAC_cmmctr_group::add_PAC( char* const PAC_address,
     PAC_cmmctr *res = new PAC_cmmctr( PAC_address, PAC_name, PAC_descr_id,
         PAC_port, timeout );  
 
-    snprintf( bug_log::msg, bug_log::msg_size, 
+    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
         "Новое описание PAC (№%d) было добавлено. Таймаут опроса - %d мсек.",
         res->get_description_id(), timeout );
-    bug_log::add_msg( res->get_name(), res->get_address() );
+   BUG_LOG.add_msg( res->get_name(), res->get_address() );
 
     PAC_descriptions.at( PAC_descr_id ) = res;    
 
@@ -583,11 +583,11 @@ int tcp_cmmctr::InitLib()
         {
         if ( WSAStartup( 0x202, &tmpWSAData ) )
             {
-            snprintf( bug_log::msg, bug_log::msg_size,
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
                 "Ошибка инициализации сетевой библиотеки: %s\n",
                 WSA_Err_Decode( WSAGetLastError() ) );
 
-            bug_log::add_error_msg( "Driver", "" );            
+            BUG_LOG.add_error_msg( "Driver", "" );            
             return 0;
             }
         }
@@ -634,9 +634,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         {
         if (!InitLib() )
             {
-            sprintf_s( bug_log::msg, bug_log::msg_size, 
+            sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Фатальная ошибка. Сетевая библиотека не инициализирована." );
-            bug_log::add_error_msg( "Driver", "" );
+            BUG_LOG.add_error_msg( "Driver", "" );
 
             LeaveCriticalSection( &m_cs );
             return 1;
@@ -647,7 +647,7 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         {
         if ( !Connect() )
             {
-            bug_log::set_error( is_errors[ EF_NO_CONNECTION ], PAC_name, 
+            BUG_LOG.set_error( is_errors[ EF_NO_CONNECTION ], PAC_name, 
                 ip_address, "Нет связи!" );
 
             LeaveCriticalSection( &m_cs );
@@ -655,7 +655,7 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
             }    
 
         //Сбрасываем ошибку.
-        bug_log::reset_error( is_errors[ EF_NO_CONNECTION ], PAC_name, 
+        BUG_LOG.reset_error( is_errors[ EF_NO_CONNECTION ], PAC_name, 
             ip_address, "Нет связи!" );
         }
 
@@ -670,7 +670,7 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( send( sock, buff, length + 6, 0 ) == SOCKET_ERROR )
         {
-        bug_log::set_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
+        BUG_LOG.set_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
             ip_address, "Ошибка отсылки сообщения!" );
 
         Disconnect();
@@ -678,16 +678,16 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         LeaveCriticalSection( &m_cs );
         return 1;
         }
-    bug_log::reset_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
+    BUG_LOG.reset_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
         ip_address, "Ошибка отсылки сообщения!" );
 
     int res = recv( sock, in_buff, 8000, 0 );
 
     if ( 0 == res )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size,
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
             "PAC закрыл соединение." );
-        bug_log::add_msg( PAC_name, ip_address );
+       BUG_LOG.add_msg( PAC_name, ip_address );
         Disconnect();
 
         LeaveCriticalSection( &m_cs );
@@ -696,7 +696,7 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( res < 0 /*res == SOCKET_ERROR*/ )
         {
-        bug_log::set_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
+        BUG_LOG.set_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
             ip_address, "Ошибка получения ответа!" );
 
         Disconnect();
@@ -704,15 +704,15 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         LeaveCriticalSection( &m_cs );
         return 1;
         }
-    bug_log::reset_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
+    BUG_LOG.reset_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
         ip_address, "Ошибка получения ответа!" );
 
 
     if ( in_buff[ 1 ] == 7 )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Возвращена ошибка!" );
-        bug_log::add_warning_msg( PAC_name, ip_address );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
         LeaveCriticalSection( &m_cs );
         return 1;
@@ -723,9 +723,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     if ( !( work_buff[ 0 ] == 's'                   //NetId 
         && pidx == work_buff[ 2 ] ) )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Возвращен неверный ответ!" );        
-        bug_log::add_warning_msg( PAC_name, ip_address );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
         Disconnect();
 #ifdef DEBUG
         //        _DebugBreak();
@@ -739,9 +739,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     answer_size = work_buff[ 3 ] * 256 + work_buff[ 4 ];
     if ( 0 == answer_size )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Длина ответа - 0!" );
-        bug_log::add_warning_msg( PAC_name, ip_address );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
 #ifdef DEBUG
         //_DebugBreak();
 #endif
@@ -751,10 +751,10 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( answer_size > P_MAX_BUFFER_SIZE )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Длина ответа[ %d ] > максимальной длины[ %d ]!", 
             answer_size, P_MAX_BUFFER_SIZE );        
-        bug_log::add_warning_msg( PAC_name, ip_address );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
         answer_size = 0;
 
 #ifdef DEBUG
@@ -772,9 +772,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
         if ( res <= 0 /*res == SOCKET_ERROR*/ )
             {
-            sprintf_s( bug_log::msg, bug_log::msg_size, 
+            sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Получена часть ответа от PAC!" );
-            bug_log::add_warning_msg( PAC_name, ip_address );
+            BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
             answer_size = 0;
 
@@ -810,9 +810,9 @@ int tcp_cmmctr::Connect()
     sock = socket(AF_INET,SOCK_STREAM,IPPROTO_IP);
     if (sock == INVALID_SOCKET)
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size,
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
             "Ошибка создания сокета!" );        
-        bug_log::add_error_msg( PAC_name, ip_address );
+        BUG_LOG.add_error_msg( PAC_name, ip_address );
         return 0;
         }
 
@@ -821,9 +821,9 @@ int tcp_cmmctr::Connect()
     if ( setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ( char* )&timeout, vlen) == SOCKET_ERROR ||
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ( char* )&timeout, vlen) == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size,
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
             "Ошибка установления параметров сокета!" );        
-        bug_log::add_error_msg( PAC_name, ip_address );
+        BUG_LOG.add_error_msg( PAC_name, ip_address );
         return 0;
         }
 
@@ -832,9 +832,9 @@ int tcp_cmmctr::Connect()
     int res = ioctlsocket( sock, FIONBIO, &mode );
     if ( res == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка перевода сокета в неблокирующий режим!" );        
-        bug_log::add_error_msg( PAC_name, ip_address );
+        BUG_LOG.add_error_msg( PAC_name, ip_address );
 
         closesocket( sock );
         return 0;
@@ -849,9 +849,9 @@ int tcp_cmmctr::Connect()
     res = connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
     //if ( res == SOCKET_ERROR )
     //    {
-    //    snprintf( bug_log::msg, bug_log::msg_size,
+    //    snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
     //        "Ошибка подключения - %s", WSA_Err_Decode( WSAGetLastError() ) );        
-    //    bug_log::add_error_msg( PAC_name, ip_address );
+    //    BUG_LOG.add_error_msg( PAC_name, ip_address );
     //    return 0;
     //    }
 
@@ -869,28 +869,28 @@ int tcp_cmmctr::Connect()
     res = ioctlsocket( sock, FIONBIO, &mode );
     if ( res == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка перевода сокета в блокирующий режим!" );
-        bug_log::add_error_msg( PAC_name, ip_address );
+        BUG_LOG.add_error_msg( PAC_name, ip_address );
         }   
 
     if ( SOCKET_ERROR == rc || 0 == rc )
         {
-        bug_log::set_error( is_errors[ EF_CONNECT_ERROR ], PAC_name, 
+        BUG_LOG.set_error( is_errors[ EF_CONNECT_ERROR ], PAC_name, 
             ip_address, "Ошибка установления соединения!" );
 
         closesocket( sock );
         return 0;
         }
-    bug_log::reset_error( is_errors[ EF_CONNECT_ERROR ], PAC_name, 
+    BUG_LOG.reset_error( is_errors[ EF_CONNECT_ERROR ], PAC_name, 
         ip_address, "Ошибка установления соединения!" );
 
     res = recv( sock, in_buff, 255, 0 );
     if (SOCKET_ERROR == res)
         {
-        sprintf_s( bug_log::msg, bug_log::msg_size, 
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка получения ответа при подключении!" );
-        bug_log::add_warning_msg( PAC_name, ip_address );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
         closesocket( sock );
 

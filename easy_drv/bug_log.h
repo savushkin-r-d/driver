@@ -1,15 +1,6 @@
-/// @file bug_log.h
-/// @brief Содержит описания классов, которые используются для отображения
-/// ошибок работы.
-/// 
-/// @author  Иванюк Дмитрий Сергеевич.
-///
-/// @par Описание директив препроцессора:
-/// 
-/// @par Текущая версия:
-/// @$Rev$.\n
-/// @$Author$.\n
-/// @$Date::                     $.
+//ОБЩЕЕ ОПИСАНИЕ.
+//  Содержит описания классов, которые используются для отображения ошибок работы 
+//  драйвера в окне.
 #pragma once
 
 #include <stdio.h>
@@ -29,31 +20,37 @@
 #include <vector>
 #include <deque>
 
+#define END_MSG_MAP_EX	END_MSG_MAP
+
 #include <ListCtrl.h>
 
 extern CAppModule _Module; 
 //-----------------------------------------------------------------------------
-/// @brief Реализация записи ошибок в файл.
+//ОБЩЕЕ ОПИСАНИЕ.
+//  Служит для записи ошибок в файл.
 class bug_log_f
     {
     public:
         bug_log_f();
+        ~bug_log_f()
+            {
+            close();
+            }
 
-        int	 open( CString bug_log_filename );
+        int	 open( char* bug_log_filename );
         void start_new_log_section();
-        int  save_msg( CString msg );
+        int  save_msg( char* msg );
         void close();
 
     private:
         enum L_CONST
             {
-            MAX_LOGFILE_SIZE = 1000 * 1024, ///< Максимальный размер файла логов, байт.
+            MAX_LOGFILE_SIZE = 1000 * 1024, //Максимальный размер файла логов, байт.
             };
 
         FILE *bug_log_stream;
     };
 //-----------------------------------------------------------------------------
-/// @brief Запись об ошибке.
 class log_message
     {     
     public:
@@ -64,7 +61,7 @@ class log_message
             MSG_ERROR,
             MSG_WARNING,
             };
-        
+
         CString   date;
         CString   time;
         CString   object_name;
@@ -81,7 +78,6 @@ class log_message
         bool operator == ( const log_message &log_message2 );
     };
 //-----------------------------------------------------------------------------
-/// @brief Список из ошибок.
 class list_message_data : public CListImpl< list_message_data >  
     {
     public:
@@ -102,11 +98,11 @@ class list_message_data : public CListImpl< list_message_data >
 
     public:
         BOOL Initialise();
-                      
+
         int add_message( log_message msg );
 
         int add_message_once( log_message msg );
-        
+
         int commit_error_message( log_message msg );
 
         void clear_messages();
@@ -147,10 +143,13 @@ class list_message_data : public CListImpl< list_message_data >
     };
 
 //-----------------------------------------------------------------------------
-/// @brief Реализация графического окна с ошибками.
+//ОБЩЕЕ ОПИСАНИЕ.
+//  Служит для вывода непосредственно графического окна с ошибками.
 class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
     {
     public:
+        ~bug_log_wnd();
+
         // Карта сообщений направляет сообщения в нужные обработчики.
         BEGIN_MSG_MAP( CMainWindow )
             MESSAGE_HANDLER( WM_DESTROY, OnDestroy )
@@ -167,7 +166,7 @@ class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
         LRESULT on_close(UINT, WPARAM, LPARAM, BOOL& bHandled );
         LRESULT on_size(UINT, WPARAM, LPARAM, BOOL& bHandled );
 
-        void create( CString window_title = "Лог драйвера Easy_drv" );  
+        void create( CString window_title = "Лог драйвера 2" );  
         void close();
 
         void clear_log(); 
@@ -190,49 +189,67 @@ class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
     };
 ////-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/// @brief Организация работы с отображением ошибок, протоколирование их - 
-///  вся обработка ошибок.
+//ОБЩЕЕ ОПИСАНИЕ.
+//  Служит для организации работы с отображением ошибок, протоколированием их - 
+//  осуществляет всю обработку ошибок.
 class bug_log
     { 
-    public:        
-        static void set_error( char &is_set_error, const char* PAC_name, 
+    public:   
+        bug_log();
+
+        ~bug_log();
+
+        bool init_window_complete() const;
+
+        void set_error( char &is_set_error, const char* PAC_name, 
             const char* ip_address, const char* msg );
 
-        static void reset_error( char &is_set_error, const char* PAC_name, 
+        void reset_error( char &is_set_error, const char* PAC_name, 
             const char* ip_address, const char* msg );
 
-        static void clear_errors();
+        void clear_errors();
 
-        static int  msg_size;
-        static char *msg;
+        enum CONSTANTS
+            {
+            C_MSG_SIZE = 1000,
+            };
 
-        static int	init( CString bug_log_filename );           
-        static int	close();		
+        static char msg[ C_MSG_SIZE ];
 
-        static int add_error_msg( CString object_name, CString IP4_address, 
+        void hide();
+
+        int add_error_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );
-        static int commit_error_msg( CString object_name, CString IP4_address, 
+        int commit_error_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg ); 
 
-        static int add_warning_msg( CString object_name, CString IP4_address, 
+        int add_warning_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );
 
-        static int add_msg( CString object_name, CString IP4_address, 
+        int add_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );
-        static int add_msg_once( CString object_name, CString IP4_address, 
+        int add_msg_once( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );
+
+        static bug_log& get_instance();
+
+        static void free_instance();
 
     private:
-        static HANDLE   bug_log_window_thread_handle;
-        static char     *tmp_str;
+        HANDLE   bug_log_window_thread_handle;
+        char     tmp_str[ C_MSG_SIZE ];
 
-        static bug_log_wnd	bug_log_window;
-        static bug_log_f	bug_log_file;
+        static bug_log_wnd* bug_log_window;
+        bug_log_f	bug_log_file;
 
-        static DWORD WINAPI bug_log_thread( LPVOID lpParameter );
+        static uintptr_t WINAPI bug_log_thread( LPVOID lpParameter );
 
         static char         is_init_window;
 
-        static vector < char* > errors_flags;
+        vector < char* > errors_flags;
+
+        static bug_log *instance;
     };
+
+#define BUG_LOG bug_log::get_instance()
 //-----------------------------------------------------------------------------

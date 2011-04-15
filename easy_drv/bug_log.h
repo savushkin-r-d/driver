@@ -166,7 +166,7 @@ class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
         LRESULT on_close(UINT, WPARAM, LPARAM, BOOL& bHandled );
         LRESULT on_size(UINT, WPARAM, LPARAM, BOOL& bHandled );
 
-        void create( CString window_title = "ֻמד הנאיגונא 2" );  
+        void create( CString window_title = "Lua - כמד הנאיגונא" );
         void close();
 
         void clear_log(); 

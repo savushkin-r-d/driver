@@ -346,7 +346,7 @@ class abstract_cmmctr
         UINT answer_size;
     };
 //-----------------------------------------------------------------------------
-/// @brief TCP\IP коммуникатор.
+/// @brief TCP/IP коммуникатор.
 class tcp_cmmctr : public abstract_cmmctr 
     {
     public:

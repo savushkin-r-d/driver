@@ -19,7 +19,7 @@ extern "C" {
 int tcp_cmmctr::instancesCount = 0;
 int tcp_cmmctr::isInitialized = 0;
 
-u_int_2 G_PROTOCOL_VERSION = 1;
+u_int_2 G_PROTOCOL_VERSION = 100;
 
 int abstract_cmmctr::count = 0;
 //-----------------------------------------------------------------------------
@@ -161,7 +161,7 @@ int PAC_cmmctr::get_PAC_info()
         if ( PAC_protocol_version != G_PROTOCOL_VERSION )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Протокол PAC имеет более раннюю версию %d - должна быть %d!",
+                "Протокол PAC версии %d - должна быть %d!",
                 PAC_protocol_version, G_PROTOCOL_VERSION );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 

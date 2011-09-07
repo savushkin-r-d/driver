@@ -34,6 +34,7 @@ int final();
 //-----------------------------------------------------------------------------
 const int        MAX_PROJECTS_CNT    = 256;
 PAC_cmmctr_group *g_PAC_descriptions = 0;     //Контроллеры сервера.
+alarm_manager    *g_alarm_manager = 0;     //Работа с ошибками контроллеров.
 
 //-Данные для потоков, работающие с контроллерами.
 bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
@@ -87,6 +88,49 @@ BOOL APIENTRY DllMain( HMODULE hModule,
         break;
         }
     return TRUE;
+    }
+//-----------------------------------------------------------------------------
+uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
+    {
+    char server_PACs_connection_state[ MAX_PROJECTS_CNT ] = { 1 };
+
+    while ( !g_thread_is_terminated[ 0 ] )   
+        {
+        Sleep( 1000 );
+
+        //-Проверяем состояния всех контроллеров.
+        for ( unsigned int i = 0; i < g_PAC_descriptions->get_PAC_count(); i++ )
+            {   
+            PAC_cmmctr *PAC = g_PAC_descriptions->get_PAC( i );
+
+            if ( PAC->get_connection_state() != 
+                server_PACs_connection_state[ PAC->get_description_id() ] )
+                {
+                const int BUFFER_SIZE = 500;
+                char error_str[ BUFFER_SIZE ];
+                sprintf_s( error_str, BUFFER_SIZE, 
+                    "Нет соединения с контроллером проекта \"%s\" [ %s ]!", 
+                    PAC->get_name(), PAC->get_address() );
+
+                if ( 0 == PAC->get_connection_state() )
+                    {
+                    g_alarm_manager->add_no_PAC_connection_error( error_str, 
+                        PAC->get_description_id() );
+                    }
+                else
+                    {
+                    g_alarm_manager->remove_no_PAC_connection_error( error_str,
+                        PAC->get_description_id() );
+                    }
+
+                server_PACs_connection_state[ PAC->get_description_id() ] = 
+                    PAC->get_connection_state();
+                }
+            }
+        }
+
+    _endthreadex( 0 );  
+    return 0;
     }
 //-----------------------------------------------------------------------------
 uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )

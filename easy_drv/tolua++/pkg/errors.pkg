@@ -1,0 +1,56 @@
+$#include "errors.h"
+
+enum ALARM_STATE
+    {
+    AS_NORMAL,
+    AS_ALARM,
+    AS_RETURN, 
+    AS_ACCEPT, 
+    };
+
+enum PRIORITY_TYPE
+    {
+    PT_SYSTEM,
+    PT_CRITICAL,
+    PT_IMPOTENT,
+    PT_UNIMPOTENT,
+    P_INFORMATIONAL,    
+    };
+
+enum ALARM_TYPE
+    {
+    AT_DISCRETE,
+    AT_VALUE,
+    AT_DEVIATION,
+    AT_RATE_OF_CHANGE,
+    AT_SPECIAL,
+    };
+
+
+enum OBJECT_TYPE      ///< Тип объекта, для которого возникла тревога.
+    {
+    OT_UNKNOWN,
+    OT_PAC,           ///< PAC.
+    };
+
+enum ALARM_CLASS      ///< Класс тревоги.
+    {
+    AC_UNKNOWN,
+    AC_NO_CONNECTION, ///< Ошибка связи.
+
+    AC_COM_DRIVER,    ///< Ошибка работы с COM-портом.
+    AC_RUNTIME_ERROR, ///< Ошибки во время работы.
+    };
+
+enum ALARM_SUBCLASS         ///< Подкласс тревоги.
+    {
+    //AC_NO_CONNECTION,     ///< Ошибка связи.
+    AS_WAGO = 1,            ///< Ошибки модулей WAGO.
+    AS_PANEL,               ///< Ошибки панелей EasyView.
+    AS_MODBUS_DEVICE,       ///< Ошибки устройства, опрашиваемого по Modbus.
+
+    AS_EASYSERVER = 5,      ///< Ошибки EasyServer.
+
+    //AC_RUNTIME_ERROR,     ///< Ошибки во время работы.
+    AS_EMERGENCY_BUTTON = 1,///< Нажата аварийная кнопка.
+    };

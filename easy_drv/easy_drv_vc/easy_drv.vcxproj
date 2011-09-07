@@ -40,7 +40,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
-    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;</IncludePath>
+    <IncludePath>$(VCInstallDir)include;$(VCInstallDir)atlmfc\include;$(WindowsSdkDir)include;$(FrameworkSDKDir)\include;..\..\..\common\tolua++</IncludePath>
     <ReferencePath />
     <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib</LibraryPath>
     <SourcePath />
@@ -69,6 +69,9 @@
     <PostBuildEvent>
       <Message>Копирование в папку драйверов</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>tolua++ -n PAC_dev -o "..\errors_lua.cpp" "..\tolua++\pkg\errors.pkg"</Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -117,7 +120,9 @@
     <ClInclude Include="..\..\..\common\lua\lundump.h" />
     <ClInclude Include="..\..\..\common\lua\lvm.h" />
     <ClInclude Include="..\..\..\common\lua\lzio.h" />
+    <ClInclude Include="..\..\..\common\PAC-driver\errors.h" />
     <ClInclude Include="..\..\..\common\PAC-driver\g_device.h" />
+    <ClInclude Include="..\..\..\common\tolua++\tolua++.h" />
     <ClInclude Include="..\..\..\common\util\snprintf.h" />
     <ClInclude Include="..\..\..\common\win_util\CmnHdr.h" />
     <ClInclude Include="..\..\..\common\win_util\SWMRG.h" />
@@ -143,6 +148,7 @@
     <ClInclude Include="..\..\..\common\WTL\atlwince.h" />
     <ClInclude Include="..\..\..\common\WTL\atlwinx.h" />
     <ClInclude Include="..\bug_log.h" />
+    <ClInclude Include="..\errors_manager.h" />
     <ClInclude Include="..\exchange_data.h" />
     <ClInclude Include="..\PAC_cmmctr.h" />
     <ClInclude Include="resource.h" />
@@ -331,6 +337,21 @@
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_event.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_is.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_map.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_push.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_to.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\..\..\common\util\snprintf.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
@@ -341,6 +362,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\bug_log.cpp" />
+    <ClCompile Include="..\errors_lua.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\PAC_cmmctr.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
@@ -360,6 +384,7 @@
     <ResourceCompile Include="easy_drv.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\tolua++\pkg\errors.pkg" />
     <None Include="res\divider.cur" />
     <None Include="res\hand.cur" />
     <None Include="res\ListItems.bmp" />

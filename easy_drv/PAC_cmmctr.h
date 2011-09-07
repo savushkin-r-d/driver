@@ -88,7 +88,12 @@ class PAC_cmmctr
             int port = 10000,
             int timeout = 1500 );
 
-         ~PAC_cmmctr();
+         ~PAC_cmmctr()
+             {
+             lua_close( PAC_Lua_state );
+             
+             PAC_Lua_state = 0;
+             }
 
         /// @brief Очистка таблицы тегов.
         ///
@@ -186,6 +191,16 @@ class PAC_cmmctr
         /// @param cmd [ in ] - строка скрипта для обработки Lua.
         void set_tag_Lua_cmd( const char *cmd );
 
+
+        /// @brief Получение флага состояния связи с PAC.
+        char get_connection_state() const
+            {
+            return ( *is_connected ) ? 1 : 0;
+            }
+
+        /// @brief Получение флага состояния связи с PAC.
+        bool get_prev_connection_state() const;
+
     private: 
         //- Lua.
 
@@ -246,7 +261,6 @@ class PAC_cmmctr
         CSWMRG    *dev_synch_access; ///< Синхронизация обращений к Lua.
 
         bool *is_connected;
-        bool *prev_connected_state;
 
         /// @brief Номер запроса устройств в PAC. Устанавливается в 0 при
         /// загрузке PAC.
@@ -288,7 +302,10 @@ class PAC_cmmctr_group
         /// @brief Получение количества описаний PAC.
         ///
         /// Для получения ошибок связи с контроллерами.
-        unsigned int get_PAC_count() const;
+        unsigned int get_PAC_count() const
+            {
+            return PAC_descriptions.size();
+            }
 
         /// @brief Получение описания PAC с заданным номером.
         PAC_cmmctr* get_PAC( int descr_id );

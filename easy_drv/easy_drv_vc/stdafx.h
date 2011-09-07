@@ -29,3 +29,5 @@
 #include "exchange_data.h"
 #include "bug_log.h"
 #include "PAC_cmmctr.h"
+
+#include "errors_manager.h"

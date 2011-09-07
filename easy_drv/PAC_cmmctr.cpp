@@ -31,11 +31,9 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     dev_synch_access( new CSWMRG ),
     has_got_PAC_devices( new bool ),
     devices_request_id( 1000 ),
-    is_connected( new bool ),
-    prev_connected_state( new bool )
+    is_connected( new bool )
     {
     *is_connected         = false;
-    *prev_connected_state = true;
     *has_got_PAC_devices  = false;
 
     PAC_Lua_state = lua_open();  /* create state */

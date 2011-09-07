@@ -49,8 +49,17 @@
     <Filter Include="Header Files\PAC-driver">
       <UniqueIdentifier>{f4cba5fe-1217-4851-ae50-e190e9a664fc}</UniqueIdentifier>
     </Filter>
-    <Filter Include="My Inspector Results">
-      <UniqueIdentifier>{47c6f6b8-2620-4c36-8ab1-8d7ac036371e}</UniqueIdentifier>
+    <Filter Include="Source Files\tolua++">
+      <UniqueIdentifier>{bc61e5ab-1a67-46f9-931a-ee2ed4897ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tolua++\pkg">
+      <UniqueIdentifier>{7c60b096-1221-4ca9-b208-f5f647f69b1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tolua++\sys">
+      <UniqueIdentifier>{f1d435ac-13f8-4242-b002-bb7c88cfb0d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tolua++">
+      <UniqueIdentifier>{8e0cd5cc-dfda-4687-9fde-61f1d6fb0fa6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -216,6 +225,15 @@
     <ClInclude Include="..\..\..\common\PAC-driver\g_device.h">
       <Filter>Header Files\PAC-driver</Filter>
     </ClInclude>
+    <ClInclude Include="..\errors_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\PAC-driver\errors.h">
+      <Filter>Header Files\PAC-driver</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\tolua++\tolua++.h">
+      <Filter>tolua++</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -332,6 +350,24 @@
     <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp">
       <Filter>win_util</Filter>
     </ClCompile>
+    <ClCompile Include="..\errors_lua.cpp">
+      <Filter>Source Files\tolua++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_event.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_is.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_map.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_push.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_to.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="easy_drv.rc">
@@ -350,6 +386,9 @@
     </None>
     <None Include="res\hand.cur">
       <Filter>Resource Files\cursors</Filter>
+    </None>
+    <None Include="..\tolua++\pkg\errors.pkg">
+      <Filter>Source Files\tolua++\pkg</Filter>
     </None>
   </ItemGroup>
 </Project>

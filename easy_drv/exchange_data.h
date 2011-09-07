@@ -16,6 +16,12 @@
 ///
 ///  Порядок полей в структуре важен для передачи данных в библиотеку драйвера
 ///  EasyDriver!
+
+#ifndef EXCHANGE_DATA_H
+#define EXCHANGE_DATA_H
+
+#include "errors.h"
+
 struct in_tag_info    
     {      
     UCHAR   PAC_descr_id;///< Номер описания PAC в базе каналов (номер узла).
@@ -42,32 +48,6 @@ struct alarm_id
 
 #pragma pack( push, 8 ) //Выравнивание полей структур по 8 байт.
 //-----------------------------------------------------------------------------
-enum ALARM_STATE
-    {
-    AS_NORMAL,
-    AS_ALARM,
-    AS_RETURN, 
-    AS_ACCEPT, 
-    };
-
-enum PRIORITY_TYPE
-    {
-    PT_SYSTEM,
-    PT_CRITICAL,
-    PT_IMPOTENT,
-    PT_UNIMPOTENT,
-    P_INFORMATIONAL,    
-    };
-
-enum ALARM_TYPE
-    {
-    AT_DISCRETE,
-    AT_VALUE,
-    AT_DEVIATION,
-    AT_RATE_OF_CHANGE,
-    AT_SPECIAL,
-    };
-
 struct alarm_params 
     {
     double  param1;
@@ -161,3 +141,4 @@ struct error_cmd
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+#endif // EXCHANGE_DATA_H

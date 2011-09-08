@@ -31,10 +31,11 @@ enum TAG_VAL_TYPE
 //-----------------------------------------------------------------------------
 int final();
 
+uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter );
 //-----------------------------------------------------------------------------
 const int        MAX_PROJECTS_CNT    = 256;
 PAC_cmmctr_group *g_PAC_descriptions = 0;     //Контроллеры сервера.
-alarm_manager    *g_alarm_manager = 0;     //Работа с ошибками контроллеров.
+alarm_manager    *g_alarm_manager = new alarm_manager(); //Работа с ошибками контроллеров.
 
 //-Данные для потоков, работающие с контроллерами.
 bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
@@ -70,6 +71,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             }
 
         _Module.Init( 0, 0, 0 );            // Инициализируем модуль. 
+
+        chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
         break;
 
     case DLL_THREAD_ATTACH:  
@@ -92,7 +95,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 //-----------------------------------------------------------------------------
 uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
     {
-    char server_PACs_connection_state[ MAX_PROJECTS_CNT ] = { 1 };
+    char server_PACs_connection_state[ MAX_PROJECTS_CNT ];
+    memset( server_PACs_connection_state, 1, MAX_PROJECTS_CNT );
 
     while ( !g_thread_is_terminated[ 0 ] )   
         {
@@ -102,24 +106,22 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
         for ( unsigned int i = 0; i < g_PAC_descriptions->get_PAC_count(); i++ )
             {   
             PAC_cmmctr *PAC = g_PAC_descriptions->get_PAC( i );
+            if ( 0 == PAC )
+                {
+                continue;
+                }
 
             if ( PAC->get_connection_state() != 
                 server_PACs_connection_state[ PAC->get_description_id() ] )
                 {
-                const int BUFFER_SIZE = 500;
-                char error_str[ BUFFER_SIZE ];
-                sprintf_s( error_str, BUFFER_SIZE, 
-                    "Нет соединения с контроллером проекта \"%s\" [ %s ]!", 
-                    PAC->get_name(), PAC->get_address() );
-
                 if ( 0 == PAC->get_connection_state() )
                     {
-                    g_alarm_manager->add_no_PAC_connection_error( error_str, 
+                    g_alarm_manager->add_no_PAC_connection_error( PAC->get_name(), 
                         PAC->get_description_id() );
                     }
                 else
                     {
-                    g_alarm_manager->remove_no_PAC_connection_error( error_str,
+                    g_alarm_manager->remove_no_PAC_connection_error(
                         PAC->get_description_id() );
                     }
 

@@ -14,6 +14,8 @@ extern "C"
 #include  "lualib.h"
     };
 
+extern PAC_cmmctr_group *g_PAC_descriptions;     //Контроллеры сервера.
+
 extern int  tolua_PAC_dev_open ( lua_State* tolua_S );
 
 class alarm_manager
@@ -72,41 +74,74 @@ class alarm_manager
             lua_state = 0;
             }
 
-        int add_no_PAC_connection_error( const char *description, 
-            UINT project_id )
+        int add_no_PAC_connection_error( const char *PAC_name, 
+            UINT project_description_id )
             {
-            std::string str = "";
+			const int MAX_SIZE   = 2000;
+			char str[ MAX_SIZE ] = { 0 };
 
-            //--alarms[ object_type ][ object_number ][ object_alarm_number ]
-            str += "alarms[ OBJECT_TYPE.OT_PAC ] = alarms[ G_PAC ] or {}\n";
-            
-            char tmp[ 10 ] = { 0 };
-            itoa( project_id, tmp, 10 );
+            //--alarms[ project_description_id ][ object_type ][ object_number ][ alarm_class ]
+			sprintf( str, "%s %d %s\n",
+				"alarms[", project_description_id, "] = {}" );
 
-            str += "alarms[ OBJECT_TYPE.OT_PAC ][ " + tmp + 
-                " ][ ALARM_CLASS.AC_NO_CONNECTION ]  =\n";
+            sprintf( str + strlen( str ), "%s %d %s\n",
+				"alarms[", project_description_id, "][ OBJECT_TYPE.OT_PAC ] = {}" );
+			//sprintf( str + strlen( str ), "%s %d %s\n",
+			//	"alarms[", project_description_id, "][ OBJECT_TYPE.OT_PAC ][ 1 ] = {}" );
+   //         
+			//sprintf( str + strlen( str ), "%s %d %s\n",
+			//	"alarms[", project_description_id,
+			//	"][ OBJECT_TYPE.OT_PAC ][ 1 ][ ALARM_CLASS.AC_NO_CONNECTION ]  =" );
 
+			//sprintf( str + strlen( str ), "%s\n", "{" );
+			//sprintf( str + strlen( str ), "%s\n", 
+			//	"description = ""Нет связи с контроллером проекта '", PAC_name, "'!""," );
+			//
+			//sprintf( str + strlen( str ), "%s\n", "type        = ALARM_TYPE.AT_SPECIAL," );
+			//sprintf( str + strlen( str ), "%s\n", "group       = 'Ошибка связи'," );
+			//sprintf( str + strlen( str ), "%s\n", "priority    = 1," );
+			//sprintf( str + strlen( str ), "%s\n", "state       = ALARM_STATE.AS_ALARM," );
+			//sprintf( str + strlen( str ), "%s\n", "suppress    = false," );
+			//
+			//sprintf( str + strlen( str ), "%s\n", "}" );
 
+			int res = luaL_dostring( lua_state, str ); 
 
-
-            //alarms[ G_PAC ][ PAC_id ] = {}
-            //alarms[ G_PAC ][ PAC_id ][ EC_NO_CONNECTION ]  =
-            //    {
-            //    description = "Нет связи с контроллером проекта 'Сыворотка'!",
-            //    type        = ALARM_TYPE.AT_SPECIAL,
-            //    group       = 'Ошибка связи',
-            //    priority    = 1,
-            //    state       = ALARM_STATE.AS_ALARM,
-            //    suppress    = false,
-            //    }
-
+			if( res != 0 )
+			    {
+				snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+					"Cannot create ""NO PAC RESPOND"" error!" );
+				BUG_LOG.add_error_msg( "System", 
+					g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+				DebugBreak();
+#endif // DEBUG
+			    }
 
             return 0;
             }
         
-        int remove_no_PAC_connection_error( const char *description,
-            UINT driver_id )
+        int remove_no_PAC_connection_error( UINT project_description_id )
             {
+            const int MAX_SIZE   = 200;
+            char str[ MAX_SIZE ] = { 0 };
+
+            //--alarms[ project_description_id ][ object_type ][ object_number ][ alarm_class ]
+            sprintf( str, "%s %d %s\n",
+                "alarms[", project_description_id, "] = {}" );
+
+            int res = luaL_dostring( lua_state, str ); 
+
+            if( res != 0 )
+                {
+                snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                    "Cannot remove ""NO PAC RESPOND"" error!" );
+                BUG_LOG.add_error_msg( "System", 
+                    g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+                DebugBreak();
+#endif // DEBUG
+                }
 
             return 0;
             }

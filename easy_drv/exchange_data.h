@@ -68,7 +68,7 @@ struct alarm
 
     //     atDiscrete      - дискретная ( true/false )
     //     atValue         - контроля значения ( Lo/LoLo, Hi/HiHi )
-    //     atDeviation     - отклонения ( MinValue/MajValue )
+    //     atDeviation     - отклонения ( MinValue/MaxValue )
     //     atRateOfChange  - изменения скорости ( speed )
     //     atSpecial       - специальная
     ALARM_TYPE type;    ///< Тип тревоги.

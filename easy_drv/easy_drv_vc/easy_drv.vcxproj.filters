@@ -22,9 +22,6 @@
     <Filter Include="Header Files\WTL">
       <UniqueIdentifier>{25781ebc-a0d0-461a-a0bc-36eb91ab3026}</UniqueIdentifier>
     </Filter>
-    <Filter Include="win_util">
-      <UniqueIdentifier>{42ff92e5-26b0-4cc0-9e54-bc6caecabf8c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Resource Files\bmp">
       <UniqueIdentifier>{3963af74-24f9-4068-af41-a1c69c81bb2f}</UniqueIdentifier>
     </Filter>
@@ -58,7 +55,10 @@
     <Filter Include="Source Files\tolua++\sys">
       <UniqueIdentifier>{f1d435ac-13f8-4242-b002-bb7c88cfb0d9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tolua++">
+    <Filter Include="Source Files\win_util">
+      <UniqueIdentifier>{42ff92e5-26b0-4cc0-9e54-bc6caecabf8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tolua++">
       <UniqueIdentifier>{8e0cd5cc-dfda-4687-9fde-61f1d6fb0fa6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -232,7 +232,7 @@
       <Filter>Header Files\PAC-driver</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\common\tolua++\tolua++.h">
-      <Filter>tolua++</Filter>
+      <Filter>Header Files\tolua++</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -255,7 +255,7 @@
       <Filter>Source Files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp">
-      <Filter>win_util</Filter>
+      <Filter>Source Files\win_util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\common\lua\lapi.c">
       <Filter>Source Files\Lua\sys</Filter>
@@ -348,7 +348,7 @@
       <Filter>Source Files\Lua\sys</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp">
-      <Filter>win_util</Filter>
+      <Filter>Source Files\win_util</Filter>
     </ClCompile>
     <ClCompile Include="..\errors_lua.cpp">
       <Filter>Source Files\tolua++</Filter>

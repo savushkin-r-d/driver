@@ -33,7 +33,7 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     devices_request_id( 1000 ),
     is_connected( new bool )
     {
-    *is_connected         = false;
+    *is_connected         = true;
     *has_got_PAC_devices  = false;
 
     PAC_Lua_state = lua_open();  /* create state */
@@ -127,7 +127,7 @@ int PAC_cmmctr::get_PAC_info()
         {
         if ( err_retr_count >= PM_MAX_ERRORS_COUNT )
             {
-            *is_connected = 0;
+            *is_connected = false;
             }
         else
             {
@@ -136,7 +136,7 @@ int PAC_cmmctr::get_PAC_info()
         }
     else            // Успешная операция обмена данными с контроллером.
         {
-        *is_connected = 1;
+        *is_connected = true;
         err_retr_count = 0;
         }
 
@@ -163,7 +163,7 @@ int PAC_cmmctr::get_PAC_info()
                 PAC_protocol_version, G_PROTOCOL_VERSION );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
-            *is_connected = 0;
+            *is_connected = false;
             return -2;
             }
 
@@ -176,7 +176,7 @@ int PAC_cmmctr::get_PAC_info()
                 "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
                 PAC_address.c_str(), in_name, PAC_name );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
-            *is_connected = 0;
+            *is_connected = false;
             return -3;
             }
 
@@ -411,7 +411,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         {
         if ( err_retr_count >= PM_MAX_ERRORS_COUNT )
             {
-            *is_connected = 0;
+            *is_connected = false;
             }
         else
             {
@@ -420,7 +420,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         }
     else            // Успешная операция обмена данными с контроллером.
         {
-        *is_connected = 1;
+        *is_connected = true;
         err_retr_count = 0;
         }
 

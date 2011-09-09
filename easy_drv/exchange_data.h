@@ -22,6 +22,9 @@
 
 #include "errors.h"
 
+typedef unsigned char UCHAR;
+typedef unsigned int  UINT;
+
 struct in_tag_info    
     {      
     UCHAR   PAC_descr_id;///< Номер описания PAC в базе каналов (номер узла).
@@ -44,6 +47,10 @@ struct alarm_id
     int object_type;
     int object_number;
     int object_alarm_number;
+
+    alarm_id(): object_type( 0 ), object_number( 0 ), object_alarm_number( 0 )
+        {
+        }
     };
 
 #pragma pack( push, 8 ) //Выравнивание полей структур по 8 байт.
@@ -60,6 +67,12 @@ struct alarm_params
     double  param8;
     double  param9;
     double  param10;
+
+    alarm_params(): param1( 0 ), param2( 0 ), param3( 0 ), param4( 0 ),
+        param5( 0 ), param6( 0 ), param7( 0 ), param8( 0 ),
+        param9( 0 ), param10( 0 )
+        {
+        }
     };
 
 struct alarm
@@ -98,25 +111,64 @@ struct alarm
     alarm_id id;        ///< Глобальный идентификатор тревоги.    
     UCHAR driver_id;    ///< id драйвера.
 
-    bool operator == ( const alarm &alarm2 )
+    alarm(): type( AT_SPECIAL ), description( 0 ), enable( 0 ), group( 0 ), inhibit( 0 ),
+        priority( 999 ), state( AS_ACCEPT ), suppress( 0 ), driver_id( 0 )
         {
-        return !strcmp( this->description, alarm2.description ); 
+
         }
 
-    bool operator < ( const alarm &alarm2 ) const
+    alarm& operator = ( const alarm & copy )
         {
-        return strcmp( this->description, alarm2.description ) < 0 ? 1 : 0;
+        if ( this != &copy ) // Защита от неправильного самоприсваивания.
+            {
+            int descr_copy_len = strlen( copy.description );
+            description = 0;
+            if ( descr_copy_len > 0 )
+                {
+                description = new char[ descr_copy_len + 1 ];
+                strcpy_s( description, descr_copy_len + 1, copy.description );
+                }
+            else
+                {
+                description = new char[ 1 ];
+                description[ 0 ] = 0;
+                }
+
+            int group_copy_len = strlen( copy.group );
+            group = 0;
+            if ( group_copy_len > 0 )
+                {
+                group = new char[ group_copy_len + 1 ];
+                strcpy_s( group, group_copy_len + 1, copy.group );
+                }
+            else
+                {
+                group = new char[ 1 ];
+                group[ 0 ] = 0;
+                }
+
+            params      = copy.params;
+            type        = copy.type;
+            enable      = copy.enable;
+            inhibit     = copy.inhibit;
+            priority    = copy.priority;
+            state       = copy.state;
+            suppress    = copy.suppress;
+            id          = copy.id;
+            driver_id   = copy.driver_id;
+            }
+        // По соглашению всегда возвращаем *this.
+        return *this;
         }
 
-    alarm( alarm const& copy );
+    ~alarm()
+        {
+       delete[] description;
+        description = 0;
 
-    alarm & operator = ( const alarm & copy );
-
-    int load_from_stream_as_simple_error( char *stream );
-
-    alarm();
-
-    ~alarm();
+        delete[] group;
+        group = 0;
+        }
 
     void accept()
         {

@@ -34,8 +34,9 @@ int final();
 uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter );
 //-----------------------------------------------------------------------------
 const int        MAX_PROJECTS_CNT    = 256;
-PAC_cmmctr_group *g_PAC_descriptions = 0;     //Контроллеры сервера.
-alarm_manager    *g_alarm_manager = new alarm_manager(); //Работа с ошибками контроллеров.
+PAC_cmmctr_group *g_PAC_descriptions = 0;   ///< Контроллеры сервера.
+alarm_manager    *g_alarm_manager = 0;      ///< Работа с ошибками контроллеров.
+alarm            *g_alarms[ MAX_PROJECTS_CNT ];///< Ошибки контроллеров.
 
 //-Данные для потоков, работающие с контроллерами.
 bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
@@ -61,11 +62,16 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             {
             BUG_LOG.get_instance();
 
-            g_PAC_descriptions   = new PAC_cmmctr_group; //Контроллеры сервера.
+            g_PAC_descriptions = new PAC_cmmctr_group(); //Контроллеры сервера.
+            g_alarm_manager    = new alarm_manager();    //Работа с ошибками контроллеров.
             }
         catch (...)
             {
             delete g_PAC_descriptions;
+            g_PAC_descriptions = 0;
+
+            delete g_alarm_manager;
+            g_alarm_manager = 0;
 
             return false;
             }
@@ -597,11 +603,16 @@ int final()
     delete g_PAC_descriptions;
     g_PAC_descriptions = 0;
 
+    delete g_alarm_manager;
+    g_alarm_manager = 0;
+
     return 0;
     }
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall get_alarms( unsigned char driver_id, all_alarm &alarms )
     {   
+    g_alarm_manager->get_alarms( driver_id, alarms );
+
     return 0;        
     }
 //-----------------------------------------------------------------------------

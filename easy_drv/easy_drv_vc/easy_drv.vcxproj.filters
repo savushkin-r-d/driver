@@ -368,6 +368,9 @@
     <ClCompile Include="..\..\..\common\tolua++\tolua_to.c">
       <Filter>Source Files\tolua++\sys</Filter>
     </ClCompile>
+    <ClCompile Include="..\errors_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="easy_drv.rc">

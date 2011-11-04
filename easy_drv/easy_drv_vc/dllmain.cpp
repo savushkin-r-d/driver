@@ -35,8 +35,10 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter );
 //-----------------------------------------------------------------------------
 const int        MAX_PROJECTS_CNT    = 256;
 PAC_cmmctr_group *g_PAC_descriptions = 0;   ///< Контроллеры сервера.
-alarm_manager    *g_alarm_manager = 0;      ///< Работа с ошибками контроллеров.
-alarm            *g_alarms[ MAX_PROJECTS_CNT ];///< Ошибки контроллеров.
+
+alarm_manager    *g_alarm_manager = 0;            ///< Работа с ошибками контроллеров.
+alarm            *g_alarms[ MAX_PROJECTS_CNT ];   ///< Ошибки контроллеров.
+u_int_2           g_alarms_id[ MAX_PROJECTS_CNT ];///< Ошибки контроллеров.
 
 //-Данные для потоков, работающие с контроллерами.
 bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
@@ -47,9 +49,9 @@ int    g_chbase_nodes_cont_count                        = 0;
 int    g_commctr_threads_count = 0;
 //-----------------------------------------------------------------------------
 // Используется для проверки соответствия DLL и версии в PAC.
-extern u_int_2 G_PROTOCOL_VERSION;
+extern u_int_2 G_CURRENT_PROTOCOL_VERSION;
 
-const int VERSION_WITH_ERRORS = 2;
+extern u_int_2 G_PROTOCOL_VERSION_V1;
 //-----------------------------------------------------------------------------
 BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -64,6 +66,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
             g_PAC_descriptions = new PAC_cmmctr_group(); //Контроллеры сервера.
             g_alarm_manager    = new alarm_manager();    //Работа с ошибками контроллеров.
+
+            memset( g_alarms_id, 0, sizeof( g_alarms_id ) );
             }
         catch (...)
             {
@@ -148,11 +152,6 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     PAC_cmmctr *PAC_com = ( PAC_cmmctr* ) lpParameter;
     int res;
 
-    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-        "Поток работы с описанием PAC [ $%X ] запущен. Таймаут опроса - %d мсек.",
-        PAC_com->get_description_id(), PAC_com->get_cmmctr()->get_timeout() );
-    BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
-
     // 1 - интервал опроса контроллера.
     int sleep_time = 510;                            //1
     if ( PAC_com->get_cmmctr()->get_timeout() > 2000 )
@@ -163,6 +162,11 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
         {
         sleep_time *= 3;
         }
+
+    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
+        "Поток работы с описанием PAC [ $%X ] запущен. Интервал опроса - %d мсек.",
+        PAC_com->get_description_id(), sleep_time );
+    BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
     while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )
         {
@@ -175,6 +179,8 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
             Sleep( 2 * sleep_time );
             continue;
             }
+
+        int PAC_program_version = res;
 
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
@@ -216,14 +222,21 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 {   
                 break;
                 }
-            }
 
-        //        Sleep( 10 );
-        //        if ( PAC_program_version >= VERSION_WITH_ERRORS ) 
-        //            {
-        //            PAC_com->get_PAC_errors();
-        //            }                
-        //        }              
+            if ( PAC_program_version > G_PROTOCOL_VERSION_V1 )
+                {
+                //Пытаемся получить параметры всех устройств контроллера.
+                int CRC = PAC_com->get_PAC_params_CRC();
+                if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
+                    {                
+                    PAC_com->backup_PAC_params();
+                    PAC_com->set_saved_CRC( CRC );
+                    }
+
+                PAC_com->get_PAC_errors();
+
+                } // if ( PAC_program_version > G_PROTOCOL_VERSION_V1 )
+            } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
 
     _endthreadex( 0 );

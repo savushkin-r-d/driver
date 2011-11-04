@@ -41,8 +41,6 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
         "alarms[", project_description_id, "] = {}" );
     sprintf( str + strlen( str ), "%s %d %s\n",
         "alarms[", project_description_id, "].id = 1" );
-    sprintf( str + strlen( str ), "%s %d %s\n",
-        "alarms[", project_description_id, "].is_changed = true" );
 
     sprintf( str + strlen( str ), "%s %d %s\n",
         "alarms[", project_description_id, "][ 1 ] = " );
@@ -174,6 +172,21 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
         lua_remove( lua_state, -1 );
         }
 
+    //ѕроверка на равенство уже полученных ошибок.
+    if ( g_alarms[ project_description_id ] != 0 )
+        {
+        if ( g_alarms_id[ project_description_id ] == id )
+            {
+            project_alarms.alarms = g_alarms[ project_description_id ];
+            project_alarms.cnt    = alarms_cnt;            
+            project_alarms.id     = id;
+
+            return 0;
+            }
+        }
+
+    g_alarms_id[ project_description_id ] = id;
+
     delete [] g_alarms[ project_description_id ];
     g_alarms[ project_description_id ] = 0;
     if ( alarms_cnt )
@@ -218,3 +231,28 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 
     return 0;
     }
+//-----------------------------------------------------------------------------
+int alarm_manager::add_PAC_errors( const char *LUA_str, 
+    unsigned char project_description_id )
+    {
+    int res = luaL_dostring( lua_state, LUA_str ); 
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Cannot process PAC errors, error - ""%s""!",
+            lua_tostring( lua_state, -1 ) );
+
+        BUG_LOG.add_error_msg( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+        //DebugBreak();
+#endif // DEBUG
+
+        return 1;
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------

@@ -61,6 +61,9 @@
     <Filter Include="Header Files\tolua++">
       <UniqueIdentifier>{8e0cd5cc-dfda-4687-9fde-61f1d6fb0fa6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Other">
+      <UniqueIdentifier>{72d610a8-ca97-4deb-b6dd-7a6deb288cb7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -392,6 +395,9 @@
     </None>
     <None Include="..\tolua++\pkg\errors.pkg">
       <Filter>Source Files\tolua++\pkg</Filter>
+    </None>
+    <None Include="..\versions.txt">
+      <Filter>Other</Filter>
     </None>
   </ItemGroup>
 </Project>

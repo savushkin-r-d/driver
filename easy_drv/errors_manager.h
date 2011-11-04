@@ -31,7 +31,8 @@ extern "C"
     };
 
 extern PAC_cmmctr_group *g_PAC_descriptions;  
-extern alarm *g_alarms[ 256 ];
+extern alarm   *g_alarms[ 256 ];
+extern u_int_2  g_alarms_id[ 256 ];
 
 extern int  tolua_PAC_dev_open ( lua_State* tolua_S );
 //-----------------------------------------------------------------------------
@@ -77,6 +78,10 @@ class alarm_manager
         /// @return 0 - ок.
         int get_alarms( unsigned char project_description_id, 
             all_alarm &project_alarms );
+
+
+        int add_PAC_errors( const char *LUA_str, 
+            unsigned char project_description_id );
 
     private:
         lua_State *lua_state;    ///< Ёкземпл€р Lua дл€ работы с ошибками.

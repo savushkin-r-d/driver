@@ -30,20 +30,16 @@ typedef unsigned short int u_int_2;
 
 class abstract_cmmctr;
 
-
 #define lua_c
 
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
+extern "C"
+    {
 #include    "lua.h"
 #include    "lauxlib.h"
 #include    "lualib.h"
 
-#ifdef  __cplusplus
+#include "snprintf.h"
     };
-#endif
 //-----------------------------------------------------------------------------
 /// @brief Представление информации об одном контроллере.
 ///
@@ -201,6 +197,30 @@ class PAC_cmmctr
         /// @brief Получение флага состояния связи с PAC.
         bool get_prev_connection_state() const;
 
+
+        /// @brief Получение параметров объектов контроллера.
+        ///
+        /// @return   0 - ок.
+        /// @return < 0 - ошибка.
+        int backup_PAC_params();
+
+        int check_PAC_params();
+
+        int get_PAC_params_CRC();
+
+        int get_saved_CRC() const
+            {
+            return PAC_params_CRC;
+            }
+
+        int set_saved_CRC( int PAC_params_CRC )
+            {
+            return this->PAC_params_CRC = PAC_params_CRC;
+            }
+
+
+        int get_PAC_errors();
+
     private: 
         //- Lua.
 
@@ -282,6 +302,13 @@ class PAC_cmmctr
         UINT  PAC_descr_id;         ///< Уникальный номер описания PAC.
 
         std::string    PAC_name;    ///< Имя PAC.
+
+        void get_param_file_name( char * file_name, int max_len );
+
+        int save_to_file( const char* file_name, const char * str );
+
+        int  PAC_params_CRC;
+        bool is_process_PAC_params;
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

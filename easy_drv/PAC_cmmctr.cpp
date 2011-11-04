@@ -2,6 +2,8 @@
 
 #include "PAC_cmmctr.h"
 
+#include "errors_manager.h"
+
 #ifdef  __cplusplus
 extern "C" {
 #endif
@@ -19,9 +21,17 @@ extern "C" {
 int tcp_cmmctr::instancesCount = 0;
 int tcp_cmmctr::isInitialized = 0;
 
-u_int_2 G_PROTOCOL_VERSION = 100;
+//История версий:
+//    1 - базовая версия.
+//    2 - добавлен механизм сохранения параметров и их автоматического
+//    восстановления после сбоя (замены PAC).
+
+u_int_2 G_PROTOCOL_VERSION_V1         = 100;
+u_int_2 G_CURRENT_PROTOCOL_VERSION    = 101;
 
 int abstract_cmmctr::count = 0;
+
+extern alarm_manager *g_alarm_manager; ///< Работа с ошибками контроллеров.
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name, 
@@ -31,7 +41,9 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     dev_synch_access( new CSWMRG ),
     has_got_PAC_devices( new bool ),
     devices_request_id( 1000 ),
-    is_connected( new bool )
+    is_connected( new bool ),
+    PAC_params_CRC( 0 ),
+    is_process_PAC_params( false )
     {
     *is_connected         = true;
     *has_got_PAC_devices  = false;
@@ -119,8 +131,8 @@ int PAC_cmmctr::get_PAC_info()
     {
     if ( !cmmctr ) return -1;
 
-    char buff[ 1 ];
-    buff[ 0 ] = device_communicator::CMD_GET_INFO_ON_CONNECT;
+    const char buff[ 1 ] = { device_communicator::CMD_GET_INFO_ON_CONNECT };
+    
     const int cmd_length = 1;
     int res = cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, cmd_length );
     if ( res != 0 ) // Не успешная операция обмена данными с контроллером.
@@ -142,12 +154,12 @@ int PAC_cmmctr::get_PAC_info()
 
     unsigned int answer_size;
     char *answer = cmmctr->get_out_data( answer_size );
-        
+
     if ( answer_size > 0 )
         { 
         int res = exec_Lua_str( answer,
             "Ошибка получения данных о PAC" );
-            
+
         if( res != 0 )
             {
             return -1;
@@ -156,11 +168,12 @@ int PAC_cmmctr::get_PAC_info()
         PAC_protocol_version = get_int_param_from_Lua( "protocol_version", 
             "int PAC_cmmctr::get_PAC_info()" );
 
-        if ( PAC_protocol_version != G_PROTOCOL_VERSION )
+        if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION && 
+            PAC_protocol_version != G_PROTOCOL_VERSION_V1 )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Протокол PAC версии %d - должна быть %d!",
-                PAC_protocol_version, G_PROTOCOL_VERSION );
+                PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
             *is_connected = false;
@@ -181,9 +194,19 @@ int PAC_cmmctr::get_PAC_info()
             }
 
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Версия драйвера PAC - %d, имя - \"%s\".",
-            PAC_protocol_version, PAC_name.c_str() );
-       BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+            "Версия драйвера: PAC - %d, сервер - %d; имя PAC - \"%s\".",
+            PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION,
+            PAC_name.c_str() );
+        BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+        
+        //Проверка на сброс параметров в PAC.
+        if ( PAC_protocol_version > G_PROTOCOL_VERSION_V1 )
+            {
+            PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
+                "int PAC_cmmctr::get_PAC_info()" );
+
+            check_PAC_params();
+            }        
 
         return PAC_protocol_version;
         }    
@@ -224,7 +247,7 @@ int PAC_cmmctr::exec_Lua_str( const char *Lua_str,
                 error_str, lua_tostring( PAC_Lua_state, -1 ) );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             }
-        
+
         lua_pop( PAC_Lua_state, 1 );
         return 1;
         }
@@ -288,22 +311,22 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
     char *str_value, int max_length )
     {
     is_exist_tag = false;
-    
+
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
     snprintf( cmd, sizeof( cmd ), "res = nil; assert( loadstring( tags[ %d ] ) )()", tag_id );    
     exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
-    
+
     const char *res = get_str_param_from_Lua( "res",
         "char* PAC_cmmctr::get_tag_str_value" );
 
     str_value[ 0 ] = 0;
     if ( res )
-    	{
+        {
         is_exist_tag = true;
 
         strncpy( str_value, res, max_length );        
-    	}
+        }
     }
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
@@ -319,7 +342,7 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
 
     res = get_str_param_from_Lua( "res",
         "PAC_cmmctr::get_tag_str_value" );
-   
+
     str_value[ 0 ] = 0;
     if ( res )
         {
@@ -389,7 +412,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     if ( !cmmctr ) return OTHER_ERROR;
 
     lua_gc( PAC_Lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
-    
+
 #ifdef DEBUG
     static int counter = 0;
     counter++;
@@ -398,13 +421,13 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory = %d", 
             lua_gc( PAC_Lua_state, LUA_GCCOUNT, 0 ) * 1024 +
             lua_gc( PAC_Lua_state, LUA_GCCOUNTB, 0 ) );
-       BUG_LOG.add_msg( get_name(), get_address() );
+        BUG_LOG.add_msg( get_name(), get_address() );
 
         counter = 0;
         }
 #endif // DEBUG
 
-    
+
     char buff[ 1 ] = { device_communicator::CMD_GET_DEVICES_STATES };            
     int res = cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, sizeof( buff ) );
     if ( res != 0 ) // Неуспешная операция обмена данными с контроллером.
@@ -501,6 +524,197 @@ void PAC_cmmctr::set_tag_Lua_cmd( const char *cmd )
         }
     }
 //-----------------------------------------------------------------------------
+int PAC_cmmctr::backup_PAC_params()
+    {
+    if ( !cmmctr ) return -1;
+
+    char buff[ 1 ];
+    buff[ 0 ] = device_communicator::CMD_GET_PARAMS;
+    const int cmd_length = 1;
+    cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, cmd_length );
+
+    unsigned int answer_size;
+    char *answer = cmmctr->get_out_data( answer_size );
+
+    char file_name[ 100 ];
+    get_param_file_name( file_name, sizeof( file_name ) );
+
+    save_to_file( file_name, answer );
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::check_PAC_params()
+    {
+    char file_name[ 100 ];
+    get_param_file_name( file_name, sizeof( file_name ) );
+
+    FILE *f = fopen( file_name, "r" );
+    if ( f == NULL ) 
+        {
+        // Не восстанавливаем параметры.
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Файл параметров \"%s\" отсутствует - не восстанавливаем их.",
+            file_name );
+        BUG_LOG.add_msg( get_name(), get_address() );  
+
+        is_process_PAC_params = false;
+        return 0;
+        }
+    else
+        {
+        is_process_PAC_params = true;
+        }
+
+    bool is_reset_params = get_int_param_from_Lua( "is_reset_params", 
+        "int PAC_cmmctr::get_PAC_info()" ) > 0 ? true : false;
+          
+    if ( is_reset_params )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Параметры в PAC были сброшены к значениям по умолчанию.",
+            PAC_protocol_version, PAC_name.c_str() );
+
+        BUG_LOG.add_warning_msg( PAC_name.c_str(), PAC_address.c_str() );
+
+        //Передача в PAC сохраненных ранее параметров.
+        fseek( f, 0, SEEK_END );
+        int str_size = ftell( f );
+        fseek( f, 0, SEEK_SET ) ; 
+
+        char *str = new char[ str_size + 2 ];       
+        memset( str, 0, str_size + 2 );
+
+        fread( str + 1, sizeof( char ), str_size, f );
+
+        bool params_restore_flag = false;
+
+        str[ 0 ] = device_communicator::CMD_RESTORE_PARAMS;
+        const int CMD_LENGTH = str_size + 2;
+        int res = cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, str, CMD_LENGTH );                
+        if ( 0 == res )
+            {
+            u_int answer_size = 0;
+            char *answer = cmmctr->get_out_data( answer_size );
+
+            if ( answer_size > 0 )
+                { 
+                if ( 0 == answer[ 0 ] && 0 == answer[ 1 ] )
+                    {
+                    char file_name[ 100 ];
+                    get_param_file_name( file_name, sizeof( file_name ) );
+
+                    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                        "Параметры в PAC были успешно восстановлены из \"%s\".",
+                        file_name );
+                    BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+                    params_restore_flag = true;
+
+                    set_saved_CRC( get_PAC_params_CRC() );
+                    }
+                }
+            }
+
+        if ( false == params_restore_flag )
+            {
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                "Ошибка восстановления параметров в PAC.",
+                PAC_protocol_version, PAC_name.c_str() );
+            BUG_LOG.add_error_msg( PAC_name.c_str(), PAC_address.c_str() );
+            }
+        }
+
+    fclose( f );  
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::get_PAC_params_CRC()
+    {
+    if ( is_process_PAC_params )
+        {
+        const char CMD[] = { device_communicator::CMD_GET_PARAMS_CRC };
+        cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, CMD, sizeof( CMD ) );         
+
+        u_int answer_size = 0;
+        char *answer = cmmctr->get_out_data( answer_size );
+
+        if ( answer_size > 0 )
+            { 
+            int res = exec_Lua_str( answer,
+                "Ошибка получения данных о контрольной сумме параметров PAC" );
+
+            if( res != 0 )
+                {
+                return -2;
+                }
+
+            int PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
+                "int PAC_cmmctr::get_PAC_params_CRC()" );
+
+            return PAC_params_CRC;
+            }
+        }
+
+    return -1;
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::get_param_file_name( char * file_name, int max_len )
+    {
+
+#ifdef DEBUG
+    snprintf( file_name, max_len, "./Параметры PAC/%s.txt", 
+        get_name() );
+#else
+    snprintf( file_name, max_len, "./drivers/Параметры PAC/%s.txt", 
+        get_name() );
+#endif // DEBUG    
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::save_to_file( const char* file_name, const char * str )
+    {
+    FILE *f = fopen( file_name, "w+t" );
+    if ( f == NULL ) 
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Не удалось сохранить параметры в файл \"%s\" - %s.",
+            file_name, strerror( GetLastError() ) );
+        BUG_LOG.add_error_msg( get_name(), get_address() );
+
+        return -1;
+        }
+
+    fprintf( f, "%s", str );
+    fclose( f );
+
+    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+        "Файл параметров \"%s\" обновлен.",
+        file_name );
+    BUG_LOG.add_msg( get_name(), get_address() );
+
+    return 0;
+    }
+
+int PAC_cmmctr::get_PAC_errors()
+    {
+    char cmd[ 2 ];
+    cmd[ 0 ] = device_communicator::CMD_GET_PAC_ERRORS;
+    char descr_id = ( char ) get_description_id();
+    cmd[ 1 ] = descr_id;
+
+    cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, cmd, sizeof( cmd ) );         
+
+    u_int answer_size = 0;
+    char *answer = cmmctr->get_out_data( answer_size );
+
+    if ( answer_size > 0 )
+        { 
+        return g_alarm_manager->add_PAC_errors( answer, ( u_char ) descr_id );
+        }
+
+    return 0;
+    }
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PAC_cmmctr_group::PAC_cmmctr_group()
     {
@@ -521,7 +735,7 @@ PAC_cmmctr* PAC_cmmctr_group::add_PAC( char* const PAC_address,
     snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
         "Новое описание PAC (№%d) было добавлено. Таймаут опроса - %d мсек.",
         res->get_description_id(), timeout );
-   BUG_LOG.add_msg( res->get_name(), res->get_address() );
+    BUG_LOG.add_msg( res->get_name(), res->get_address() );
 
     PAC_descriptions.at( PAC_descr_id ) = res;    
 
@@ -679,13 +893,14 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     BUG_LOG.reset_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
         ip_address, "Ошибка отсылки сообщения!" );
 
+    memset( in_buff, 0, sizeof( in_buff ) );
     int res = recv( sock, in_buff, 8000, 0 );
 
     if ( 0 == res )
         {
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
             "PAC закрыл соединение." );
-       BUG_LOG.add_msg( PAC_name, ip_address );
+        BUG_LOG.add_msg( PAC_name, ip_address );
         Disconnect();
 
         LeaveCriticalSection( &m_cs );

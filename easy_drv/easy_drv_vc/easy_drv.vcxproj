@@ -394,6 +394,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\tolua++\pkg\errors.pkg" />
+    <None Include="..\versions.txt" />
     <None Include="res\divider.cur" />
     <None Include="res\hand.cur" />
     <None Include="res\ListItems.bmp" />

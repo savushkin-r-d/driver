@@ -124,7 +124,7 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 
     lua_gc( lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
 
-    unsigned int id = 0;
+    u_int_2 id = 0;
 
     lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarms_id" );  
     lua_pushnumber( lua_state, project_description_id );
@@ -144,7 +144,7 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
         }
     else
         {
-        id = ( unsigned int ) tolua_tonumber( lua_state, -1, 0 );
+        id = ( u_int_2 ) tolua_tonumber( lua_state, -1, 0 );
         lua_remove( lua_state, -1 );
         }
 

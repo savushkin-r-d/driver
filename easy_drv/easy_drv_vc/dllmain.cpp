@@ -85,7 +85,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
         _Module.Init( 0, 0, 0 );            // Инициализируем модуль.   
 
-        g_commctr_threads_array[ 0 ] = 
+        //Создаем поток, который будет следить, есть ли связь с 
+        // контроллерами. В случае ее пропадания\появления 
+        // устанавливать\сбрасывать соответствующую ошибку.
+        g_commctr_threads_array[ MAX_PROJECTS_CNT ] = 
             chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
         break;
 

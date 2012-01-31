@@ -45,6 +45,9 @@ bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
 HANDLE g_commctr_threads_array[ MAX_PROJECTS_CNT + 1 ]  = { 0 };
 int    g_chbase_nodes_cont_count                        = 0;
 
+/// @brief Синхронизатор доступа к PAC-ам.
+CSWMRG g_sync_PAC;
+
 /// @brief Количество потоков обмена с PAC.
 int    g_commctr_threads_count = 0;
 //-----------------------------------------------------------------------------
@@ -80,9 +83,10 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             return false;
             }
 
-        _Module.Init( 0, 0, 0 );            // Инициализируем модуль. 
+        _Module.Init( 0, 0, 0 );            // Инициализируем модуль.   
 
-        chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
+        g_commctr_threads_array[ 0 ] = 
+            chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
         break;
 
     case DLL_THREAD_ATTACH:  
@@ -94,7 +98,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_PROCESS_DETACH:        
         final();
 
-        //_CrtDumpMemoryLeaks();
+        bug_log::free_instance();
 
         _Module.Term(); // Завершаем программу.
         //MessageBox( 0 , "Final", "Ok", 0 );
@@ -110,7 +114,12 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
 
     while ( !g_thread_is_terminated[ 0 ] )   
         {
-        Sleep( 1000 );
+        g_sync_PAC.WaitToRead();
+        if ( g_thread_is_terminated[ 0 ] )
+            {            
+            g_sync_PAC.Done();
+            break;
+            }
 
         //-Проверяем состояния всех контроллеров.
         for ( unsigned int i = 0; i < g_PAC_descriptions->get_PAC_count(); i++ )
@@ -139,9 +148,12 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
                     PAC->get_connection_state();
                 }
             }
+
+        g_sync_PAC.Done();
+        Sleep( 1000 );
         }
 
-    _endthreadex( 0 );  
+    //_endthreadex( 0 );  
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -168,6 +180,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
         PAC_com->get_description_id(), sleep_time );
     BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
+    
     while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )
         {
         PAC_com->get_dev_synch_access()->WaitToWrite();
@@ -239,7 +252,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
 
-    _endthreadex( 0 );
+    //_endthreadex( 0 );
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -451,7 +464,7 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
     if ( g_chbase_nodes_cont_count <= 0 )
         {
         final();
-        BUG_LOG.free_instance();
+        bug_log::free_instance();
         }
 
     return 0;
@@ -459,9 +472,11 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall init_driver_thread( int prj_id )
-    {     
+    {    
     g_thread_is_terminated[ prj_id ] = 0;
     g_chbase_nodes_cont_count++;
+
+    Sleep( 100 );
 
     if ( BUG_LOG.init_window_complete() )
         {         
@@ -600,8 +615,9 @@ int final()
     {
     //-Завершение всех потоков, работающих с контроллерами.
     memset( g_thread_is_terminated, 1, sizeof( g_thread_is_terminated ) );
+    Sleep( 1 );
 
-    const int MAX_THREAD_END_WAIT_TIME = 1500;
+    const int MAX_THREAD_END_WAIT_TIME = 15000;
     for ( int i = 0; i < MAX_PROJECTS_CNT + 1; i++ )
         {
         if (  g_commctr_threads_array[ i ] )
@@ -612,9 +628,12 @@ int final()
             g_commctr_threads_array[ i ] = 0;
             }
         }
+    Sleep( 1 );
 
+    g_sync_PAC.WaitToWrite();
     delete g_PAC_descriptions;
     g_PAC_descriptions = 0;
+    g_sync_PAC.Done();
 
     delete g_alarm_manager;
     g_alarm_manager = 0;

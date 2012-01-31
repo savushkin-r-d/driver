@@ -318,6 +318,16 @@ class PAC_cmmctr_group
     public:         
         PAC_cmmctr_group();
 
+        ~PAC_cmmctr_group()
+            {
+            for ( unsigned int i = 0; i < PAC_descriptions.size(); i++ )
+                {
+                delete PAC_descriptions[ i ];
+                }
+
+            PAC_descriptions.clear();
+            }
+
         /// @brief 
         static int get_max_PAC_number();
 

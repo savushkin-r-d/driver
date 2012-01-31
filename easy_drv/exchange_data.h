@@ -114,15 +114,19 @@ struct alarm
     alarm(): type( AT_SPECIAL ), description( 0 ), enable( 0 ), group( 0 ), inhibit( 0 ),
         priority( 999 ), state( AS_ACCEPT ), suppress( 0 ), driver_id( 0 )
         {
-
         }
 
     alarm& operator = ( const alarm & copy )
         {
         if ( this != &copy ) // «ащита от неправильного самоприсваивани€.
             {
+            if ( description )
+                {
+                delete [] description;
+                description = 0;
+                }
+
             int descr_copy_len = strlen( copy.description );
-            description = 0;
             if ( descr_copy_len > 0 )
                 {
                 description = new char[ descr_copy_len + 1 ];
@@ -133,9 +137,14 @@ struct alarm
                 description = new char[ 1 ];
                 description[ 0 ] = 0;
                 }
-
+            
+            if ( group )
+                {
+                delete [] group;
+                group = 0;
+                }
+            
             int group_copy_len = strlen( copy.group );
-            group = 0;
             if ( group_copy_len > 0 )
                 {
                 group = new char[ group_copy_len + 1 ];

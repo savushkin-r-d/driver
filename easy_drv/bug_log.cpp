@@ -49,15 +49,15 @@ LRESULT bug_log_wnd::on_close(UINT, WPARAM, LPARAM, BOOL& bHandled )
     {
     if ( is_close )
         {        
-        DestroyWindow();
-        m_hWnd = 0;
-        return 0;
+        bHandled = false; //Будет выполнен обработчик по умолчанию, уничтожающий окно.        
         }
     else
         {
         ShowWindow( SW_HIDE );
-        return 0;
+        bHandled = true;
         }
+
+    return 0;
     }
 //-----------------------------------------------------------------------------
 void bug_log_wnd::create( CString window_title )
@@ -184,7 +184,7 @@ uintptr_t WINAPI bug_log::bug_log_thread( LPVOID lpParameter )
     _Module.AddMessageLoop( &loop );
     loop.Run(); 
 
-    _endthreadex( 0 );        
+    //_endthreadex( 0 );        
     return 0;
     } 
 //-----------------------------------------------------------------------------

@@ -182,12 +182,12 @@ int PAC_cmmctr::get_PAC_info()
 
         const char *in_name = get_str_param_from_Lua( "PAC_name", 
             "int PAC_cmmctr::get_PAC_info()" );
-
+        
         if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
-                PAC_address.c_str(), in_name, PAC_name );
+                PAC_address.c_str(), in_name, PAC_name.c_str() );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = false;
             return -3;

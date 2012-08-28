@@ -26,8 +26,7 @@ int tcp_cmmctr::isInitialized = 0;
 //    2 - добавлен механизм сохранени€ параметров и их автоматического
 //    восстановлени€ после сбо€ (замены PAC).
 
-u_int_2 G_PROTOCOL_VERSION_V1         = 100;
-u_int_2 G_CURRENT_PROTOCOL_VERSION    = 101;
+u_int_2 G_CURRENT_PROTOCOL_VERSION    = 102;
 
 int abstract_cmmctr::count = 0;
 
@@ -93,10 +92,10 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
         "\n"
         "local cmd\n"
         "if type( val ) == 'string' then\n"
-        "    cmd = string.format( 'sys.%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
+        "    cmd = string.format( '_%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
         "        obj_name, prop, n, val )\n"
         "else\n"
-        "    cmd = string.format( 'sys.%s:set_cmd( \"%s\", %s, %s )',\n" 
+        "    cmd = string.format( '_%s:set_cmd( \"%s\", %s, %s )',\n" 
         "        obj_name, prop, n, val )\n"
         "end\n"
         "\n"
@@ -168,8 +167,7 @@ int PAC_cmmctr::get_PAC_info()
         PAC_protocol_version = get_int_param_from_Lua( "protocol_version", 
             "int PAC_cmmctr::get_PAC_info()" );
 
-        if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION && 
-            PAC_protocol_version != G_PROTOCOL_VERSION_V1 )
+        if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "ѕротокол PAC версии %d - должна быть %d!",
@@ -200,13 +198,10 @@ int PAC_cmmctr::get_PAC_info()
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
         
         //ѕроверка на сброс параметров в PAC.
-        if ( PAC_protocol_version > G_PROTOCOL_VERSION_V1 )
-            {
-            PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
-                "int PAC_cmmctr::get_PAC_info()" );
+        PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
+            "int PAC_cmmctr::get_PAC_info()" );
 
-            check_PAC_params();
-            }        
+        check_PAC_params();
 
         return PAC_protocol_version;
         }    

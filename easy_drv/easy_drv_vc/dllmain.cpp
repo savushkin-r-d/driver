@@ -54,7 +54,6 @@ int    g_commctr_threads_count = 0;
 // Используется для проверки соответствия DLL и версии в PAC.
 extern u_int_2 G_CURRENT_PROTOCOL_VERSION;
 
-extern u_int_2 G_PROTOCOL_VERSION_V1;
 //-----------------------------------------------------------------------------
 BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -186,18 +185,6 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     
     while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )
         {
-        PAC_com->get_dev_synch_access()->WaitToWrite();
-        res = PAC_com->get_PAC_info();//Получение информации от PAC.
-        PAC_com->get_dev_synch_access()->Done();
-
-        if ( res <= 0 )
-            {
-            Sleep( 2 * sleep_time );
-            continue;
-            }
-
-        int PAC_program_version = res;
-
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
@@ -239,19 +226,15 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 break;
                 }
 
-            if ( PAC_program_version > G_PROTOCOL_VERSION_V1 )
-                {
-                //Пытаемся получить параметры всех устройств контроллера.
-                int CRC = PAC_com->get_PAC_params_CRC();
-                if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
-                    {                
-                    PAC_com->backup_PAC_params();
-                    PAC_com->set_saved_CRC( CRC );
-                    }
+            //Пытаемся получить параметры всех устройств контроллера.
+            int CRC = PAC_com->get_PAC_params_CRC();
+            if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
+                {                
+                PAC_com->backup_PAC_params();
+                PAC_com->set_saved_CRC( CRC );
+                }
 
-                PAC_com->get_PAC_errors();
-
-                } // if ( PAC_program_version > G_PROTOCOL_VERSION_V1 )
+            PAC_com->get_PAC_errors();
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
 

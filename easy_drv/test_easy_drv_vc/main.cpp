@@ -3,8 +3,6 @@
 
 #include <stdio.h> 
 
-#include <vld.h>
-
 
 #define uchar unsigned char 
 #define uint  unsigned int 

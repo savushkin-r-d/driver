@@ -50,10 +50,9 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
         "description = \"Нет связи с контроллером проекта '", PAC_name, "'!\"," );
 
     sprintf( str + strlen( str ), "%s\n", "type        = AT_SPECIAL," );
-    sprintf( str + strlen( str ), "%s\n", "group       = 'Ошибка связи'," );
+    sprintf( str + strlen( str ), "%s\n", "group       = 'Авария'," );
     sprintf( str + strlen( str ), "%s\n", "priority    = 1," );
     sprintf( str + strlen( str ), "%s\n", "state       = AS_ALARM," );
-    sprintf( str + strlen( str ), "%s\n", "suppress    = false," );
     sprintf( str + strlen( str ), "%s\n", "}" );
 
     int res = luaL_dostring( lua_state, str ); 

@@ -44,7 +44,7 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     PAC_params_CRC( 0 ),
     is_process_PAC_params( false )
     {
-    *is_connected         = true;
+    *is_connected         = false;
     *has_got_PAC_devices  = false;
 
     PAC_Lua_state = lua_open();  /* create state */

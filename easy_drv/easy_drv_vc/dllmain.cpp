@@ -234,7 +234,9 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 PAC_com->set_saved_CRC( CRC );
                 }
 
+            //Получаем ошибки устройств и объектов.
             PAC_com->get_PAC_errors();
+
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
 
@@ -636,7 +638,31 @@ EXPORT int __stdcall get_alarms( unsigned char driver_id, all_alarm &alarms )
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
     error_cmd *errors )
-    {      
+    {   
+    if ( g_PAC_descriptions->get_PAC( PAC_id ) != 0 )
+        {
+        std::string Lua_str = " ";
+        Lua_str[ 0 ] = 104;
+
+        for ( int i = 0; i < count; i++ )
+            {
+            char tmp_str[ 200 ];
+
+            snprintf( tmp_str, sizeof( tmp_str ),
+                "dev_errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+                errors[ i ].cmd, 
+                errors[ i ].object_type, errors[ i ].object_number,
+                errors[ i ].object_alarm_number );
+
+            Lua_str += tmp_str;
+            }
+
+        const int SERVICE_ID = 1;
+        g_PAC_descriptions->get_PAC( PAC_id )->get_cmmctr()->send_2_PAC( SERVICE_ID, 
+            Lua_str.c_str(), Lua_str.length() );
+        }        
+
+
     return 0;
     }
 //-----------------------------------------------------------------------------

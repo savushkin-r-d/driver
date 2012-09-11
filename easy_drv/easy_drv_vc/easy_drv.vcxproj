@@ -73,6 +73,7 @@
     </PostBuildEvent>
     <PreBuildEvent>
       <Command>tolua++ -n PAC_dev -o "..\errors_lua.cpp" "..\tolua++\pkg\errors.pkg"</Command>
+      <Message>Генерация скрипта Lua</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

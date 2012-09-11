@@ -26,44 +26,13 @@ enum ALARM_TYPE
     AT_RATE_OF_CHANGE,
     AT_SPECIAL,
     };
-
-
-enum OBJECT_TYPE      ///< Тип объекта, для которого возникла тревога.
-    {
-    OT_UNKNOWN,
-    OT_PAC,           ///< PAC.
-    };
-
-enum ALARM_CLASS      ///< Класс тревоги.
-    {
-    AC_UNKNOWN,
-    AC_NO_CONNECTION, ///< Ошибка связи.
-
-    AC_COM_DRIVER,    ///< Ошибка работы с COM-портом.
-    AC_RUNTIME_ERROR, ///< Ошибки во время работы.
-    };
-
-enum ALARM_SUBCLASS         ///< Подкласс тревоги.
-    {
-    //AC_NO_CONNECTION,     ///< Ошибка связи.
-    AS_WAGO = 1,            ///< Ошибки модулей WAGO.
-    AS_PANEL,               ///< Ошибки панелей EasyView.
-    AS_MODBUS_DEVICE,       ///< Ошибки устройства, опрашиваемого по Modbus.
-
-    AS_EASYSERVER = 5,      ///< Ошибки EasyServer.
-
-    //AC_RUNTIME_ERROR,     ///< Ошибки во время работы.
-    AS_EMERGENCY_BUTTON = 1,///< Нажата аварийная кнопка.
-    };
 //-----------------------------------------------------------------------------
 /// @brief Глобальный идентификатор тревоги. 
 struct alarm_id
     {
     int object_type;
     int object_number;
-    int object_alarm_number;
-
-	alarm_id();
+    int object_alarm_number;	
     };
 //-----------------------------------------------------------------------------
 struct alarm_params 
@@ -145,14 +114,21 @@ function get_alarm( project_description_id, n )
 
 			a = alarm:new() 
 			a.type = Lua_a.type or AT_SPECIAL 
-			a.description = Lua_a.description or "неизвестная ошибка" 
-			a.enable = Lua_a.enable or 0
-			a.group = Lua_a.group or "неизвестная группа" 
 
-			a.inhibit = Lua_a.inhibit or 0
+			a.description = Lua_a.description or "неизвестная ошибка" 
+			a.group		  = Lua_a.group or "?" 
+
+			a.enable   = Lua_a.enable or 0
+			a.suppress = Lua_a.suppress or false			
+
+			a.inhibit  = Lua_a.inhibit or 0
 			a.priority = Lua_a.priority or 999
-			a.state = Lua_a.state or AS_ALARM
-			a.id = Lua_a.id or alarm_id:new()
+			a.state    = Lua_a.state or AS_ALARM
+
+			a.id.object_type		 = Lua_a.id_type or 0
+			a.id.object_number		 = Lua_a.id_n or 0
+			a.id.object_alarm_number = Lua_a.id_object_alarm_number or 0
+
 			a.driver_id = project_description_id			
 		end
     end

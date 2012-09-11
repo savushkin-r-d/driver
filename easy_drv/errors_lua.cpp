@@ -1,6 +1,6 @@
 /*
 ** Lua binding: PAC_dev
-** Generated automatically by tolua++-1.0.92 on 07/30/12 17:00:10.
+** Generated automatically by tolua++-1.0.92 on 09/11/12 10:43:09.
 */
 
 #ifndef __cplusplus
@@ -22,13 +22,6 @@ TOLUA_API int  tolua_PAC_dev_open (lua_State* tolua_S);
 static int tolua_collect_alarm (lua_State* tolua_S)
 {
  alarm* self = (alarm*) tolua_tousertype(tolua_S,1,0);
-	Mtolua_delete(self);
-	return 0;
-}
-
-static int tolua_collect_alarm_id (lua_State* tolua_S)
-{
- alarm_id* self = (alarm_id*) tolua_tousertype(tolua_S,1,0);
 	Mtolua_delete(self);
 	return 0;
 }
@@ -130,63 +123,6 @@ static int tolua_set_alarm_id_object_alarm_number(lua_State* tolua_S)
   self->object_alarm_number = ((int)  tolua_tonumber(tolua_S,2,0))
 ;
  return 0;
-}
-#endif //#ifndef TOLUA_DISABLE
-
-/* method: new of class  alarm_id */
-#ifndef TOLUA_DISABLE_tolua_PAC_dev_alarm_id_new00
-static int tolua_PAC_dev_alarm_id_new00(lua_State* tolua_S)
-{
-#ifndef TOLUA_RELEASE
- tolua_Error tolua_err;
- if (
-     !tolua_isusertable(tolua_S,1,"alarm_id",0,&tolua_err) ||
-     !tolua_isnoobj(tolua_S,2,&tolua_err)
- )
-  goto tolua_lerror;
- else
-#endif
- {
-  {
-   alarm_id* tolua_ret = (alarm_id*)  Mtolua_new((alarm_id)());
-    tolua_pushusertype(tolua_S,(void*)tolua_ret,"alarm_id");
-  }
- }
- return 1;
-#ifndef TOLUA_RELEASE
- tolua_lerror:
- tolua_error(tolua_S,"#ferror in function 'new'.",&tolua_err);
- return 0;
-#endif
-}
-#endif //#ifndef TOLUA_DISABLE
-
-/* method: new_local of class  alarm_id */
-#ifndef TOLUA_DISABLE_tolua_PAC_dev_alarm_id_new00_local
-static int tolua_PAC_dev_alarm_id_new00_local(lua_State* tolua_S)
-{
-#ifndef TOLUA_RELEASE
- tolua_Error tolua_err;
- if (
-     !tolua_isusertable(tolua_S,1,"alarm_id",0,&tolua_err) ||
-     !tolua_isnoobj(tolua_S,2,&tolua_err)
- )
-  goto tolua_lerror;
- else
-#endif
- {
-  {
-   alarm_id* tolua_ret = (alarm_id*)  Mtolua_new((alarm_id)());
-    tolua_pushusertype(tolua_S,(void*)tolua_ret,"alarm_id");
-    tolua_register_gc(tolua_S,lua_gettop(tolua_S));
-  }
- }
- return 1;
-#ifndef TOLUA_RELEASE
- tolua_lerror:
- tolua_error(tolua_S,"#ferror in function 'new'.",&tolua_err);
- return 0;
-#endif
 }
 #endif //#ifndef TOLUA_DISABLE
 
@@ -927,29 +863,11 @@ TOLUA_API int tolua_PAC_dev_open (lua_State* tolua_S)
   tolua_constant(tolua_S,"AT_DEVIATION",AT_DEVIATION);
   tolua_constant(tolua_S,"AT_RATE_OF_CHANGE",AT_RATE_OF_CHANGE);
   tolua_constant(tolua_S,"AT_SPECIAL",AT_SPECIAL);
-  tolua_constant(tolua_S,"OT_UNKNOWN",OT_UNKNOWN);
-  tolua_constant(tolua_S,"OT_PAC",OT_PAC);
-  tolua_constant(tolua_S,"AC_UNKNOWN",AC_UNKNOWN);
-  tolua_constant(tolua_S,"AC_NO_CONNECTION",AC_NO_CONNECTION);
-  tolua_constant(tolua_S,"AC_COM_DRIVER",AC_COM_DRIVER);
-  tolua_constant(tolua_S,"AC_RUNTIME_ERROR",AC_RUNTIME_ERROR);
-  tolua_constant(tolua_S,"AS_WAGO",AS_WAGO);
-  tolua_constant(tolua_S,"AS_PANEL",AS_PANEL);
-  tolua_constant(tolua_S,"AS_MODBUS_DEVICE",AS_MODBUS_DEVICE);
-  tolua_constant(tolua_S,"AS_EASYSERVER",AS_EASYSERVER);
-  tolua_constant(tolua_S,"AS_EMERGENCY_BUTTON",AS_EMERGENCY_BUTTON);
-  #ifdef __cplusplus
-  tolua_cclass(tolua_S,"alarm_id","alarm_id","",tolua_collect_alarm_id);
-  #else
   tolua_cclass(tolua_S,"alarm_id","alarm_id","",NULL);
-  #endif
   tolua_beginmodule(tolua_S,"alarm_id");
    tolua_variable(tolua_S,"object_type",tolua_get_alarm_id_object_type,tolua_set_alarm_id_object_type);
    tolua_variable(tolua_S,"object_number",tolua_get_alarm_id_object_number,tolua_set_alarm_id_object_number);
    tolua_variable(tolua_S,"object_alarm_number",tolua_get_alarm_id_object_alarm_number,tolua_set_alarm_id_object_alarm_number);
-   tolua_function(tolua_S,"new",tolua_PAC_dev_alarm_id_new00);
-   tolua_function(tolua_S,"new_local",tolua_PAC_dev_alarm_id_new00_local);
-   tolua_function(tolua_S,".call",tolua_PAC_dev_alarm_id_new00_local);
   tolua_endmodule(tolua_S);
   tolua_cclass(tolua_S,"alarm_params","alarm_params","",NULL);
   tolua_beginmodule(tolua_S,"alarm_params");
@@ -1030,25 +948,34 @@ TOLUA_API int tolua_PAC_dev_open (lua_State* tolua_S)
     101,115, 99,114,105,112,116,105,111,110, 32, 61, 32, 76,117,
      97, 95, 97, 46,100,101,115, 99,114,105,112,116,105,111,110,
      32,111,114, 32, 34,237,229,232,231,226,229,241,242,237,224,
-    255, 32,238,248,232,225,234,224, 34, 10, 97, 46,101,110, 97,
-     98,108,101, 32, 61, 32, 76,117, 97, 95, 97, 46,101,110, 97,
-     98,108,101, 32,111,114, 32, 48, 10, 97, 46,103,114,111,117,
-    112, 32, 61, 32, 76,117, 97, 95, 97, 46,103,114,111,117,112,
-     32,111,114, 32, 34,237,229,232,231,226,229,241,242,237,224,
-    255, 32,227,240,243,239,239,224, 34, 10, 97, 46,105,110,104,
-    105, 98,105,116, 32, 61, 32, 76,117, 97, 95, 97, 46,105,110,
-    104,105, 98,105,116, 32,111,114, 32, 48, 10, 97, 46,112,114,
-    105,111,114,105,116,121, 32, 61, 32, 76,117, 97, 95, 97, 46,
-    112,114,105,111,114,105,116,121, 32,111,114, 32, 57, 57, 57,
-     10, 97, 46,115,116, 97,116,101, 32, 61, 32, 76,117, 97, 95,
-     97, 46,115,116, 97,116,101, 32,111,114, 32, 65, 83, 95, 65,
-     76, 65, 82, 77, 10, 97, 46,105,100, 32, 61, 32, 76,117, 97,
-     95, 97, 46,105,100, 32,111,114, 32, 97,108, 97,114,109, 95,
-    105,100, 58,110,101,119, 40, 41, 10, 97, 46,100,114,105,118,
-    101,114, 95,105,100, 32, 61, 32,112,114,111,106,101, 99,116,
-     95,100,101,115, 99,114,105,112,116,105,111,110, 95,105,100,
-     10,101,110,100, 10,101,110,100, 10,114,101,116,117,114,110,
-     32, 97, 10,101,110,100, 45, 45, 45, 45,32
+    255, 32,238,248,232,225,234,224, 34, 10, 97, 46,103,114,111,
+    117,112, 32, 61, 32, 76,117, 97, 95, 97, 46,103,114,111,117,
+    112, 32,111,114, 32, 34, 63, 34, 10, 97, 46,101,110, 97, 98,
+    108,101, 32, 61, 32, 76,117, 97, 95, 97, 46,101,110, 97, 98,
+    108,101, 32,111,114, 32, 48, 10, 97, 46,115,117,112,112,114,
+    101,115,115, 32, 61, 32, 76,117, 97, 95, 97, 46,115,117,112,
+    112,114,101,115,115, 32,111,114, 32,102, 97,108,115,101, 10,
+     97, 46,105,110,104,105, 98,105,116, 32, 61, 32, 76,117, 97,
+     95, 97, 46,105,110,104,105, 98,105,116, 32,111,114, 32, 48,
+     10, 97, 46,112,114,105,111,114,105,116,121, 32, 61, 32, 76,
+    117, 97, 95, 97, 46,112,114,105,111,114,105,116,121, 32,111,
+    114, 32, 57, 57, 57, 10, 97, 46,115,116, 97,116,101, 32, 61,
+     32, 76,117, 97, 95, 97, 46,115,116, 97,116,101, 32,111,114,
+     32, 65, 83, 95, 65, 76, 65, 82, 77, 10, 97, 46,105,100, 46,
+    111, 98,106,101, 99,116, 95,116,121,112,101, 32, 61, 32, 76,
+    117, 97, 95, 97, 46,105,100, 95,116,121,112,101, 32,111,114,
+     32, 48, 10, 97, 46,105,100, 46,111, 98,106,101, 99,116, 95,
+    110,117,109, 98,101,114, 32, 61, 32, 76,117, 97, 95, 97, 46,
+    105,100, 95,110, 32,111,114, 32, 48, 10, 97, 46,105,100, 46,
+    111, 98,106,101, 99,116, 95, 97,108, 97,114,109, 95,110,117,
+    109, 98,101,114, 32, 61, 32, 76,117, 97, 95, 97, 46,105,100,
+     95,111, 98,106,101, 99,116, 95, 97,108, 97,114,109, 95,110,
+    117,109, 98,101,114, 32,111,114, 32, 48, 10, 97, 46,100,114,
+    105,118,101,114, 95,105,100, 32, 61, 32,112,114,111,106,101,
+     99,116, 95,100,101,115, 99,114,105,112,116,105,111,110, 95,
+    105,100, 10,101,110,100, 10,101,110,100, 10,114,101,116,117,
+    114,110, 32, 97, 10,101,110,100, 45, 45, 45, 45, 45, 45, 45,
+     45, 45, 45,32
    };
    tolua_dobuffer(tolua_S,(char*)B,sizeof(B),"tolua: embedded Lua code 1");
    lua_settop(tolua_S, top);

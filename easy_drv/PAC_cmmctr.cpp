@@ -408,19 +408,19 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
 
     lua_gc( PAC_Lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
 
-#ifdef DEBUG
+#ifdef DEBUG_LUA_MEM
     static int counter = 0;
     counter++;
     if ( counter > 100 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory = %d", 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory (devices data) = %d", 
             lua_gc( PAC_Lua_state, LUA_GCCOUNT, 0 ) * 1024 +
             lua_gc( PAC_Lua_state, LUA_GCCOUNTB, 0 ) );
         BUG_LOG.add_msg( get_name(), get_address() );
 
         counter = 0;
         }
-#endif // DEBUG
+#endif // DEBUG_LUA_MEM
 
 
     char buff[ 1 ] = { device_communicator::CMD_GET_DEVICES_STATES };            

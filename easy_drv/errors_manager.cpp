@@ -107,19 +107,19 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
 int alarm_manager::get_alarms( unsigned char project_description_id, 
     all_alarm &project_alarms )
     {
-#ifdef DEBUG
+#ifdef DEBUG_LUA_MEM
     static int counter = 0;
     counter++;
     if ( counter > 1000 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory = %d", 
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory (alarms) = %d", 
             lua_gc( lua_state, LUA_GCCOUNT, 0 ) * 1024 +
             lua_gc( lua_state, LUA_GCCOUNTB, 0 ) );
         BUG_LOG.add_msg( "System", "Control thread" );
 
         counter = 0;
         }
-#endif // DEBUG
+#endif // DEBUG_LUA_MEM
 
     lua_gc( lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
 

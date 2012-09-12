@@ -119,7 +119,7 @@ function get_alarm( project_description_id, n )
 			a.group		  = Lua_a.group or "?" 
 
 			a.enable   = Lua_a.enable or 0
-			a.suppress = Lua_a.suppress or false			
+			a.suppress = Lua_a.suppress or 0			
 
 			a.inhibit  = Lua_a.inhibit or 0
 			a.priority = Lua_a.priority or 999

@@ -393,11 +393,11 @@
     <None Include="res\hand.cur">
       <Filter>Resource Files\cursors</Filter>
     </None>
-    <None Include="..\tolua++\pkg\errors.pkg">
-      <Filter>Source Files\tolua++\pkg</Filter>
-    </None>
     <None Include="..\versions.txt">
       <Filter>Other</Filter>
+    </None>
+    <None Include="..\tolua++\pkg\errors.hh">
+      <Filter>Source Files\tolua++\pkg</Filter>
     </None>
   </ItemGroup>
 </Project>

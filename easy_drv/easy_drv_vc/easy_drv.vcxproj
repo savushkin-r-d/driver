@@ -72,7 +72,7 @@
       <Message>Копирование в папку драйверов</Message>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>tolua++ -n PAC_dev -o "..\errors_lua.cpp" "..\tolua++\pkg\errors.pkg"</Command>
+      <Command>tolua++ -n PAC_dev -o "..\errors_lua.cpp" "..\tolua++\pkg\errors.hh"</Command>
       <Message>Генерация скрипта Lua</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -394,7 +394,7 @@
     <ResourceCompile Include="easy_drv.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\tolua++\pkg\errors.pkg" />
+    <None Include="..\tolua++\pkg\errors.hh" />
     <None Include="..\versions.txt" />
     <None Include="res\divider.cur" />
     <None Include="res\hand.cur" />

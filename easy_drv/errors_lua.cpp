@@ -1,6 +1,6 @@
 /*
 ** Lua binding: PAC_dev
-** Generated automatically by tolua++-1.0.92 on 10/31/12 15:03:10.
+** Generated automatically by tolua++-1.0.92 on 12/05/12 16:13:26.
 */
 
 #ifndef __cplusplus
@@ -853,11 +853,6 @@ TOLUA_API int tolua_PAC_dev_open (lua_State* tolua_S)
   tolua_constant(tolua_S,"AS_ALARM",AS_ALARM);
   tolua_constant(tolua_S,"AS_RETURN",AS_RETURN);
   tolua_constant(tolua_S,"AS_ACCEPT",AS_ACCEPT);
-  tolua_constant(tolua_S,"PT_SYSTEM",PT_SYSTEM);
-  tolua_constant(tolua_S,"PT_CRITICAL",PT_CRITICAL);
-  tolua_constant(tolua_S,"PT_IMPOTENT",PT_IMPOTENT);
-  tolua_constant(tolua_S,"PT_UNIMPOTENT",PT_UNIMPOTENT);
-  tolua_constant(tolua_S,"P_INFORMATIONAL",P_INFORMATIONAL);
   tolua_constant(tolua_S,"AT_DISCRETE",AT_DISCRETE);
   tolua_constant(tolua_S,"AT_VALUE",AT_VALUE);
   tolua_constant(tolua_S,"AT_DEVIATION",AT_DEVIATION);

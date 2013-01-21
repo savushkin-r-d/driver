@@ -191,37 +191,38 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
     if ( alarms_cnt )
         {                
         g_alarms[ project_description_id ] = new alarm[ alarms_cnt ];
-        }
 
-    for ( unsigned int i = 0; i < alarms_cnt; i++ )
-        {
-        lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarm" );  
-        lua_pushnumber( lua_state, project_description_id );
-        lua_pushnumber( lua_state, i + 1 );
-        res = lua_pcall( lua_state, 2, 1, 0 );
 
-        alarm *new_alarm = 0;
-
-        if( res != 0 )
-            {                    
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "get_alarms(...) error - '%s'!",
-                lua_tostring( lua_state, -1 ) );
-
-            BUG_LOG.add_error_msg( "System", 
-                g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
-#ifdef DEBUG
-            DebugBreak();
-#endif // DEBUG
-            break;
-            }
-        else
+        for ( unsigned int i = 0; i < alarms_cnt; i++ )
             {
-            new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
-            lua_remove( lua_state, -1 );
+            lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarm" );  
+            lua_pushnumber( lua_state, project_description_id );
+            lua_pushnumber( lua_state, i + 1 );
+            res = lua_pcall( lua_state, 2, 1, 0 );
 
-            g_alarms[ project_description_id ][ i ] = *new_alarm;
-            }                                
+            alarm *new_alarm = 0;
+
+            if( res != 0 )
+                {                    
+                snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                    "get_alarms(...) error - '%s'!",
+                    lua_tostring( lua_state, -1 ) );
+
+                BUG_LOG.add_error_msg( "System", 
+                    g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+                DebugBreak();
+#endif // DEBUG
+                break;
+                }
+            else
+                {
+                new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
+                lua_remove( lua_state, -1 );
+
+                g_alarms[ project_description_id ][ i ] = *new_alarm;
+                }                                
+            }
         }
 
     project_alarms.alarms = g_alarms[ project_description_id ];

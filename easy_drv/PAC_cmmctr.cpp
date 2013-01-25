@@ -170,7 +170,7 @@ int PAC_cmmctr::get_PAC_info()
         if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Протокол PAC версии %d - должна быть %d!",
+                "Протокол PAC версии %d - должна быть %u!",
                 PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
@@ -192,7 +192,7 @@ int PAC_cmmctr::get_PAC_info()
             }
 
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Версия драйвера: PAC - %d, сервер - %d; имя PAC - \"%s\".",
+            "Версия драйвера: PAC - %d, сервер - %u; имя PAC - \"%s\".",
             PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION,
             PAC_name.c_str() );
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
@@ -566,8 +566,7 @@ int PAC_cmmctr::check_PAC_params()
     if ( is_reset_params )
         {
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Параметры в PAC были сброшены к значениям по умолчанию.",
-            PAC_protocol_version, PAC_name.c_str() );
+            "Параметры в PAC были сброшены к значениям по умолчанию." );
 
         BUG_LOG.add_warning_msg( PAC_name.c_str(), PAC_address.c_str() );
 
@@ -612,8 +611,7 @@ int PAC_cmmctr::check_PAC_params()
         if ( false == params_restore_flag )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Ошибка восстановления параметров в PAC.",
-                PAC_protocol_version, PAC_name.c_str() );
+                "Ошибка восстановления параметров в PAC." );
             BUG_LOG.add_error_msg( PAC_name.c_str(), PAC_address.c_str() );
             }
         }
@@ -1054,7 +1052,8 @@ int tcp_cmmctr::Connect()
     sock_address.sin_port = htons( ( u_short ) port);
     sock_address.sin_addr.s_addr = inet_addr(ip_address);
 
-    res = connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
+    connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
+    //res = connect( sock, ( SOCKADDR* ) &sock_address, sizeof( sockaddr_in ) );
     //if ( res == SOCKET_ERROR )
     //    {
     //    snprintf( bug_log::msg, bug_log::C_MSG_SIZE,

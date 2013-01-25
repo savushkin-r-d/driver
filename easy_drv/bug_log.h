@@ -159,6 +159,10 @@ class list_message_data : public CListImpl< list_message_data >
 class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
     {
     public:
+        bug_log_wnd(): is_close( 0 )
+            {
+            }
+
         ~bug_log_wnd();
 
         // Карта сообщений направляет сообщения в нужные обработчики.

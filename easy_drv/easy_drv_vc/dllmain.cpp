@@ -59,9 +59,11 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,
     LPVOID lpReserved )
     {
+    HRESULT hRes;
+
     switch ( ul_reason_for_call )
         {
-    case DLL_PROCESS_ATTACH:  
+    case DLL_PROCESS_ATTACH:          
         try
             {
             BUG_LOG.get_instance();
@@ -82,7 +84,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             return false;
             }
 
-        _Module.Init( 0, 0, 0 );            // Инициализируем модуль.   
+        hRes = _Module.Init( 0, ( HINSTANCE ) hModule );            // Инициализируем модуль.
+        ATLASSERT( SUCCEEDED( hRes ) );
 
         //Создаем поток, который будет следить, есть ли связь с 
         // контроллерами. В случае ее пропадания\появления 
@@ -161,7 +164,7 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
 //-----------------------------------------------------------------------------
 uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     {		        
-#pragma chMSG( Тестирование комментария! )
+//#pragma chMSG( Тестирование комментария! )
 
     PAC_cmmctr *PAC_com = ( PAC_cmmctr* ) lpParameter;
     int res;
@@ -423,6 +426,8 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
     return 0;
     }
 //-----------------------------------------------------------------------------
+const int MAX_THREAD_END_WAIT_TIME = 10000;
+
 EXPORT int __stdcall stop_driver_thread( int prj_id )
     {
     if ( prj_id > MAX_PROJECTS_CNT )
@@ -432,8 +437,7 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
 
     g_thread_is_terminated[ prj_id ] = 1;
     Sleep( 1 );
-
-    const int MAX_THREAD_END_WAIT_TIME = 10000;
+        
     if (  g_commctr_threads_array[ prj_id ] )
         {
         WaitForSingleObject( g_commctr_threads_array[ prj_id ],
@@ -452,7 +456,7 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
     if ( g_chbase_nodes_cont_count <= 0 )
         {
         final();
-        bug_log::free_instance();
+        bug_log::free_instance();        
         }
 
     return 0;
@@ -625,6 +629,12 @@ int final()
 
     delete g_alarm_manager;
     g_alarm_manager = 0;
+
+    for ( int i = 0; i < MAX_PROJECTS_CNT; i++ )
+        {
+        delete [] g_alarms[ i ];
+        g_alarms[ i ] = 0;
+        }
 
     return 0;
     }

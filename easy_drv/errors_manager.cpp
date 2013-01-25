@@ -200,8 +200,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
             lua_pushnumber( lua_state, i + 1 );
             res = lua_pcall( lua_state, 2, 1, 0 );
 
-            alarm *new_alarm = 0;
-
             if( res != 0 )
                 {                    
                 snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
@@ -217,7 +215,7 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
                 }
             else
                 {
-                new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
+                alarm *new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
                 lua_remove( lua_state, -1 );
 
                 g_alarms[ project_description_id ][ i ] = *new_alarm;

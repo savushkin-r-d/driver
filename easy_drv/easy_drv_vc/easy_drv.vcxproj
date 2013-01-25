@@ -46,6 +46,7 @@
     <SourcePath />
     <ExcludePath />
     <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>
+    <TargetName>$(ProjectName)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

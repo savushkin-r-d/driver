@@ -690,7 +690,7 @@ static int tolua_set_alarm_suppress(lua_State* tolua_S)
   if (!tolua_isboolean(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->suppress = ((bool)  tolua_toboolean(tolua_S,2,0))
+  self->suppress = tolua_toboolean(tolua_S,2,0) != 0;
 ;
  return 0;
 }

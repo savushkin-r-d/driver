@@ -92,10 +92,10 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
         "\n"
         "local cmd\n"
         "if type( val ) == 'string' then\n"
-        "    cmd = string.format( '_%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
+        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
         "        obj_name, prop, n, val )\n"
         "else\n"
-        "    cmd = string.format( '_%s:set_cmd( \"%s\", %s, %s )',\n" 
+        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, %s )',\n" 
         "        obj_name, prop, n, val )\n"
         "end\n"
         "\n"
@@ -332,7 +332,8 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
 
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
+         isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
     exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
 
     res = get_str_param_from_Lua( "res",
@@ -371,7 +372,8 @@ double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
 
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
+        isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
     exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false );
 
     res = get_double_param_from_Lua( "res",

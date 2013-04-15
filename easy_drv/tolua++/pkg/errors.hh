@@ -61,7 +61,7 @@ struct alarm
 
     ALARM_STATE state;  ///< Состояние тревоги.
 
-    unsigned char suppress;  ///< Подавление тревоги клиентами.
+    bool     suppress;       ///< Подавление тревоги клиентами.
     alarm_id id;			 ///< Глобальный идентификатор тревоги.    
     unsigned char driver_id; ///< id драйвера.
 
@@ -110,7 +110,7 @@ function get_alarm( project_description_id, n )
 			a.group		  = Lua_a.group or "?" 
 
 			a.enable   = Lua_a.enable or 0
-			a.suppress = Lua_a.suppress or 0			
+			a.suppress = Lua_a.suppress or false			
 
 			a.inhibit  = Lua_a.inhibit or 0
 			a.priority = Lua_a.priority or 999

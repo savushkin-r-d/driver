@@ -1,6 +1,6 @@
 /*
 ** Lua binding: PAC_dev
-** Generated automatically by tolua++-1.0.92 on 12/05/12 16:13:26.
+** Generated automatically by tolua++-1.0.92 on 03/13/13 16:22:02.
 */
 
 #ifndef __cplusplus
@@ -667,30 +667,30 @@ static int tolua_set_alarm_state(lua_State* tolua_S)
 #endif //#ifndef TOLUA_DISABLE
 
 /* get function: suppress of class  alarm */
-#ifndef TOLUA_DISABLE_tolua_get_alarm_unsigned_suppress
-static int tolua_get_alarm_unsigned_suppress(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_get_alarm_suppress
+static int tolua_get_alarm_suppress(lua_State* tolua_S)
 {
   alarm* self = (alarm*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'suppress'",NULL);
 #endif
-  tolua_pushnumber(tolua_S,(lua_Number)self->suppress);
+  tolua_pushboolean(tolua_S,(bool)self->suppress);
  return 1;
 }
 #endif //#ifndef TOLUA_DISABLE
 
 /* set function: suppress of class  alarm */
-#ifndef TOLUA_DISABLE_tolua_set_alarm_unsigned_suppress
-static int tolua_set_alarm_unsigned_suppress(lua_State* tolua_S)
+#ifndef TOLUA_DISABLE_tolua_set_alarm_suppress
+static int tolua_set_alarm_suppress(lua_State* tolua_S)
 {
   alarm* self = (alarm*)  tolua_tousertype(tolua_S,1,0);
 #ifndef TOLUA_RELEASE
   tolua_Error tolua_err;
   if (!self) tolua_error(tolua_S,"invalid 'self' in accessing variable 'suppress'",NULL);
-  if (!tolua_isnumber(tolua_S,2,0,&tolua_err))
+  if (!tolua_isboolean(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->suppress = ((unsigned char)  tolua_tonumber(tolua_S,2,0))
+  self->suppress = ((bool)  tolua_toboolean(tolua_S,2,0))
 ;
  return 0;
 }
@@ -891,7 +891,7 @@ TOLUA_API int tolua_PAC_dev_open (lua_State* tolua_S)
    tolua_variable(tolua_S,"inhibit",tolua_get_alarm_unsigned_inhibit,tolua_set_alarm_unsigned_inhibit);
    tolua_variable(tolua_S,"priority",tolua_get_alarm_priority,tolua_set_alarm_priority);
    tolua_variable(tolua_S,"state",tolua_get_alarm_state,tolua_set_alarm_state);
-   tolua_variable(tolua_S,"suppress",tolua_get_alarm_unsigned_suppress,tolua_set_alarm_unsigned_suppress);
+   tolua_variable(tolua_S,"suppress",tolua_get_alarm_suppress,tolua_set_alarm_suppress);
    tolua_variable(tolua_S,"id",tolua_get_alarm_id,tolua_set_alarm_id);
    tolua_variable(tolua_S,"driver_id",tolua_get_alarm_unsigned_driver_id,tolua_set_alarm_unsigned_driver_id);
    tolua_function(tolua_S,"new",tolua_PAC_dev_alarm_new00);
@@ -949,27 +949,27 @@ TOLUA_API int tolua_PAC_dev_open (lua_State* tolua_S)
     108,101, 32, 61, 32, 76,117, 97, 95, 97, 46,101,110, 97, 98,
     108,101, 32,111,114, 32, 48, 10, 97, 46,115,117,112,112,114,
     101,115,115, 32, 61, 32, 76,117, 97, 95, 97, 46,115,117,112,
-    112,114,101,115,115, 32,111,114, 32, 48, 10, 97, 46,105,110,
-    104,105, 98,105,116, 32, 61, 32, 76,117, 97, 95, 97, 46,105,
-    110,104,105, 98,105,116, 32,111,114, 32, 48, 10, 97, 46,112,
-    114,105,111,114,105,116,121, 32, 61, 32, 76,117, 97, 95, 97,
-     46,112,114,105,111,114,105,116,121, 32,111,114, 32, 57, 57,
-     57, 10, 97, 46,115,116, 97,116,101, 32, 61, 32, 76,117, 97,
-     95, 97, 46,115,116, 97,116,101, 32,111,114, 32, 65, 83, 95,
-     65, 76, 65, 82, 77, 10, 97, 46,105,100, 46,111, 98,106,101,
-     99,116, 95,116,121,112,101, 32, 61, 32, 76,117, 97, 95, 97,
-     46,105,100, 95,116,121,112,101, 32,111,114, 32, 48, 10, 97,
-     46,105,100, 46,111, 98,106,101, 99,116, 95,110,117,109, 98,
-    101,114, 32, 61, 32, 76,117, 97, 95, 97, 46,105,100, 95,110,
-     32,111,114, 32, 48, 10, 97, 46,105,100, 46,111, 98,106,101,
-     99,116, 95, 97,108, 97,114,109, 95,110,117,109, 98,101,114,
-     32, 61, 32, 76,117, 97, 95, 97, 46,105,100, 95,111, 98,106,
-    101, 99,116, 95, 97,108, 97,114,109, 95,110,117,109, 98,101,
-    114, 32,111,114, 32, 48, 10, 97, 46,100,114,105,118,101,114,
-     95,105,100, 32, 61, 32,112,114,111,106,101, 99,116, 95,100,
-    101,115, 99,114,105,112,116,105,111,110, 95,105,100, 10,101,
-    110,100, 10,101,110,100, 10,114,101,116,117,114,110, 32, 97,
-     10,101,110,100, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45, 45,
+    112,114,101,115,115, 32,111,114, 32,102, 97,108,115,101, 10,
+     97, 46,105,110,104,105, 98,105,116, 32, 61, 32, 76,117, 97,
+     95, 97, 46,105,110,104,105, 98,105,116, 32,111,114, 32, 48,
+     10, 97, 46,112,114,105,111,114,105,116,121, 32, 61, 32, 76,
+    117, 97, 95, 97, 46,112,114,105,111,114,105,116,121, 32,111,
+    114, 32, 57, 57, 57, 10, 97, 46,115,116, 97,116,101, 32, 61,
+     32, 76,117, 97, 95, 97, 46,115,116, 97,116,101, 32,111,114,
+     32, 65, 83, 95, 65, 76, 65, 82, 77, 10, 97, 46,105,100, 46,
+    111, 98,106,101, 99,116, 95,116,121,112,101, 32, 61, 32, 76,
+    117, 97, 95, 97, 46,105,100, 95,116,121,112,101, 32,111,114,
+     32, 48, 10, 97, 46,105,100, 46,111, 98,106,101, 99,116, 95,
+    110,117,109, 98,101,114, 32, 61, 32, 76,117, 97, 95, 97, 46,
+    105,100, 95,110, 32,111,114, 32, 48, 10, 97, 46,105,100, 46,
+    111, 98,106,101, 99,116, 95, 97,108, 97,114,109, 95,110,117,
+    109, 98,101,114, 32, 61, 32, 76,117, 97, 95, 97, 46,105,100,
+     95,111, 98,106,101, 99,116, 95, 97,108, 97,114,109, 95,110,
+    117,109, 98,101,114, 32,111,114, 32, 48, 10, 97, 46,100,114,
+    105,118,101,114, 95,105,100, 32, 61, 32,112,114,111,106,101,
+     99,116, 95,100,101,115, 99,114,105,112,116,105,111,110, 95,
+    105,100, 10,101,110,100, 10,101,110,100, 10,114,101,116,117,
+    114,110, 32, 97, 10,101,110,100, 45, 45, 45, 45, 45, 45, 45,
      45, 45, 45,32
    };
    tolua_dobuffer(tolua_S,(char*)B,sizeof(B),"tolua: embedded Lua code 1");

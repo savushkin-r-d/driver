@@ -107,12 +107,12 @@ struct alarm
     //     asAccept    - тревога подтверждена
     ALARM_STATE state;  ///< Состояние тревоги.
 
-    UCHAR  suppress;    ///< Подавление тревоги клиентами.
+    bool suppress;      ///< Подавление тревоги клиентами.
     alarm_id id;        ///< Глобальный идентификатор тревоги.    
     UCHAR driver_id;    ///< id драйвера.
 
     alarm(): type( AT_SPECIAL ), description( 0 ), enable( 0 ), group( 0 ), inhibit( 0 ),
-        priority( 999 ), state( AS_ACCEPT ), suppress( 0 ), driver_id( 0 )
+        priority( 999 ), state( AS_ACCEPT ), suppress( false ), driver_id( 0 )
         {
         }
 

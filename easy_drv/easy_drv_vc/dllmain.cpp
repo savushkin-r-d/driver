@@ -238,7 +238,9 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 }
 
             //Получаем ошибки устройств и объектов.
+            PAC_com->get_dev_synch_access()->WaitToWrite();
             PAC_com->get_PAC_errors();
+            PAC_com->get_dev_synch_access()->Done();
 
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
@@ -639,9 +641,16 @@ int final()
     return 0;
     }
 //-----------------------------------------------------------------------------
-EXPORT int __stdcall get_alarms( unsigned char driver_id, all_alarm &alarms )
+EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
     {   
-    g_alarm_manager->get_alarms( driver_id, alarms );
+    if ( g_PAC_descriptions->get_PAC( PAC_id ) == 0 ) 
+        {
+        return 0;
+        }
+
+    g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->WaitToRead();
+    g_alarm_manager->get_alarms( PAC_id, alarms );
+    g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->Done();
 
     return 0;        
     }
@@ -664,14 +673,18 @@ EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
                 errors[ i ].object_type, errors[ i ].object_number,
                 errors[ i ].object_alarm_number );
 
-            Lua_str += tmp_str;
+            Lua_str += tmp_str;         
             }
 
         const int SERVICE_ID = 1;
+        
         g_PAC_descriptions->get_PAC( PAC_id )->get_cmmctr()->send_2_PAC( SERVICE_ID, 
             Lua_str.c_str(), Lua_str.length() );
+        
+        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->WaitToWrite();
+        g_PAC_descriptions->get_PAC( PAC_id )->get_PAC_errors();
+        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->Done();
         }        
-
 
     return 0;
     }

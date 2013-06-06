@@ -170,7 +170,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     int res;
 
     // 1 - интервал опроса контроллера.
-    int sleep_time = 510;                            //1
+    int sleep_time = 210;                            //1
     if ( PAC_com->get_cmmctr()->get_timeout() > 2000 )
         {
         sleep_time *= 2;

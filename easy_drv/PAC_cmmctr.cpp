@@ -408,7 +408,13 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     {
     if ( !cmmctr ) return OTHER_ERROR;
 
-    lua_gc( PAC_Lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
+    static unsigned long int gc_counter = 0;
+    gc_counter++;
+    if ( gc_counter % PM_GARBAGE_CYCLE == 0 )
+        {
+        // Полная уборка мусора каждые n итераций.
+        lua_gc( PAC_Lua_state, LUA_GCCOLLECT, 0 ); 
+        }
 
 #ifdef DEBUG_LUA_MEM
     static int counter = 0;

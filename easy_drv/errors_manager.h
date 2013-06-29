@@ -44,6 +44,10 @@ class alarm_manager
         enum AM_CONST
             {
             AM_MAX_COUNT = 256,
+            
+            /// @brief Число циклов получения ошибок, после которого 
+            /// происходит уборка мусора.
+            AM_GARBAGE_CYCLE = 100,
             };
 
         alarm_manager();

@@ -275,6 +275,10 @@ class PAC_cmmctr
             /// @brief ћаксимальное число ошибок обмена с PAC дл€ возникновени€
             /// ошибки св€зи.
             PM_MAX_ERRORS_COUNT = 2,
+
+            /// @brief „исло циклов обмена данными с PAC, после которого 
+            /// происходит уборка мусора.
+            PM_GARBAGE_CYCLE = 100,
             };
 
         lua_State *PAC_Lua_state;    ///< Ёкземпл€р Lua дл€ PAC.

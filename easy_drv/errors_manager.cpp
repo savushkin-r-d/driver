@@ -121,8 +121,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
         }
 #endif // DEBUG_LUA_MEM
 
-    lua_gc( lua_state, LUA_GCSTEP, 200 ); // Уборка мусора.
-
     u_int_2 id = 0;
 
     lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarms_id" );  
@@ -233,6 +231,14 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 int alarm_manager::add_PAC_errors( const char *LUA_str, 
     unsigned char project_description_id )
     {
+    static unsigned long int gc_counter = 0;
+    gc_counter++;
+    if ( gc_counter % AM_GARBAGE_CYCLE == 0 )
+        {
+        // Полная уборка мусора каждые n итераций.
+        lua_gc( lua_state, LUA_GCCOLLECT, 0 ); 
+        }
+
     int res = luaL_dostring( lua_state, LUA_str ); 
 
     if( res != 0 )

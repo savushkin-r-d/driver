@@ -880,7 +880,6 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     buff[5] = length & 0xFF;
     memcpy(buff+6,data,length);
 
-
     if ( send( sock, buff, length + 6, 0 ) == SOCKET_ERROR )
         {
         BUG_LOG.set_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
@@ -894,6 +893,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     BUG_LOG.reset_error( is_errors[ EF_SEND_ERROR ], PAC_name, 
         ip_address, "Ошибка отсылки сообщения!" );
 
+    static int recv_err_cnt = 0;
+    int RECV_MAX_ERR_CNT = 3;
     memset( in_buff, 0, sizeof( in_buff ) );
     int res = recv( sock, in_buff, 8000, 0 );
 
@@ -912,12 +913,19 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         {
         BUG_LOG.set_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
             ip_address, "Ошибка получения ответа!" );
+        recv_err_cnt++;
 
-        Disconnect();
+        if ( recv_err_cnt >= RECV_MAX_ERR_CNT )
+            {
+            BUG_LOG.add_warning_msg( PAC_name, 
+                ip_address, "Соединение разорвано." );            
+            Disconnect();            
+            }    
 
         LeaveCriticalSection( &m_cs );
         return 1;
         }
+    recv_err_cnt = 0;
     BUG_LOG.reset_error( is_errors[ EF_ANSWER_ERROR ], PAC_name, 
         ip_address, "Ошибка получения ответа!" );
 
@@ -992,7 +1000,6 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
             answer_size = 0;
 
-            Disconnect();
             LeaveCriticalSection( &m_cs );
             return 1;
             }

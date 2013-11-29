@@ -391,7 +391,7 @@ class abstract_cmmctr
 
         enum PARAMS
             {
-            P_MAX_BUFFER_SIZE = 20*1024,
+            P_MAX_BUFFER_SIZE = 30*1024,
             };
 
         /// @brief Буфер для обмена данными с контроллером.

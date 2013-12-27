@@ -188,6 +188,13 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     
     while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )
         {
+        res = PAC_com->get_PAC_info();//Получение информации от PAC.
+        if ( res <= 0 )
+            {
+            Sleep( 2 * sleep_time );
+            continue;
+            }
+
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 

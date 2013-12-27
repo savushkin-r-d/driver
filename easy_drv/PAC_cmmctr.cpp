@@ -823,7 +823,9 @@ tcp_cmmctr::tcp_cmmctr( const char *PAC_name, const char* sIP,
     sprintf_s( ip_address, 20, "%s", sIP );
 
     InitLib();
-    //Connect( 1 );
+
+    state_decompress =
+        ( qlz_state_decompress *) malloc( sizeof( qlz_state_decompress ) );
     }
 //-----------------------------------------------------------------------------
 tcp_cmmctr::~tcp_cmmctr()
@@ -942,11 +944,25 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     unsigned char *work_buff = ( unsigned char* ) in_buff;
 
     //-Проверка на правильность заголовка блока данных от PAC.
-    if ( !( work_buff[ 0 ] == 's'                   //NetId 
-        && pidx == work_buff[ 2 ] ) )
+    if ( work_buff[ 0 ] != 's' )                  //NetId         
         {
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Возвращен неверный ответ!" );        
+            "Возвращен ответ с неверным заголовком!" );        
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
+        Disconnect();
+#ifdef DEBUG
+        //        _DebugBreak();
+#endif
+
+        LeaveCriticalSection( &m_cs );
+        return 1;
+        }
+
+    if ( pidx != work_buff[ 2 ] )
+        {
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Возвращен ответ номер %d, а ожидался %d!",
+            work_buff[ 2 ], pidx );        
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
         Disconnect();
 #ifdef DEBUG
@@ -1008,6 +1024,16 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         tmp_answer_size -= res;   
         }     
 
+    int r = qlz_decompress( in_buff + 5, buff, state_decompress );
+    
+    if ( 0 == r )
+    	{
+        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Размер исходный/после декомпрессии (%d/%d)!", 
+            answer_size, r );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address );
+    	}
+    
     LeaveCriticalSection( &m_cs );
     return 0;
     }
@@ -1157,7 +1183,7 @@ void tcp_cmmctr::Disconnect()
 char* tcp_cmmctr::get_out_data( unsigned int &cnt )
     {
     cnt = answer_size;
-    return in_buff + 5;
+    return buff;
     }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

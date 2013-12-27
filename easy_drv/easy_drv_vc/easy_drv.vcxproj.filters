@@ -64,6 +64,12 @@
     <Filter Include="Other">
       <UniqueIdentifier>{72d610a8-ca97-4deb-b6dd-7a6deb288cb7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\QuickLZ">
+      <UniqueIdentifier>{812e4efd-43a5-41c3-acd0-f19bd8d9dabd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QuickLZ">
+      <UniqueIdentifier>{5a950daf-d13c-4841-8e8f-ce7ba59ec6ed}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -237,6 +243,9 @@
     <ClInclude Include="..\..\..\common\tolua++\tolua++.h">
       <Filter>Header Files\tolua++</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\common\QuickLZ\quicklz.h">
+      <Filter>Header Files\QuickLZ</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -373,6 +382,9 @@
     </ClCompile>
     <ClCompile Include="..\errors_manager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\QuickLZ\quicklz.c">
+      <Filter>Source Files\QuickLZ</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

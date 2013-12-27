@@ -24,6 +24,8 @@
 #include "SWMRG.h"
 #include "WSA_err_decode.h"
 
+#include "quicklz.h"
+
 #include "g_device.h"
 
 typedef unsigned short int u_int_2;
@@ -446,6 +448,10 @@ class tcp_cmmctr : public abstract_cmmctr
         int  Connect();
         void Disconnect();
         int  recvtimeout( UINT s, char *buf, int len, int timeout, int usec );
+
+    private:
+        qlz_state_decompress *state_decompress;
+        char buff[ 40000 + 400 ];
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

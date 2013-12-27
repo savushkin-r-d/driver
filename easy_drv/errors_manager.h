@@ -88,7 +88,8 @@ class alarm_manager
             unsigned char project_description_id );
 
     private:
-        lua_State *lua_state;    ///< Ёкземпл€р Lua дл€ работы с ошибками.
+        lua_State *lua_state;        ///< Ёкземпл€р Lua дл€ работы с ошибками.
+        CSWMRG    *lua_synch_access; ///< —инхронизаци€ обращений к Lua.
     };
 
 #endif // ERRORS_MANAGER_H

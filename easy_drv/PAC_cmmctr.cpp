@@ -106,7 +106,8 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     exec_Lua_str( Lua_F, "PAC_cmmctr(...)" );
 
     cmmctr = new tcp_cmmctr( PAC_name, 
-        this->PAC_address.c_str() + 2 /*Пропускаем IP в адресе - IP10.0.1.23*/ );
+        this->PAC_address.c_str() + 2, /*Пропускаем IP в адресе - IP10.0.1.23*/
+        port, timeout );
 
     clear_tags();
     }

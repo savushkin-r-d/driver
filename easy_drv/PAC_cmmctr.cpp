@@ -110,6 +110,8 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
         port, timeout );
 
     clear_tags();
+        
+    tags_str.reserve( 10000 );
     }
 //-----------------------------------------------------------------------------
 const char* PAC_cmmctr::get_address() const
@@ -125,6 +127,64 @@ const char*  PAC_cmmctr::get_name() const
 UINT PAC_cmmctr::get_description_id() const
     {
     return PAC_descr_id;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::get_int_param_from_Lua( const char *param_name,
+    const char *c_function_name ) const
+    {    
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
+            c_function_name, param_name );
+        BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+        }
+
+    int res = lua_tointeger( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::exec_Lua_str( const char *Lua_str, 
+    const char *error_str, bool is_print_error_msg ) const
+    {
+    int res = luaL_dostring( PAC_Lua_state, Lua_str );
+
+    if( res != 0 )
+        {
+        if ( is_print_error_msg )
+            {
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                "%s -> %s!",
+                error_str, lua_tostring( PAC_Lua_state, -1 ) );
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
+            }
+
+        lua_pop( PAC_Lua_state, 1 );
+        return 1;
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name, 
+    const char *c_function_name ) const
+    {
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        //snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+        //    "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
+        //    c_function_name, param_name );
+        //BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
+        }
+
+    const char *res = lua_tostring( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
     }
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::get_PAC_info()
@@ -209,65 +269,6 @@ int PAC_cmmctr::get_PAC_info()
 
     return 0;
     }
-
-//-----------------------------------------------------------------------------
-int PAC_cmmctr::get_int_param_from_Lua( const char *param_name,
-    const char *c_function_name ) const
-    {    
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
-    if ( lua_isnil( PAC_Lua_state, -1 ) )
-        {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
-            c_function_name, param_name );
-        BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
-        }
-
-    int res = lua_tointeger( PAC_Lua_state, -1 );
-
-    lua_remove( PAC_Lua_state, -1 );
-    return res;
-    }
-//-----------------------------------------------------------------------------
-int PAC_cmmctr::exec_Lua_str( const char *Lua_str, 
-    const char *error_str, bool is_print_error_msg ) const
-    {
-    int res = luaL_dostring( PAC_Lua_state, Lua_str );
-
-    if( res != 0 )
-        {
-        if ( is_print_error_msg )
-            {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "%s -> %s!",
-                error_str, lua_tostring( PAC_Lua_state, -1 ) );
-            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
-            }
-
-        lua_pop( PAC_Lua_state, 1 );
-        return 1;
-        }
-
-    return 0;
-    }
-//-----------------------------------------------------------------------------
-const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name, 
-    const char *c_function_name ) const
-    {
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
-    if ( lua_isnil( PAC_Lua_state, -1 ) )
-        {
-        //snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-        //    "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
-        //    c_function_name, param_name );
-        //BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() ); 
-        }
-
-    const char *res = lua_tostring( PAC_Lua_state, -1 );
-
-    lua_remove( PAC_Lua_state, -1 );
-    return res;
-    }
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::get_PAC_devices()
     {
@@ -293,116 +294,15 @@ int PAC_cmmctr::get_PAC_devices()
 
         if( res != 0 )
             {
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(), answer + 2 );
             return -1;
             }
-
+        
         *has_got_PAC_devices = 1;
         return res;
         }   
 
     return -1;
-    }
-//-----------------------------------------------------------------------------
-void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag, 
-    char *str_value, int max_length )
-    {
-    is_exist_tag = false;
-
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, sizeof( cmd ), "res = nil; assert( loadstring( tags[ %d ] ) )()", tag_id );    
-    exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
-
-    const char *res = get_str_param_from_Lua( "res",
-        "char* PAC_cmmctr::get_tag_str_value" );
-
-    str_value[ 0 ] = 0;
-    if ( res )
-        {
-        is_exist_tag = true;
-
-        strncpy( str_value, res, max_length );        
-        }
-    }
-//-----------------------------------------------------------------------------
-void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
-    char *str_value, int max_length )
-    {
-    is_exist_tag = false;
-    const char *res = 0;
-
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
-         isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
-    exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
-
-    res = get_str_param_from_Lua( "res",
-        "PAC_cmmctr::get_tag_str_value" );
-
-    str_value[ 0 ] = 0;
-    if ( res )
-        {
-        is_exist_tag = true;
-        strncpy( str_value, res, max_length );
-        }
-    }
-//-----------------------------------------------------------------------------
-double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
-    {
-    is_exist_tag = false;
-    double res = 0;
-
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, sizeof( cmd ), 
-        "res = nil; assert( loadstring( tags[ %d ] ) )()", tag_id );
-
-    exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false );
-
-    res = get_double_param_from_Lua( "res",
-        "double PAC_cmmctr::get_tag_value", is_exist_tag );
-
-    return res;
-    }
-//-----------------------------------------------------------------------------
-double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
-    {
-    is_exist_tag = false;
-    double res = 0;
-
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
-        isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
-    exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false );
-
-    res = get_double_param_from_Lua( "res",
-        "double PAC_cmmctr::get_tag_value", is_exist_tag );
-    return res;
-    }
-//-----------------------------------------------------------------------------
-double PAC_cmmctr::get_double_param_from_Lua( const char *param_name,
-    const char *c_function_name, bool &is_exist ) const
-    {
-    is_exist = true;
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
-    if ( lua_isnil( PAC_Lua_state, -1 ) )
-        {
-        is_exist = false;
-        }
-
-    double res = lua_tonumber( PAC_Lua_state, -1 );
-
-    lua_remove( PAC_Lua_state, -1 );
-    return res;
-    }
-//-----------------------------------------------------------------------------
-void PAC_cmmctr::add_nill_tag( int tag_id )
-    {   
-    char cmd[ 200 ];
-    snprintf( cmd, sizeof( cmd ), "tags[ %d ] = \"res = 0\"", tag_id );
-    exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );    
     }
 //-----------------------------------------------------------------------------
 PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
@@ -460,17 +360,139 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
             return PAC_DEVICES_CHANGING;
             }
 
-        int res = exec_Lua_str( answer + 2, "Ошибка получения объектов PAC" );
+        int res = exec_Lua_str( answer + 2,
+            "Ошибка получения состояния объектов PAC" );
 
         if( res != 0 )
             {
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
+                answer + 2 );
             return OTHER_ERROR;
             }
 
+        res = exec_Lua_str( tags_str.c_str(), 
+            "Ошибка обновления тегов состояния объектов PAC" );
+       
+        if( res != 0 )
+            {
+            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
+                tags_str.c_str() );
+            }
+       
         return LOAD_OK;
         }   
 
     return OTHER_ERROR;
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag, 
+    char *str_value, int max_length )
+    {
+    str_value[ 0 ] = 0;
+    is_exist_tag = false;
+
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
+    if ( !lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_gettable( PAC_Lua_state, -2 );
+        if ( lua_isstring( PAC_Lua_state, -1 ) )
+            {
+            const char* val = lua_tostring( PAC_Lua_state, -1 );
+
+            strncpy( str_value, val, max_length );  
+            is_exist_tag = true;
+            }
+        lua_remove( PAC_Lua_state, -1 );
+        }
+    lua_remove( PAC_Lua_state, -1 );
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
+    char *str_value, int max_length )
+    {
+    is_exist_tag = false;
+    const char *res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
+         isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
+    exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
+
+    res = get_str_param_from_Lua( "res", 
+        "PAC_cmmctr::get_tag_str_value" );
+
+    str_value[ 0 ] = 0;
+    if ( res )
+        {
+        is_exist_tag = true;
+        strncpy( str_value, res, max_length );
+        }
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    double res = 0;
+
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
+    if ( !lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_gettable( PAC_Lua_state, -2 );
+        if ( lua_isnumber( PAC_Lua_state, -1 ) )
+            {
+            res = lua_tonumber( PAC_Lua_state, -1 );
+            is_exist_tag = true;
+            }     
+
+        lua_remove( PAC_Lua_state, -1 );
+        }
+    lua_remove( PAC_Lua_state, -1 );
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
+    {
+    is_exist_tag = false;
+    double res = 0;
+
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
+        isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
+    exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false );
+
+    res = get_double_param_from_Lua( "res",
+        "double PAC_cmmctr::get_tag_value", is_exist_tag );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+double PAC_cmmctr::get_double_param_from_Lua( const char *param_name,
+    const char *c_function_name, bool &is_exist ) const
+    {
+    is_exist = true;
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
+    if ( lua_isnil( PAC_Lua_state, -1 ) )
+        {
+        is_exist = false;
+        }
+
+    double res = lua_tonumber( PAC_Lua_state, -1 );
+
+    lua_remove( PAC_Lua_state, -1 );
+    return res;
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::add_nill_tag( int tag_id )
+    { 
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=0\n", tag_id );
+
+    exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );    
     }
 //-----------------------------------------------------------------------------
 bool PAC_cmmctr::is_got_PAC_devices()
@@ -482,8 +504,9 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
     {
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "tags[ %d ] = \"res = t.%s\"", tag_id, tag_name );
-    exec_Lua_str( cmd, "PAC_cmmctr::add_exist_tag" );
+
+    snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=t.%s\n", tag_id, tag_name );
+    tags_str += cmd;
     }
 //-----------------------------------------------------------------------------
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()
@@ -495,12 +518,15 @@ int PAC_cmmctr::clear_tags()
     {
     // Уборка мусора.
     lua_gc( PAC_Lua_state, LUA_GCSTOP, 0 );
+    
+    //-Инициализация таблицы тегов.
+    int res = exec_Lua_str( "tags = {}", "clear_tags" );
+
+    tags_str.clear();
+
+    // Уборка мусора.
     lua_gc( PAC_Lua_state, LUA_GCRESTART, 0 );
     lua_gc( PAC_Lua_state, LUA_GCCOLLECT, 0 );
-
-    //-Инициализация таблицы тегов.
-    const char *init_tags_cmd = "tags = {}";
-    int res = exec_Lua_str( init_tags_cmd, "clear_tags" );
     return res;
     }
 //-----------------------------------------------------------------------------
@@ -719,11 +745,10 @@ int PAC_cmmctr::get_PAC_errors()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PAC_cmmctr_group::PAC_cmmctr_group()
-    {
-    PAC_descriptions.reserve( MAX_PAC_DESCR_NUMBER );
+    {    
     for ( int i = 0; i < MAX_PAC_DESCR_NUMBER; i++ )
         {
-        PAC_descriptions.push_back( 0 );
+        PAC_descriptions[ i ] = 0;
         }
     }
 //-----------------------------------------------------------------------------
@@ -739,33 +764,14 @@ PAC_cmmctr* PAC_cmmctr_group::add_PAC( char* const PAC_address,
         res->get_description_id(), timeout );
     BUG_LOG.add_msg( res->get_name(), res->get_address() );
 
-    PAC_descriptions.at( PAC_descr_id ) = res;    
+    PAC_descriptions[ PAC_descr_id ] = res;    
 
-    return get_PAC( PAC_descr_id );  //Возвращаем добавленный контроллер.
+    return res;  //Возвращаем добавленный контроллер.
     }
 //-----------------------------------------------------------------------------
 PAC_cmmctr* PAC_cmmctr_group::get_PAC( int descr_id )
     {
-    PAC_cmmctr* res = 0;
-
-    try
-        {
-        res = PAC_descriptions.at( descr_id );
-        }
-    catch (...)
-        {
-#ifdef DEBUG
-        DebugBreak();
-#endif // DEBUG
-        res = 0;    	
-        }
-
-    return res;
-    }
-//-----------------------------------------------------------------------------
-int PAC_cmmctr_group::get_max_PAC_number()
-    {
-    return MAX_PAC_DESCR_NUMBER;
+    return PAC_descriptions[ descr_id ];    
     }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

@@ -264,6 +264,10 @@ int alarm_manager::add_PAC_errors( const char *LUA_str,
 
         BUG_LOG.add_error_msg( "System", 
             g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+
+        BUG_LOG.add_msg_once( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address(),
+            LUA_str );
 #ifdef DEBUG
         DebugBreak();
 #endif // DEBUG

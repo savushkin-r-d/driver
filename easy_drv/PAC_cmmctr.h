@@ -315,6 +315,8 @@ class PAC_cmmctr
 
         int  PAC_params_CRC;
         bool is_process_PAC_params;
+
+        std::string tags_str;
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -326,40 +328,28 @@ class PAC_cmmctr_group
 
         ~PAC_cmmctr_group()
             {
-            for ( unsigned int i = 0; i < PAC_descriptions.size(); i++ )
+            for ( unsigned int i = 0; i < MAX_PAC_DESCR_NUMBER; i++ )
                 {
                 delete PAC_descriptions[ i ];
-                }
-
-            PAC_descriptions.clear();
+                PAC_descriptions[ i ] = 0;
+                }            
             }
-
-        /// @brief 
-        static int get_max_PAC_number();
 
         /// @brief Добавление описания PAC в группу описаний сервера.
         PAC_cmmctr* add_PAC( char* const PAC_address, 
             char* const PAC_name, UCHAR PAC_descr_id, 
             int PAC_port, int timeout );
                 
-        /// @brief Получение количества описаний PAC.
-        ///
-        /// Для получения ошибок связи с контроллерами.
-        unsigned int get_PAC_count() const
-            {
-            return PAC_descriptions.size();
-            }
-
         /// @brief Получение описания PAC с заданным номером.
         PAC_cmmctr* get_PAC( int descr_id );
-
-    private:          
+                     
         enum CONSTANTS
             {
             MAX_PAC_DESCR_NUMBER = 255, ///< Максимальный номер описания PAC.
             };
 
-        vector< PAC_cmmctr* > PAC_descriptions; ///< Все описания PAC сервера.
+    private: 
+        PAC_cmmctr* PAC_descriptions[ MAX_PAC_DESCR_NUMBER ]; ///< Все описания PAC сервера.
     };
 //-----------------------------------------------------------------------------
 /// @brief Базовый класс. Служит для передачи\получения данных. 

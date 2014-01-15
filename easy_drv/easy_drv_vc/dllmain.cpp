@@ -127,7 +127,7 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
             }
 
         //-Проверяем состояния всех контроллеров.
-        for ( unsigned int i = 0; i < g_PAC_descriptions->get_PAC_count(); i++ )
+        for ( unsigned int i = 0; i < PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER; i++ )
             {   
             PAC_cmmctr *PAC = g_PAC_descriptions->get_PAC( i );
             if ( 0 == PAC )
@@ -279,11 +279,11 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     // не найдена, добавляется новый тег (9), который всегда возвращает 
     // значение 0.
 
-    if ( tag.PAC_descr_id > g_PAC_descriptions->get_max_PAC_number() ) //1
+    if ( tag.PAC_descr_id > PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER ) //1
         {
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
             "Ошибка get_tag_value(...) - номер описания PAC %d превышает допустимый %d!",
-            tag.PAC_descr_id, g_PAC_descriptions->get_max_PAC_number() );
+            tag.PAC_descr_id, PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER );
 
         BUG_LOG.add_msg_once( "Driver", "" );
         return 0;

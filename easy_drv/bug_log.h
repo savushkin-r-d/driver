@@ -50,7 +50,7 @@ class bug_log_f
 
         int	 open( char* bug_log_filename );
         void start_new_log_section();
-        int  save_msg( char* msg );
+        int  save_msg( const char* msg );
         void close();
 
     private:
@@ -250,12 +250,13 @@ class bug_log
 
         static void free_instance();
 
+        bug_log_f	bug_log_file;
+
     private:
         HANDLE   bug_log_window_thread_handle;
         char     tmp_str[ C_MSG_SIZE ];
 
-        static bug_log_wnd* bug_log_window;
-        bug_log_f	bug_log_file;
+        static bug_log_wnd* bug_log_window;        
 
         static uintptr_t WINAPI bug_log_thread( LPVOID lpParameter );
 

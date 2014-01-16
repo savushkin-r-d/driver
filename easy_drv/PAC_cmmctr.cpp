@@ -294,7 +294,8 @@ int PAC_cmmctr::get_PAC_devices()
 
         if( res != 0 )
             {
-            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(), answer + 2 );
+            //Сохраняем строку, вызвавшую ошибку.
+            BUG_LOG.bug_log_file.save_msg( answer + 2 );
             return -1;
             }
         
@@ -375,8 +376,8 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
        
         if( res != 0 )
             {
-            BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
-                tags_str.c_str() );
+            //Сохраняем строку, вызвавшую ошибку.
+            BUG_LOG.bug_log_file.save_msg( tags_str.c_str() );
             }
        
         return LOAD_OK;
@@ -411,23 +412,22 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
 void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
     char *str_value, int max_length )
     {
-    is_exist_tag = false;
-    const char *res = 0;
+    is_exist_tag = false;    
+    str_value[ 0 ] = 0;
 
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
-         isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
-    exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false );
-
-    res = get_str_param_from_Lua( "res", 
-        "PAC_cmmctr::get_tag_str_value" );
-
-    str_value[ 0 ] = 0;
-    if ( res )
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );
+    if ( exec_Lua_str( cmd, "char* PAC_cmmctr::get_tag_str_value", false ) == 0 )
         {
-        is_exist_tag = true;
-        strncpy( str_value, res, max_length );
+        const char *res = get_str_param_from_Lua( "res", 
+            "PAC_cmmctr::get_tag_str_value" );
+                
+        if ( res )
+            {
+            is_exist_tag = true;
+            strncpy( str_value, res, max_length );
+            }
         }
     }
 //-----------------------------------------------------------------------------
@@ -461,18 +461,20 @@ double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
 
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s%s", 
-        isdigit( tag_name[ 0 ] ) ? "_" : "", tag_name );
-    exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false );
+    snprintf( cmd, MAX_CMD_SIZE, "res = t.%s", tag_name );    
+    
+    if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
+        {
+        res = get_double_param_from_Lua( "res",
+            "double PAC_cmmctr::get_tag_value", is_exist_tag );
+        }
 
-    res = get_double_param_from_Lua( "res",
-        "double PAC_cmmctr::get_tag_value", is_exist_tag );
     return res;
     }
 //-----------------------------------------------------------------------------
 double PAC_cmmctr::get_double_param_from_Lua( const char *param_name,
     const char *c_function_name, bool &is_exist ) const
-    {
+    {    
     is_exist = true;
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
     if ( lua_isnil( PAC_Lua_state, -1 ) )

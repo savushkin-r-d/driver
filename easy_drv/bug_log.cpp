@@ -379,7 +379,7 @@ int bug_log_f::open( char* bug_log_filename )
     return 0;
     }
 //-----------------------------------------------------------------------------
-int bug_log_f::save_msg( char* msg )
+int bug_log_f::save_msg( const char* msg )
     {
     if ( bug_log_stream )
         {

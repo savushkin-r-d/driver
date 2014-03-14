@@ -383,7 +383,7 @@ class abstract_cmmctr
 
         enum PARAMS
             {
-            P_MAX_BUFFER_SIZE = 30*1024,
+            P_MAX_BUFFER_SIZE = 50*1024,
             };
 
         /// @brief Буфер для обмена данными с контроллером.
@@ -441,7 +441,7 @@ class tcp_cmmctr : public abstract_cmmctr
 
     private:
         qlz_state_decompress *state_decompress;
-        char buff[ 40000 + 400 ];
+        char buff[ P_MAX_BUFFER_SIZE + 400 ];
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

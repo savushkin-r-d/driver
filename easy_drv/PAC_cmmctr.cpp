@@ -1038,7 +1038,7 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     if ( 0 == r )
     	{
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Размер исходный/после декомпрессии (%d/%d)!", 
+            "Размер исходный/после декомпрессии (%d/%d)! Возможно, превышен размер буфера!", 
             answer_size, r );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
     	}

@@ -675,7 +675,7 @@ EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
             char tmp_str[ 200 ];
 
             snprintf( tmp_str, sizeof( tmp_str ),
-                "dev_errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+                "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
                 errors[ i ].cmd, 
                 errors[ i ].object_type, errors[ i ].object_number,
                 errors[ i ].object_alarm_number );

@@ -367,6 +367,8 @@ class abstract_cmmctr
 
         virtual ~abstract_cmmctr()
             {
+            delete [] PAC_name;
+            PAC_name = 0;
             }
 
         /// @brief Отсылка заданного массива PAC.
@@ -379,7 +381,7 @@ class abstract_cmmctr
         static int count;
 
         int  timeout;        ///< Время ожидания ответа, мсек.
-        char PAC_name[ 20 ]; ///< Имя PAC.
+        char *PAC_name;      ///< Имя PAC.
 
         enum PARAMS
             {

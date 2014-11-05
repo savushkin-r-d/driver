@@ -786,7 +786,12 @@ char* abstract_cmmctr::get_out_data( unsigned int &cnt )
 abstract_cmmctr::abstract_cmmctr( const char* PAC_name, int timeout ): id( id ),
     timeout( timeout )
     {
-    strcpy_s( this->PAC_name, 20, PAC_name );
+    this->PAC_name = 0;
+    int name_length = strlen( PAC_name );
+    this->PAC_name = new char[ name_length + 1 ];
+
+    strcpy( this->PAC_name, "?" );
+    strcpy( this->PAC_name, PAC_name );
 
     count++;
     id = count;

@@ -1,5 +1,9 @@
 #include "errors_manager.h"
 
+#if _MSC_VER == 1700
+#define snprintf _snprintf
+#endif // _MSC_VER
+
 //-----------------------------------------------------------------------------
 alarm_manager::alarm_manager(): lua_synch_access( new CSWMRG )
     {

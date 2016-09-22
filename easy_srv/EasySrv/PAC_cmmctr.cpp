@@ -1,5 +1,10 @@
-#include "PAC_cmmctr.h"
+#if _MSC_VER == 1700
+#define snprintf _snprintf
+#endif // _MSC_VER
 
+#include <stdio.h>
+
+#include "PAC_cmmctr.h"
 #include "errors_manager.h"
 
 

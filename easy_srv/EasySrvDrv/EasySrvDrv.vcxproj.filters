@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\wtl">
+      <UniqueIdentifier>{5fdba07f-e589-4f8b-b73e-2c8b254434d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\wtl\list_control">
+      <UniqueIdentifier>{5ed644b6-3b28-4dd2-bdf8-95b4557f0535}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PAC-driver">
+      <UniqueIdentifier>{f627961a-01e9-4bf4-8387-ba230851045e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\win_util">
+      <UniqueIdentifier>{3acbdad4-1027-47f3-9bbb-0e8763476f90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\bmp">
+      <UniqueIdentifier>{667cc487-78e9-42f0-b131-6513b41b7822}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\cursors">
+      <UniqueIdentifier>{52a148bb-dd29-4a82-938a-9765d5e9b91f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bug_log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="bug_log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlapp.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlcrack.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrls.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlw.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlx.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlddx.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atldlgs.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlfind.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlframe.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlgdi.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlmisc.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlprint.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlres.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlresce.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlscrl.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlsplit.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atltheme.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atluser.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwince.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwinx.h">
+      <Filter>Header Files\wtl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\DragDrop.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\droparrows.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\listcombo.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\ListCtrl.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\listdate.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\listedit.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\ListTypes.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\PropertyItem.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\list_control\TitleTip.h">
+      <Filter>Header Files\wtl\list_control</Filter>
+    </ClInclude>
+    <ClInclude Include="exchange_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\PAC-driver\errors.h">
+      <Filter>Header Files\PAC-driver</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\PAC-driver\g_device.h">
+      <Filter>Header Files\PAC-driver</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\CmnHdr.h">
+      <Filter>Header Files\win_util</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\ListItems.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </Image>
+    <Image Include="res\message_images.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\divider.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
+    <None Include="res\hand.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="EasySrvDrv.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

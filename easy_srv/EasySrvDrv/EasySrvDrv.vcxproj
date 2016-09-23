@@ -1,0 +1,135 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>EasySrvDrv</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>p:\PTUSA\common\;p:\PTUSA\common\WTL\;p:\PTUSA\common\WTL\list_control\;P:\PTUSA\common\win_util;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>p:\PTUSA\common\;p:\PTUSA\common\WTL\;p:\PTUSA\common\WTL\list_control\;P:\PTUSA\common\win_util;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;EASYSRVDRV_EXPORTS;DRIVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;EASYSRVDRV_EXPORTS;DRIVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="bug_log.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\common\PAC-driver\errors.h" />
+    <ClInclude Include="..\..\..\common\PAC-driver\g_device.h" />
+    <ClInclude Include="..\..\..\common\win_util\CmnHdr.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlapp.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlcrack.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrls.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrlw.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlctrlx.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlddx.h" />
+    <ClInclude Include="..\..\..\common\WTL\atldlgs.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlfind.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlframe.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlgdi.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlmisc.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlprint.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlres.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlresce.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlscrl.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlsplit.h" />
+    <ClInclude Include="..\..\..\common\WTL\atltheme.h" />
+    <ClInclude Include="..\..\..\common\WTL\atluser.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlwince.h" />
+    <ClInclude Include="..\..\..\common\WTL\atlwinx.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\DragDrop.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\droparrows.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\listcombo.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\ListCtrl.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\listdate.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\listedit.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\ListTypes.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\PropertyItem.h" />
+    <ClInclude Include="..\..\..\common\WTL\list_control\TitleTip.h" />
+    <ClInclude Include="bug_log.h" />
+    <ClInclude Include="exchange_data.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\ListItems.bmp" />
+    <Image Include="res\message_images.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\divider.cur" />
+    <None Include="res\hand.cur" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="EasySrvDrv.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

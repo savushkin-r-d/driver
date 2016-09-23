@@ -1,6 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "windows.h"
 
+
 #include "bug_log.h"
 #include "exchange_data.h"
 
@@ -89,14 +90,90 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     DWORD cbRead; 
     LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\EasySrvPipe");
 
-    fSuccess = CallNamedPipe( 
-        lpszPipename,        // pipe name 
-        lpszWrite,           // message to server 
+    HANDLE hPipe;
+
+    while (1) 
+        { 
+        hPipe = CreateFile( 
+            lpszPipename,                 // pipe name 
+            GENERIC_READ | GENERIC_WRITE, // read and write access              
+            0,                            // no sharing 
+            NULL,                         // default security attributes
+            OPEN_EXISTING,                // opens existing pipe 
+            FILE_FLAG_OVERLAPPED,         // default attributes 
+            NULL);                        // no template file 
+
+        // Break if the pipe handle is valid. 
+
+        if (hPipe != INVALID_HANDLE_VALUE) 
+            break; 
+
+        // Exit if an error other than ERROR_PIPE_BUSY occurs. 
+
+        if (GetLastError() != ERROR_PIPE_BUSY) 
+            {
+            _tprintf( TEXT("Could not open pipe. GLE=%d\n"), GetLastError() ); 
+            return 0;
+            }
+        } 
+
+    // The pipe connected; change to message-read mode. 
+    DWORD dwMode = PIPE_READMODE_MESSAGE; 
+    fSuccess = SetNamedPipeHandleState( 
+        hPipe,    // pipe handle 
+        &dwMode,  // new pipe mode 
+        NULL,     // don't set maximum bytes 
+        NULL);    // don't set maximum time 
+    if (!fSuccess) 
+        {
+        sprintf( bug_log::msg, "SetNamedPipeHandleState failed, %d", GetLastError() ); 
+        BUG_LOG.add_msg( "Driver", "" );
+
+        return 0;
+        }
+
+    OVERLAPPED overlap;
+    SecureZeroMemory(&overlap, sizeof(overlap));
+    HANDLE event;
+    event = CreateEvent( 
+        NULL,    // default security attribute 
+        TRUE,    // manual-reset event 
+        FALSE,   // initial state = unsignaled 
+        NULL);   // unnamed event object 
+    overlap.hEvent = event;
+
+    // Send a message to the pipe server and read the response. 
+    fSuccess = TransactNamedPipe( 
+        hPipe,                  // pipe handle 
+        lpszWrite,              // message to server
         (lstrlen(lpszWrite)+1)*sizeof(TCHAR), // message length 
-        chReadBuf,              // buffer to receive reply 
-        BUFSIZE*sizeof(TCHAR),  // size of read buffer 
-        &cbRead,                // number of bytes read 
-        20000);                 // waits for 20 seconds 
+        chReadBuf,              // buffer to receive reply
+        BUFSIZE*sizeof(TCHAR),  // size of read buffer
+        &cbRead,                // bytes read
+        &overlap);              // overlapped 
+
+    //DWORD  cbWritten = 0, cbToWrite = (lstrlen(lpszWrite)+1)*sizeof(TCHAR);
+    //fSuccess = WriteFile( 
+    //    hPipe,                  // pipe handle 
+    //    lpszWrite,              // message 
+    //    cbToWrite,              // message length 
+    //    &cbWritten,             // bytes written 
+    //    &overlap);              // not overlapped 
+
+    //if ( !fSuccess ) 
+    //    {
+    //    sprintf( bug_log::msg, "WriteFile to pipe failed, %d", GetLastError() ); 
+    //    BUG_LOG.add_msg( "Driver", "" );        
+    //    return 0;
+    //    }
+    //FlushFileBuffers(hPipe); 
+
+    //fSuccess = ReadFile( 
+    //    hPipe,                  // pipe handle 
+    //    chReadBuf,              // buffer to receive reply 
+    //    BUFSIZE*sizeof(TCHAR),  // size of buffer 
+    //    &cbRead,                // number of bytes read 
+    //    &overlap);              // not overlapped 
 
     if ( fSuccess )
     	{
@@ -109,6 +186,28 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     	}
     else
         {
+        int err = GetLastError();
+        if ( err == ERROR_IO_PENDING )
+        	{
+            Sleep( 1 );
+            fSuccess = GetOverlappedResult( hPipe, &overlap, &cbRead, true );
+
+            if ( fSuccess )
+                {
+                //sprintf( bug_log::msg, "Для тэга %d получено значение %d", 
+                //    tag.tag_id, chReadBuf ); 
+                //BUG_LOG.add_msg( "Driver", "" );
+
+                res = *((int*) chReadBuf);
+                return &res;
+                }
+            else
+                {
+                sprintf( bug_log::msg, "Нет ответа от сервиса, %d", GetLastError() ); 
+                BUG_LOG.add_msg( "Driver", "" );
+                }
+        	}
+
         sprintf( bug_log::msg, "Нет ответа от сервиса, %d", GetLastError() ); 
         BUG_LOG.add_msg( "Driver", "" );
         }

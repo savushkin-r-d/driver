@@ -39,8 +39,20 @@ protected:
 
     void ServiceWorkerThread(void);
 
+    //Поток взаимодействия с сервером.
+    void server_communication_thread();
+
 private:
 
     BOOL m_fStopping;
     HANDLE m_hStoppedEvent;
+
+    bool is_server_communication_thread_init_complete;
+    HANDLE server_cmmctr_stopped_event;
+    
+    HANDLE server_pipe;
+    static const wchar_t *server_pipe_name; 
+    static const int BUFSIZE_PIPE = 1024;
+    static TCHAR request_buff[ BUFSIZE_PIPE ];
+    static TCHAR reply_buff[ BUFSIZE_PIPE ];
 };

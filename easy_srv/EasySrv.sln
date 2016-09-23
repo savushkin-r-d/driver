@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasySrv", "EasySrv\EasySrv.vcxproj", "{DE70E2D1-6A4D-4984-BD82-CE750889F0D3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasySrvDrv", "EasySrvDrv\EasySrvDrv.vcxproj", "{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -20,6 +20,12 @@ Global
 		{DE70E2D1-6A4D-4984-BD82-CE750889F0D3}.Release|Win32.Build.0 = Release|Win32
 		{DE70E2D1-6A4D-4984-BD82-CE750889F0D3}.Release|x64.ActiveCfg = Release|x64
 		{DE70E2D1-6A4D-4984-BD82-CE750889F0D3}.Release|x64.Build.0 = Release|x64
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Debug|Win32.Build.0 = Debug|Win32
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Debug|x64.ActiveCfg = Debug|Win32
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Release|Win32.ActiveCfg = Release|Win32
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Release|Win32.Build.0 = Release|Win32
+		{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

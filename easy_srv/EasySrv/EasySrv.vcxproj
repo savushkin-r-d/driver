@@ -256,6 +256,7 @@
     <ClInclude Include="EasySrv.h" />
     <ClInclude Include="exchange_data.h" />
     <ClInclude Include="PAC_cmmctr.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="ServiceInstaller.h" />
     <ClInclude Include="ThreadPool.h" />

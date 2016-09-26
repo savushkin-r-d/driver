@@ -29,50 +29,184 @@ enum TAG_VAL_TYPE
     };
 //-----------------------------------------------------------------------------
 int final();
+int connect_to_srv();
+
+bool g_connected = false;
 //-----------------------------------------------------------------------------
+HANDLE g_pipe;
+OVERLAPPED g_overlap;
+HANDLE g_event;
+
 BOOL APIENTRY DllMain( HMODULE hModule,
-    DWORD  ul_reason_for_call,
-    LPVOID lpReserved )
+                      DWORD  ul_reason_for_call,
+                      LPVOID lpReserved )
     {
     HRESULT hRes;
 
     switch ( ul_reason_for_call )
         {
-    case DLL_PROCESS_ATTACH:          
-        try
-            {
-            BUG_LOG.get_instance();
-            }
-        catch (...)
-            {
-            return false;
-            }
+        case DLL_PROCESS_ATTACH:          
+            try
+                {
+                BUG_LOG.get_instance();
+                }
+            catch (...)
+                {
+                return false;
+                }
 
-        hRes = _Module.Init( 0, ( HINSTANCE ) hModule );            // Инициализируем модуль.
-        ATLASSERT( SUCCEEDED( hRes ) );
-        break;
+            hRes = _Module.Init( 0, ( HINSTANCE ) hModule );            // Инициализируем модуль.
+            ATLASSERT( SUCCEEDED( hRes ) );
+            
+            SecureZeroMemory( &g_overlap, sizeof( g_overlap ) );
+            g_event = CreateEvent( 
+                NULL,    // default security attribute 
+                TRUE,    // manual-reset event 
+                FALSE,   // initial state = non signaled 
+                NULL);   // unnamed event object 
+            g_overlap.hEvent = g_event;
 
-    case DLL_THREAD_ATTACH:  
-        break;
+            break;
 
-    case DLL_THREAD_DETACH:
-        break;
+        case DLL_THREAD_ATTACH:  
+            break;
 
-    case DLL_PROCESS_DETACH:  
-        final();
+        case DLL_THREAD_DETACH:
+            break;
 
-        bug_log::free_instance();
+        case DLL_PROCESS_DETACH:  
+            final();
 
-        _Module.Term(); // Завершаем программу.
-        //MessageBox( 0 , "Final", "Ok", 0 );
-        break;
+            bug_log::free_instance();
+
+            _Module.Term(); // Завершаем программу.
+            //MessageBox( 0 , "Final", "Ok", 0 );
+            break;
         }
     return TRUE;
     }
 //-----------------------------------------------------------------------------
-const int BUFSIZE = 512;
-TCHAR chReadBuf[BUFSIZE];
-double res;
+CString FormatErrorMessage(DWORD ErrorCode)
+    {
+    TCHAR   *pMsgBuf = NULL;
+    DWORD   nMsgLen = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, ErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        reinterpret_cast<LPTSTR>(&pMsgBuf), 0, NULL);
+    if (!nMsgLen)
+        return _T("FormatMessage fail");
+    CString sMsg(pMsgBuf, nMsgLen);
+    LocalFree(pMsgBuf);
+    return sMsg;
+    }
+//-----------------------------------------------------------------------------
+int connect_to_srv()
+    {
+    static CString err_str;
+    static char is_srv_connect_err = 0;
+
+    BOOL fSuccess; 
+    LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\EasySrvPipe");
+
+    g_pipe = CreateFile( 
+        lpszPipename,                 // pipe name 
+        GENERIC_READ | GENERIC_WRITE, // read and write access              
+        0,                            // no sharing 
+        NULL,                         // default security attributes
+        OPEN_EXISTING,                // opens existing pipe 
+        FILE_FLAG_OVERLAPPED,         // default attributes 
+        NULL);                        // no template file 
+
+    // Exit if the pipe handle is invalid. 
+    if (g_pipe == INVALID_HANDLE_VALUE) 
+        {
+        if ( is_srv_connect_err == 0 )
+            {
+            err_str.Format( _T( "Нет подключения к сервису. %s" ),
+                FormatErrorMessage( GetLastError() ) );     
+            BUG_LOG.set_error( is_srv_connect_err, "Driver", "", err_str );
+            }
+        return 1; 
+        }
+
+    // The pipe connected; change to message-read mode. 
+    DWORD dwMode = PIPE_READMODE_MESSAGE; 
+    fSuccess = SetNamedPipeHandleState( 
+        g_pipe,    // pipe handle 
+        &dwMode,  // new pipe mode 
+        NULL,     // don't set maximum bytes 
+        NULL);    // don't set maximum time 
+    
+    // Exit if can't set the pipe state. 
+    if (!fSuccess) 
+        {
+        if ( is_srv_connect_err == 0 )
+            {
+            err_str.Format( _T( "Нет подключения к сервису. %s" ),
+                FormatErrorMessage( GetLastError() ) );      
+            BUG_LOG.set_error( is_srv_connect_err, "Driver", "", err_str );
+            }
+        CloseHandle( g_pipe );
+        g_pipe = 0;
+        return 1;
+        }
+
+    if ( is_srv_connect_err == 1 )
+        {
+        BUG_LOG.reset_error( is_srv_connect_err, "Driver", "", err_str );
+        }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+void* transact_pipe( void* buff, int size )
+    {
+    BOOL fSuccess; 
+    DWORD cbRead; 
+    const int BUFSIZE = 512;
+    static char chReadBuf[ BUFSIZE ];
+    ZeroMemory( chReadBuf, sizeof( chReadBuf ) );
+
+    // Send a message to the pipe server and read the response. 
+    fSuccess = TransactNamedPipe( 
+        g_pipe,                  // pipe handle 
+        buff,                   // message to server
+        size,                   // message length 
+        chReadBuf,              // buffer to receive reply
+        BUFSIZE*sizeof(TCHAR),  // size of read buffer
+        &cbRead,                // bytes read
+        &g_overlap);              // overlapped 
+
+    if ( fSuccess )
+        {
+        return chReadBuf;
+        }
+    else
+        {
+        int err = GetLastError();
+        if ( err == ERROR_IO_PENDING )
+            {
+            Sleep( 1 );
+            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
+
+            if ( fSuccess )
+                {
+                return chReadBuf;
+                }
+            }
+        }
+
+    bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ), 
+        FormatErrorMessage( GetLastError() ) ); 
+    BUG_LOG.add_warning_msg( "Driver", "" );
+
+    CloseHandle( g_pipe );
+    g_pipe = 0;
+    g_connected = 0;
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
 /// @brief Получение значения тега на основе его полного описания.
 ///
 /// Внутренняя функция библиотеки.
@@ -83,136 +217,47 @@ double res;
 ///
 /// @return Значение тега.
 void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
-    bool use_only_tag_id = false )
-    {    
-    LPTSTR lpszWrite = _T( "\1" );  
-    BOOL fSuccess; 
-    DWORD cbRead; 
-    LPTSTR lpszPipename = TEXT("\\\\.\\pipe\\EasySrvPipe");
+                    bool use_only_tag_id = false )
+    {   
+    static double tag_val            = 0;    
+    static char   str_tag_val[ 500 ] = { 0 };    
+    tag_val          = 0;
+    str_tag_val[ 0 ] = 0;
+    void* res = 0;
 
-    HANDLE hPipe;
-
-    while (1) 
-        { 
-        hPipe = CreateFile( 
-            lpszPipename,                 // pipe name 
-            GENERIC_READ | GENERIC_WRITE, // read and write access              
-            0,                            // no sharing 
-            NULL,                         // default security attributes
-            OPEN_EXISTING,                // opens existing pipe 
-            FILE_FLAG_OVERLAPPED,         // default attributes 
-            NULL);                        // no template file 
-
-        // Break if the pipe handle is valid. 
-
-        if (hPipe != INVALID_HANDLE_VALUE) 
-            break; 
-
-        // Exit if an error other than ERROR_PIPE_BUSY occurs. 
-
-        if (GetLastError() != ERROR_PIPE_BUSY) 
-            {
-            _tprintf( TEXT("Could not open pipe. GLE=%d\n"), GetLastError() ); 
-            return 0;
-            }
-        } 
-
-    // The pipe connected; change to message-read mode. 
-    DWORD dwMode = PIPE_READMODE_MESSAGE; 
-    fSuccess = SetNamedPipeHandleState( 
-        hPipe,    // pipe handle 
-        &dwMode,  // new pipe mode 
-        NULL,     // don't set maximum bytes 
-        NULL);    // don't set maximum time 
-    if (!fSuccess) 
+    switch ( tag_type )
         {
-        sprintf( bug_log::msg, "SetNamedPipeHandleState failed, %d", GetLastError() ); 
-        BUG_LOG.add_msg( "Driver", "" );
+        case T_NUMBER:
+            tag_val = 0;
+            res = &tag_val;
+            break;
 
-        return 0;
+        case T_STRING:
+            sprintf( str_tag_val, "" );
+            res = &str_tag_val;
+            break;
         }
 
-    OVERLAPPED overlap;
-    SecureZeroMemory(&overlap, sizeof(overlap));
-    HANDLE event;
-    event = CreateEvent( 
-        NULL,    // default security attribute 
-        TRUE,    // manual-reset event 
-        FALSE,   // initial state = unsignaled 
-        NULL);   // unnamed event object 
-    overlap.hEvent = event;
-
-    // Send a message to the pipe server and read the response. 
-    fSuccess = TransactNamedPipe( 
-        hPipe,                  // pipe handle 
-        lpszWrite,              // message to server
-        (lstrlen(lpszWrite)+1)*sizeof(TCHAR), // message length 
-        chReadBuf,              // buffer to receive reply
-        BUFSIZE*sizeof(TCHAR),  // size of read buffer
-        &cbRead,                // bytes read
-        &overlap);              // overlapped 
-
-    //DWORD  cbWritten = 0, cbToWrite = (lstrlen(lpszWrite)+1)*sizeof(TCHAR);
-    //fSuccess = WriteFile( 
-    //    hPipe,                  // pipe handle 
-    //    lpszWrite,              // message 
-    //    cbToWrite,              // message length 
-    //    &cbWritten,             // bytes written 
-    //    &overlap);              // not overlapped 
-
-    //if ( !fSuccess ) 
-    //    {
-    //    sprintf( bug_log::msg, "WriteFile to pipe failed, %d", GetLastError() ); 
-    //    BUG_LOG.add_msg( "Driver", "" );        
-    //    return 0;
-    //    }
-    //FlushFileBuffers(hPipe); 
-
-    //fSuccess = ReadFile( 
-    //    hPipe,                  // pipe handle 
-    //    chReadBuf,              // buffer to receive reply 
-    //    BUFSIZE*sizeof(TCHAR),  // size of buffer 
-    //    &cbRead,                // number of bytes read 
-    //    &overlap);              // not overlapped 
-
-    if ( fSuccess )
+    if ( !g_connected )
     	{
-        //sprintf( bug_log::msg, "Для тэга %d получено значение %d", 
-        //    tag.tag_id, chReadBuf ); 
-        //BUG_LOG.add_msg( "Driver", "" );
-
-        res = *((int*) chReadBuf);
-        return &res;
+        g_connected = connect_to_srv() == 0;
     	}
-    else
+
+    if ( !g_connected )
         {
-        int err = GetLastError();
-        if ( err == ERROR_IO_PENDING )
-        	{
-            Sleep( 1 );
-            fSuccess = GetOverlappedResult( hPipe, &overlap, &cbRead, true );
-
-            if ( fSuccess )
-                {
-                //sprintf( bug_log::msg, "Для тэга %d получено значение %d", 
-                //    tag.tag_id, chReadBuf ); 
-                //BUG_LOG.add_msg( "Driver", "" );
-
-                res = *((int*) chReadBuf);
-                return &res;
-                }
-            else
-                {
-                sprintf( bug_log::msg, "Нет ответа от сервиса, %d", GetLastError() ); 
-                BUG_LOG.add_msg( "Driver", "" );
-                }
-        	}
-
-        sprintf( bug_log::msg, "Нет ответа от сервиса, %d", GetLastError() ); 
-        BUG_LOG.add_msg( "Driver", "" );
+        return res;
         }
 
-    return 0;
+    TCHAR cmd_str[] = _T( "\1" );  
+    void *res_buff = transact_pipe( cmd_str, sizeof( cmd_str ) );    
+    if ( res_buff!= 0 )
+    	{
+        tag_val = *( ( int* )res_buff );
+        res = &tag_val;
+        return res;
+    	}
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 enum SET_TAG_VAL_TYPE
@@ -232,7 +277,7 @@ enum SET_TAG_VAL_TYPE
 ///
 /// @return 0 - ок.
 int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
-    TAG_VAL_TYPE tag_type )
+            TAG_VAL_TYPE tag_type )
     {
     return 0;
     }
@@ -243,8 +288,10 @@ EXPORT int __stdcall init_driver_thread( int prj_id )
     {    
     if ( BUG_LOG.init_window_complete() )
         {         
-        sprintf( bug_log::msg, "Драйвер для узла базы каналов [ $%X ] загружен.", 
-            prj_id ); 
+        bug_log::msg.Format( 
+            _T( "Драйвер для узла базы каналов [ $%X ] загружен." ), 
+            prj_id );
+
         BUG_LOG.add_msg( "Driver", "" );
         }
 
@@ -287,7 +334,7 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
 ///
 /// @return Значение тега.
 EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
-    UCHAR &result )
+                                   UCHAR &result )
     {
     in_tag_info tag;
     tag.tag_id = tag_id;
@@ -335,7 +382,7 @@ EXPORT char* __stdcall get_str_value( in_tag_info &tag )
 ///
 /// @return Значение тега.
 EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
-    UCHAR &result )
+                                      UCHAR &result )
     {
     in_tag_info tag;
     tag.tag_id = tag_id;
@@ -390,7 +437,7 @@ EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
     }
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
-    error_cmd *errors )
+                                   error_cmd *errors )
     {
     return 0;
     }

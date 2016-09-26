@@ -149,7 +149,7 @@ class list_message_data : public CListImpl< list_message_data >
     private:
         enum CONSTANTS
             {
-            C_MAX_LOG_SIZE = 1000,
+            C_MAX_LOG_SIZE = 200,
             };        
     };
 
@@ -217,19 +217,14 @@ class bug_log
         bool init_window_complete() const;
 
         void set_error( char &is_set_error, const char* PAC_name, 
-            const char* ip_address, const char* msg );
+            const char* ip_address, CString msg );
 
         void reset_error( char &is_set_error, const char* PAC_name, 
-            const char* ip_address, const char* msg );
+            const char* ip_address, CString msg );
 
         void clear_errors();
 
-        enum CONSTANTS
-            {
-            C_MSG_SIZE = 1000,
-            };
-
-        static char msg[ C_MSG_SIZE ];
+        static CString msg;
 
         void hide();
 
@@ -248,14 +243,13 @@ class bug_log
 
         static bug_log& get_instance();
 
-        static void free_instance();
-
-        bug_log_f	bug_log_file;
+        static void free_instance();        
 
     private:
-        HANDLE   bug_log_window_thread_handle;
-        char     tmp_str[ C_MSG_SIZE ];
+        bug_log_f	bug_log_file;
 
+        HANDLE   bug_log_window_thread_handle;
+        
         static bug_log_wnd* bug_log_window;        
 
         static uintptr_t WINAPI bug_log_thread( LPVOID lpParameter );

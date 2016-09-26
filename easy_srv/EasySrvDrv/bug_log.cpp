@@ -12,7 +12,7 @@ using namespace std;
 bug_log_wnd* bug_log::bug_log_window = 0;
 char         bug_log::is_init_window = 0;
 
-char	 bug_log::msg[ bug_log::C_MSG_SIZE ] = { 0 };
+CString	 bug_log::msg;
 bug_log* bug_log::instance = 0;
 //-----------------------------------------------------------------------------
 LRESULT bug_log_wnd::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam,
@@ -241,12 +241,11 @@ int bug_log::add_msg_once( CString object_name,
     }
 //-----------------------------------------------------------------------------
 void bug_log::set_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, CString msg )
     {
     if ( 0 == is_set_error )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg );
         add_error_msg( PAC_name, ip_address );
         is_set_error = 1;
 
@@ -255,16 +254,14 @@ void bug_log::set_error( char &is_set_error, const char* PAC_name,
     }
 //-----------------------------------------------------------------------------
 void bug_log::reset_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, CString msg )
     {
     if ( 1 == is_set_error )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg );
         commit_error_msg( PAC_name, ip_address );
 
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "RESET: %s", msg );
+        bug_log::msg.Format( _T( "RESET  : %s" ), msg );
         add_error_msg( PAC_name, ip_address );
         commit_error_msg( PAC_name, ip_address );
 
@@ -439,7 +436,7 @@ int list_message_data::add_message( log_message msg )
     {
     if ( messages.size() > C_MAX_LOG_SIZE )
         {
-        messages.clear();
+        messages.pop_back();        
         }
 
     messages.push_front( msg );

@@ -397,6 +397,31 @@ enum SET_TAG_VAL_TYPE
 int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
             TAG_VAL_TYPE tag_type )
     {
+    static char cmd_str[ 500 ];
+
+    int data_size = 0;
+    cmd_str[ data_size++ ] = SRV_CMD::SET_TAG_VALUE;
+    cmd_str[ data_size++ ] = tag_type;
+
+    cmd_str[ data_size++ ] = PAC_description_id;   
+    strcpy( &cmd_str[ data_size ], tag_name );    
+    data_size += strlen( tag_name ) + 1;
+
+    switch ( tag_type )
+        {
+        case T_NUMBER:
+            memcpy( &cmd_str[ data_size ], value, sizeof( double ) );    
+            data_size += sizeof( double );
+            break;
+
+        case T_STRING:            
+            strcpy( &cmd_str[ data_size ], ( char* ) value );                
+            data_size += strlen( ( char* ) value ) + 1;
+            break;
+        } 
+
+    transact_pipe( cmd_str, data_size );    
+    
     return 0;
     }
 //-----------------------------------------------------------------------------

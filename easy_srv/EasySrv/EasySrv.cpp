@@ -391,10 +391,32 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                     case SRV_CMD::GET_TAG_VALUE_BY_ID: //Get tag value by ID                        
                         tag_type = ( TAG_VAL_TYPE ) request_buff[ idx++ ];
                         tag.PAC_descr_id = request_buff[ idx++ ];
+
                         tag.tag_id = *( ( u_int* ) ( request_buff + idx ) );
 
                         use_only_tag_id = true;
                         break;
+
+                    case SRV_CMD::SET_TAG_VALUE:
+                        tag_type = ( TAG_VAL_TYPE ) request_buff[ idx++ ];
+                        u_char PAC_descr_id = request_buff[ idx++ ];
+
+                        str_len = strlen( &request_buff[ idx ] ) + 1;
+                        char *tag_name = &request_buff[ idx ];
+                        idx += str_len;
+
+                        set_tag( tag_name, PAC_descr_id, request_buff + idx, tag_type );
+
+                        reply_buff[ 0 ] = 0;
+                        fSuccess = WriteFile( 
+                            server_pipe,       // handle to pipe 
+                            reply_buff,        // buffer to write from 
+                            1,                 // number of bytes to write 
+                            &cbWritten,        // number of bytes written 
+                            &overlap );  
+
+                        state = READING;                    
+                        continue;                        
                     }
 
                 void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
@@ -620,6 +642,36 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
         }
 
     return res;
+    }
+
+//-----------------------------------------------------------------------------
+int EasySrv::set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
+    TAG_VAL_TYPE tag_type )
+    {
+    PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( PAC_description_id );
+    if ( current_PAC_cmmctr )
+        {	
+        static char cmd[ 1000 ];
+
+        switch ( tag_type )
+            {
+            case T_NUMBER:
+                sprintf( cmd, "res = make_lua_str( \"%s\", %f )", 
+                    tag_name, *( double* ) value  );
+                break;
+
+            case T_STRING:
+                snprintf( cmd, sizeof( cmd ), "res = make_lua_str( \"%s\", \"%s\" )", 
+                    tag_name, ( char* ) value );
+                break;
+            }      
+
+        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
+        current_PAC_cmmctr->set_tag_Lua_cmd( cmd );
+        current_PAC_cmmctr->get_dev_synch_access()->Done();
+        }
+
+    return 0;
     }
 //-----------------------------------------------------------------------------
 //

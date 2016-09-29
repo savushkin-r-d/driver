@@ -55,6 +55,18 @@ protected:
     static void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
         GET_TAG_RES &res, bool use_only_tag_id = false );
 
+    //-----------------------------------------------------------------------------
+    /// @brief Запись в тег.
+    ///
+    /// @param [in] tag_name            - имя тега.
+    /// @param [in] PAC_description_id  - номер описания PAC.
+    /// @param [in] value               - новое значение тега.
+    /// @param [in] tag_type            - тип значения тега.
+    ///
+    /// @return 0 - ок.
+    static int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
+        TAG_VAL_TYPE tag_type );
+
 private:
     static BOOL m_fStopping;
 

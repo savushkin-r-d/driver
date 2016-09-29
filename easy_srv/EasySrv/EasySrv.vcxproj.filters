@@ -309,7 +309,4 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="Documentation\ReadMe.htm" />
-  </ItemGroup>
 </Project>

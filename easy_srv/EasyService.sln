@@ -2,7 +2,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasySrv", "EasySrv\EasySrv.vcxproj", "{DE70E2D1-6A4D-4984-BD82-CE750889F0D3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasySrvDrv", "EasySrvDrv\EasySrvDrv.vcxproj", "{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EasyDrv", "EasyDrv\EasyDrv.vcxproj", "{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

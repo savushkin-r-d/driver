@@ -146,14 +146,13 @@ void UninstallService(PWSTR pszServiceName)
     if (ControlService(schService, SERVICE_CONTROL_STOP, &ssSvcStatus))
     {
         wprintf(L"Stopping %s.", pszServiceName);
-        Sleep(1000);
 
         while (QueryServiceStatus(schService, &ssSvcStatus))
         {
             if (ssSvcStatus.dwCurrentState == SERVICE_STOP_PENDING)
             {
                 wprintf(L".");
-                Sleep(1000);
+                Sleep(100);
             }
             else break;
         }

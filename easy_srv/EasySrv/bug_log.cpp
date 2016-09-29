@@ -1,4 +1,5 @@
 #include "bug_log.h"
+#include "CmnHdr.h"
 
 #include <algorithm>
 
@@ -15,6 +16,7 @@ int bug_log::add_msg( CString object_name, CString IP4_address,
     CString msg )
     {
 	//TODO Fix later.
+    #pragma chMSG( Реализовать запись в файл! )
     return 0;
     }
 //-----------------------------------------------------------------------------

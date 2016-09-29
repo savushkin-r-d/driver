@@ -5,6 +5,10 @@
 #include "bug_log.h"
 #include "exchange_data.h"
 
+#include "drv_srv_communication.h"
+
+#include <ctime>
+
 #pragma comment(linker, "/export:get_alarms=_get_alarms@8")
 #pragma comment(linker, "/export:set_alarm_cmd=_set_alarm_cmd@12")
 
@@ -21,17 +25,12 @@
 
 #define EXPORT extern "C" __declspec (dllexport)
 
-/// @brief Типы значения тега.
-enum TAG_VAL_TYPE
-    {
-    T_NUMBER,///< Вещественное (float, 32 бита).
-    T_STRING,///< Строка.
-    };
 //-----------------------------------------------------------------------------
 int final();
 int connect_to_srv();
 
 bool g_connected = false;
+int g_chbase_nodes_cont_count = 0;
 //-----------------------------------------------------------------------------
 HANDLE g_pipe;
 OVERLAPPED g_overlap;
@@ -165,17 +164,16 @@ void* transact_pipe( void* buff, int size )
     DWORD cbRead; 
     const int BUFSIZE = 512;
     static char chReadBuf[ BUFSIZE ];
-    ZeroMemory( chReadBuf, sizeof( chReadBuf ) );
 
     // Send a message to the pipe server and read the response. 
     fSuccess = TransactNamedPipe( 
-        g_pipe,                  // pipe handle 
+        g_pipe,                 // pipe handle 
         buff,                   // message to server
         size,                   // message length 
         chReadBuf,              // buffer to receive reply
-        BUFSIZE*sizeof(TCHAR),  // size of read buffer
+        sizeof( chReadBuf ),    // size of read buffer
         &cbRead,                // bytes read
-        &g_overlap);              // overlapped 
+        &g_overlap);            // overlapped 
 
     if ( fSuccess )
         {
@@ -185,8 +183,7 @@ void* transact_pipe( void* buff, int size )
         {
         int err = GetLastError();
         if ( err == ERROR_IO_PENDING )
-            {
-            Sleep( 1 );
+            {            
             fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
 
             if ( fSuccess )
@@ -217,10 +214,12 @@ void* transact_pipe( void* buff, int size )
 ///
 /// @return Значение тега.
 void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
+                    GET_TAG_RES &res_get_tag,
                     bool use_only_tag_id = false )
     {   
     static double tag_val            = 0;    
     static char   str_tag_val[ 500 ] = { 0 };    
+    
     tag_val          = 0;
     str_tag_val[ 0 ] = 0;
     void* res = 0;
@@ -248,14 +247,133 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
         return res;
         }
 
-    TCHAR cmd_str[] = _T( "\1" );  
-    void *res_buff = transact_pipe( cmd_str, sizeof( cmd_str ) );    
+    static char cmd_str[ 500 ];
+    int data_size = 1;
+
+    cmd_str[ 0 ] = SRV_CMD::GET_TAG_VALUE;
+    memcpy( &cmd_str[ data_size ], &tag, sizeof( tag ) );
+    data_size += sizeof( tag );
+    
+    strcpy( &cmd_str[ data_size ], tag.PAC_address );
+    data_size += strlen( tag.PAC_address ) + 1;
+    strcpy( &cmd_str[ data_size ], tag.PAC_name );
+    data_size += strlen( tag.PAC_name ) + 1;
+    strcpy( &cmd_str[ data_size ], tag.tag_name );
+    data_size += strlen( tag.tag_name ) + 1;
+
+    cmd_str[ data_size++ ] = tag_type;
+    cmd_str[ data_size++ ] = use_only_tag_id;
+
+    void *res_buff = transact_pipe( cmd_str, data_size );    
     if ( res_buff!= 0 )
     	{
-        tag_val = *( ( int* )res_buff );
-        res = &tag_val;
-        return res;
+        res_get_tag = ( GET_TAG_RES ) ( ( char* ) res_buff )[ 0 ];
+
+        switch ( tag_type )
+            {
+            case T_NUMBER:
+                tag_val = *( ( double* )( ( char* ) res_buff + 1 ) ) ;
+                res = &tag_val;
+                break;
+
+            case T_STRING:
+                strcpy( str_tag_val, ( ( char* ) res_buff + 1 ) );                
+                res = &str_tag_val;
+                break;
+            } 
     	}
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
+/// @brief Получение значения тега на основе его id.
+///
+/// Внутренняя функция библиотеки.
+///
+/// @param [in] tag             - полное описание тега.
+/// @param [in] tag_type        - тип значения тега.
+/// @param [in] use_only_tag_id - использовать только номер тега.
+///
+/// @return Значение тега.
+void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
+                          TAG_VAL_TYPE tag_type, 
+                          GET_TAG_RES &res_get_tag )
+    {   
+    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    //LARGE_INTEGER Frequency;
+    //if ( tag_id == 0xe13b0009 )
+    //    {        
+    //    QueryPerformanceFrequency(&Frequency); 
+    //    QueryPerformanceCounter(&StartingTime);
+    //    }
+
+    static double tag_val            = 0;    
+    static char   str_tag_val[ 500 ] = { 0 };    
+    tag_val          = 0;
+    str_tag_val[ 0 ] = 0;
+    void* res = 0;
+
+    switch ( tag_type )
+        {
+        case T_NUMBER:
+            tag_val = 0;
+            res = &tag_val;
+            break;
+
+        case T_STRING:
+            sprintf( str_tag_val, "" );
+            res = &str_tag_val;
+            break;
+        }
+
+    if ( !g_connected )
+        {
+        g_connected = connect_to_srv() == 0;
+        }
+
+    if ( !g_connected )
+        {
+        return res;
+        }
+
+    static char cmd_str[ 500 ];
+    
+    int data_size = 0;
+    cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
+    cmd_str[ data_size++ ] = tag_type;
+
+    cmd_str[ data_size++ ] = PAC_description_id;    
+    memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
+    data_size += sizeof( tag_id );
+
+    void *res_buff = transact_pipe( cmd_str, data_size );    
+
+    if ( res_buff!= 0 )
+        {
+        res_get_tag = ( GET_TAG_RES ) ( ( char* ) res_buff )[ 0 ];
+
+        switch ( tag_type )
+            {
+            case T_NUMBER:
+                tag_val = *( ( double* )( ( char* ) res_buff + 1 ) ) ;
+                res = &tag_val;
+                break;
+
+            case T_STRING:
+                strcpy( str_tag_val, ( ( char* ) res_buff + 1 ) );                
+                res = &str_tag_val;
+                break;
+            } 
+        }
+
+    //if ( tag_id == 0xe13b0009 )
+    //    {
+    //    QueryPerformanceCounter(&EndingTime);
+    //    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+
+    //    bug_log::msg.Format( _T( "transact_pipe time = %d!" ), ElapsedMicroseconds.QuadPart );
+    //    BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
+    //    }
 
     return res;
     }
@@ -295,11 +413,19 @@ EXPORT int __stdcall init_driver_thread( int prj_id )
         BUG_LOG.add_msg( "Driver", "" );
         }
 
+    g_chbase_nodes_cont_count++;
     return 0;
     }
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall stop_driver_thread( int prj_id )
     {
+    g_chbase_nodes_cont_count--;
+    if ( g_chbase_nodes_cont_count <= 0 )
+    	{
+        final();
+        bug_log::free_instance();   
+    	}     
+
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -312,11 +438,23 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
 /// @return Значение тега.
 EXPORT double __stdcall get_value( in_tag_info &tag )
     {
-    void *res = get_tag_value( tag, T_NUMBER );
+    GET_TAG_RES res_get_tag;
 
-    if ( res )
+    void *res = get_tag_value( tag, T_NUMBER, res_get_tag );
+
+    if ( res_get_tag == GT_OK )
         {
         return *( double* ) res;
+        }
+    else
+        {
+        if ( res_get_tag == GT_NO_TAG_FOUND )
+            {
+            wchar_t tmp[ 50 ];
+            mbstowcs( tmp, tag.tag_name, sizeof( tmp ) );
+            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), tmp );                
+            BUG_LOG.add_msg_once( tag.PAC_name, tag.PAC_address );
+            }
         }
 
     return 0;
@@ -336,19 +474,65 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
 EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
                                    UCHAR &result )
     {
-    in_tag_info tag;
-    tag.tag_id = tag_id;
-    tag.PAC_descr_id = PAC_description_id;
+    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    LARGE_INTEGER Frequency;
 
-    void *res = get_tag_value( tag, T_NUMBER, true );
-    if ( res )
+    if ( tag_id == 0xe13b0009 )
         {
-        result = 0;
-        return *( double* ) res;
+        QueryPerformanceFrequency(&Frequency); 
+        QueryPerformanceCounter(&StartingTime);
+        }
+    
+    GET_TAG_RES res_get_tag;
+    double tag_val = 0;        
+
+    if ( !g_connected )
+        {
+        g_connected = connect_to_srv() == 0;
         }
 
-    result = 1;
-    return 1;
+    if ( !g_connected )
+        {
+        return 0;
+        }
+
+    static char cmd_str[ 500 ];
+
+    int data_size = 0;
+    cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
+    cmd_str[ data_size++ ] = T_NUMBER;
+
+    cmd_str[ data_size++ ] = PAC_description_id;    
+    memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
+    data_size += sizeof( tag_id );
+
+    void *res_buff = transact_pipe( cmd_str, data_size );    
+
+    if ( res_buff!= 0 )
+        {
+        res_get_tag = ( GET_TAG_RES ) ( ( char* ) res_buff )[ 0 ];
+        tag_val     = *( ( double* )( ( char* ) res_buff + 1 ) ) ;     
+
+        if ( res_get_tag == GT_NEED_FUL_TAG_INFO )
+            {
+            result = 1;     
+            }
+        else
+            {
+            result = 0;        
+            }
+        }
+
+    if ( tag_id == 0xe13b0009 )
+        {
+        QueryPerformanceCounter(&EndingTime);
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+
+        bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
+        BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
+        }
+
+    return tag_val;
     }
 //-----------------------------------------------------------------------------
 /// @brief Получение строкового значения тега на основе его полного описания.
@@ -360,14 +544,23 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @return Значение тега.
 EXPORT char* __stdcall get_str_value( in_tag_info &tag )
     {
-    void *res = get_tag_value( tag, T_NUMBER );
+    GET_TAG_RES res_get_tag;
+    void *res = get_tag_value( tag, T_STRING, res_get_tag );
 
-    if ( res )
+    if ( res_get_tag == GT_OK )
+        {        
+        }
+    else
         {
-        return ( char* ) res;
+        if ( res_get_tag == GT_NO_TAG_FOUND )
+            {
+            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), 
+                tag.tag_name );
+            BUG_LOG.add_msg_once( tag.PAC_name, tag.PAC_address );
+            }
         }
 
-    return 0;
+    return ( char* ) res;
     }
 //-----------------------------------------------------------------------------
 /// @brief Получение строкового значения тега на основе его частичного описания.
@@ -384,19 +577,23 @@ EXPORT char* __stdcall get_str_value( in_tag_info &tag )
 EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
                                       UCHAR &result )
     {
+    GET_TAG_RES res_get_tag;
+
     in_tag_info tag;
     tag.tag_id = tag_id;
     tag.PAC_descr_id = PAC_description_id;
 
-    void *res = get_tag_value( tag, T_STRING, true );
-    if ( res )
+    void *res = get_tag_value( tag, T_STRING, res_get_tag, true );
+    if ( res_get_tag == GT_NEED_FUL_TAG_INFO )
         {
-        result = 0;
-        return ( char* ) res;
+        result = 1;
         }
-
-    result = 1;
-    return 0;
+    else
+        {
+        result = 0;        
+        }
+    
+    return ( char* ) res;
     }
 //-----------------------------------------------------------------------------
 /// @brief Запись в тег на основе его полного описания.
@@ -428,6 +625,7 @@ EXPORT int __stdcall set_str_value( in_tag_info &tag, char *str_value )
 //-----------------------------------------------------------------------------
 int final()
     {
+    Sleep( 1 );
     return 0;
     }
 //-----------------------------------------------------------------------------

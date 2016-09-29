@@ -21,6 +21,8 @@
 
 #include "ServiceBase.h"
 
+#include "exchange_data.h"
+#include "drv_srv_communication.h"
 
 class EasySrv : public CServiceBase
 {
@@ -37,22 +39,31 @@ protected:
     virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv);
     virtual void OnStop();
 
-    void ServiceWorkerThread(void);
-
     //Поток взаимодействия с сервером.
-    void server_communication_thread();
+    static uintptr_t WINAPI server_communication_thread( LPVOID lpParameter );
+
+    /// @brief Получение значения тега на основе его полного описания.
+    ///
+    /// Внутренняя функция библиотеки.
+    ///
+    /// @param [in]  tag             - полное описание тега.
+    /// @param [in]  tag_type        - тип значения тега.
+    /// @param [out] is_exist_tag    - найден ли тег.
+    /// @param [in]  use_only_tag_id - использовать только номер тега.
+    ///
+    /// @return Значение тега.
+    static void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
+        GET_TAG_RES &res, bool use_only_tag_id = false );
 
 private:
-
-    BOOL m_fStopping;
-    HANDLE m_hStoppedEvent;
+    static BOOL m_fStopping;
 
     bool is_server_communication_thread_init_complete;
-    HANDLE server_cmmctr_stopped_event;
+    static HANDLE server_cmmctr_stopped_event;
     
-    HANDLE server_pipe;
+    static HANDLE server_pipe;
     static const wchar_t *server_pipe_name; 
     static const int BUFSIZE_PIPE = 1024;
-    static TCHAR request_buff[ BUFSIZE_PIPE ];
-    static TCHAR reply_buff[ BUFSIZE_PIPE ];
+    static char request_buff[ BUFSIZE_PIPE ];
+    static char reply_buff[ BUFSIZE_PIPE ];
 };

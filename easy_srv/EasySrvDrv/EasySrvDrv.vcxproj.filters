@@ -31,6 +31,9 @@
     <Filter Include="Resource Files\cursors">
       <UniqueIdentifier>{52a148bb-dd29-4a82-938a-9765d5e9b91f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\common_src">
+      <UniqueIdentifier>{036b461a-57df-4cfe-8597-e0e1750368af}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -145,6 +148,12 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common_src\drv_srv_communication.h">
+      <Filter>Header Files\common_src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common_src\exchange_data.h">
+      <Filter>Header Files\common_src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

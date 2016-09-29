@@ -14,6 +14,7 @@
     <ProjectGuid>{D3605EC0-6B5E-4234-8863-A4D9772CE0CB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>EasySrvDrv</RootNamespace>
+    <ProjectName>EasyDrv</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -41,7 +42,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>p:\PTUSA\common\;p:\PTUSA\common\WTL\;p:\PTUSA\common\WTL\list_control\;P:\PTUSA\common\win_util;$(IncludePath)</IncludePath>
+    <IncludePath>p:\PTUSA\common\;p:\PTUSA\common\WTL\;p:\PTUSA\common\WTL\list_control\;P:\PTUSA\common\win_util;P:\PTUSA\drivers\easy_srv\common_src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -120,6 +121,8 @@
     <ClInclude Include="..\..\..\common\WTL\list_control\ListTypes.h" />
     <ClInclude Include="..\..\..\common\WTL\list_control\PropertyItem.h" />
     <ClInclude Include="..\..\..\common\WTL\list_control\TitleTip.h" />
+    <ClInclude Include="..\common_src\drv_srv_communication.h" />
+    <ClInclude Include="..\common_src\exchange_data.h" />
     <ClInclude Include="bug_log.h" />
     <ClInclude Include="exchange_data.h" />
     <ClInclude Include="resource.h" />

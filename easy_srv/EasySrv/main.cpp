@@ -56,16 +56,6 @@ alarm_manager    *g_alarm_manager = 0;          ///< Работа с ошибками контролле
 alarm            *g_alarms[MAX_PROJECTS_CNT];   ///< Ошибки контроллеров.
 u_int_2           g_alarms_id[MAX_PROJECTS_CNT];///< Ошибки контроллеров.
 
-//-Данные для потоков, работающие с контроллерами.
-bool   g_thread_is_terminated[MAX_PROJECTS_CNT] = { 0 };
-HANDLE g_commctr_threads_array[MAX_PROJECTS_CNT + 1] = { 0 };
-int    g_chbase_nodes_cont_count = 0;
-
-/// @brief Синхронизатор доступа к PAC-ам.
-CSWMRG g_sync_PAC;
-
-/// @brief Количество потоков обмена с PAC.
-int    g_commctr_threads_count = 0;
 //-----------------------------------------------------------------------------
 // Используется для проверки соответствия DLL и версии в PAC.
 extern u_int_2 G_CURRENT_PROTOCOL_VERSION;

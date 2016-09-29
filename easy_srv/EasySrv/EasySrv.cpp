@@ -26,58 +26,159 @@
 #include "PAC_cmmctr.h"
 #include "errors_manager.h"
 
+#include "SWMRG.h"
+#include "CmnHdr.h"
+
+#if _MSC_VER == 1700
+#define snprintf _snprintf
+#endif // _MSC_VER
+
+const int MAX_PROJECTS_CNT = 256;
+
 extern PAC_cmmctr_group *g_PAC_descriptions;
-extern alarm   *g_alarms[256];
-extern u_int_2  g_alarms_id[256];
+extern alarm   *g_alarms[ MAX_PROJECTS_CNT ];
+extern u_int_2  g_alarms_id[ MAX_PROJECTS_CNT ];
 
 extern alarm_manager *g_alarm_manager; ///< Работа с ошибками контроллеров.
 
-const wchar_t *EasySrv::server_pipe_name = TEXT("\\\\.\\pipe\\EasySrvPipe");
-TCHAR EasySrv::request_buff[ EasySrv::BUFSIZE_PIPE ];
-TCHAR EasySrv::reply_buff[ EasySrv::BUFSIZE_PIPE ];
+const wchar_t *EasySrv::server_pipe_name = TEXT( "\\\\.\\pipe\\EasySrvPipe" );
+char EasySrv::request_buff[ EasySrv::BUFSIZE_PIPE ];
+char EasySrv::reply_buff[ EasySrv::BUFSIZE_PIPE ];
 
+BOOL EasySrv::m_fStopping;
+HANDLE EasySrv::server_pipe;
+HANDLE EasySrv::server_cmmctr_stopped_event;
+
+//-Данные для потоков, работающие с контроллерами.
+bool   g_thread_is_terminated[ MAX_PROJECTS_CNT ]       = { 0 };
+HANDLE g_commctr_threads_array[ MAX_PROJECTS_CNT + 1 ]  = { 0 };
+int    g_chbase_nodes_cont_count                        = 0;
+
+/// @brief Синхронизатор доступа к PAC-ам.
+CSWMRG g_sync_PAC;
+
+/// @brief Количество потоков обмена с PAC.
+int g_commctr_threads_count = 0;
+//-----------------------------------------------------------------------------
+uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
+    {		        
+    PAC_cmmctr *PAC_com = ( PAC_cmmctr* ) lpParameter;
+    int res;
+
+    // 1 - интервал опроса контроллера.
+    int sleep_time = 210;                            
+    if ( PAC_com->get_cmmctr()->get_timeout() > 2000 )
+        {
+        sleep_time *= 2;
+        }
+    if ( PAC_com->get_cmmctr()->get_timeout() > 4000 )
+        {
+        sleep_time *= 3;
+        }
+    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
+        "Поток работы с описанием PAC [ $%X ] запущен. Интервал опроса - %d мсек.",
+        PAC_com->get_description_id(), sleep_time );
+    BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
+
+    while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )
+        {        
+        res = PAC_com->get_PAC_info();//Получение информации от PAC.
+        if ( res <= 0 )
+            {
+            Sleep( 2 * sleep_time );
+            continue;
+            }
+
+        //Состояния устройств будут доступны после того, как мы получим 
+        //всю необходимую информацию от контроллера.
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Устройства PAC изменились." );
+        BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
+
+        PAC_com->get_dev_synch_access()->WaitToWrite();
+        PAC_com->clear_tags(); // Очищаем все теги проекта.
+        PAC_com->get_dev_synch_access()->Done();
+
+        //Пытаемся получить все устройства контроллера.
+        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
+            {            
+            PAC_com->get_dev_synch_access()->WaitToWrite();
+            res = PAC_com->get_PAC_devices();
+            PAC_com->get_dev_synch_access()->Done();
+
+            if ( PAC_cmmctr::LOAD_OK == res )
+                {
+                snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
+                    "Получены устройства PAC." );
+                BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );                
+                break;
+                }  
+
+            Sleep( sleep_time );
+            }
+
+        //Пытаемся получить состояния всех устройств контроллера.
+        while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
+            {            
+            PAC_com->get_dev_synch_access()->WaitToWrite();
+            res = PAC_com->get_PAC_all_devices_states();
+            PAC_com->get_dev_synch_access()->Done();
+
+            if ( PAC_cmmctr::PAC_DEVICES_CHANGING == res )     
+                {   
+                break;
+                }
+
+            //Пытаемся получить параметры всех устройств контроллера.
+            int CRC = PAC_com->get_PAC_params_CRC();
+            if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
+                {                
+                PAC_com->backup_PAC_params();
+                PAC_com->set_saved_CRC( CRC );
+                }
+
+            //Получаем ошибки устройств и объектов.
+            PAC_com->get_dev_synch_access()->WaitToWrite();
+            PAC_com->get_PAC_errors();
+            PAC_com->get_dev_synch_access()->Done();
+
+            Sleep( sleep_time );
+            } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
+
+        } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
+
+    _endthreadex( 0 );
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 EasySrv::EasySrv(PWSTR pszServiceName, 
                  BOOL fCanStop, 
                  BOOL fCanShutdown, 
                  BOOL fCanPauseContinue)
                  : CServiceBase(pszServiceName, fCanStop, fCanShutdown, fCanPauseContinue),
-                 is_server_communication_thread_init_complete( false ),
-                 server_pipe( INVALID_HANDLE_VALUE )
+                 is_server_communication_thread_init_complete( false )                 
     {
     m_fStopping = FALSE;
 
     // Create a manual-reset event that is not signaled at first to indicate 
     // the stopped signal of the service.
-    m_hStoppedEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
-    if (m_hStoppedEvent == NULL)
-        {
-        throw GetLastError();
-        }
-
     server_cmmctr_stopped_event = CreateEvent(NULL, TRUE, FALSE, NULL);
     if (server_cmmctr_stopped_event == NULL)
         {
         throw GetLastError();
         }
     }
-
-
+//-----------------------------------------------------------------------------
 EasySrv::~EasySrv(void)
     {
-    if (m_hStoppedEvent)
-        {
-        CloseHandle(m_hStoppedEvent);
-        m_hStoppedEvent = NULL;
-        }
-
     if (server_cmmctr_stopped_event)
         {
         CloseHandle(server_cmmctr_stopped_event);
         server_cmmctr_stopped_event = NULL;
         }
     }
-
-
+//-----------------------------------------------------------------------------
 //
 //   FUNCTION: EasySrv::OnStart(DWORD, LPWSTR *)
 //
@@ -111,9 +212,9 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
 
     g_PAC_descriptions = new PAC_cmmctr_group(); //Контроллеры сервера.
     g_alarm_manager = new alarm_manager();       //Работа с ошибками контроллеров.
-
     memset(g_alarms_id, 0, sizeof(g_alarms_id));
-        
+
+
     //Запускаем поток для работы с запросами от сервера.
     static SECURITY_ATTRIBUTES g_sa = {0};
     g_sa.nLength = sizeof(g_sa);
@@ -142,35 +243,11 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
         throw GetLastError();        
         }
 
-    // Queue the pipe service function for execution in a worker thread.
-    CThreadPool::QueueUserWorkItem(&EasySrv::server_communication_thread, this);
-
-    // Queue the main service function for execution in a worker thread.
-    CThreadPool::QueueUserWorkItem(&EasySrv::ServiceWorkerThread, this);
+    chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
+        0, 0, 0 );	
     }
-
-
-//
-//   FUNCTION: EasySrv::ServiceWorkerThread(void)
-//
-//   PURPOSE: The method performs the main function of the service. It runs 
-//   on a thread pool worker thread.
-//
-void EasySrv::ServiceWorkerThread(void)
-    {
-    // Periodically check if the service is stopping.
-    while (!m_fStopping)
-        {
-        // Perform main service function here...
-
-        ::Sleep(2000);  // Simulate some lengthy operations.
-        }
-
-    // Signal the stopped event.
-    SetEvent(m_hStoppedEvent);
-    }
-
-void EasySrv::server_communication_thread()
+//-----------------------------------------------------------------------------
+uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
     {
     OVERLAPPED overlap;
     SecureZeroMemory(&overlap, sizeof(overlap));
@@ -181,8 +258,7 @@ void EasySrv::server_communication_thread()
         FALSE,   // initial state = unsignaled 
         NULL);   // unnamed event object 
     overlap.hEvent = event;
-
-    bool connected = false;
+        
     DWORD cbBytesRead = 0, cbWritten = 0; 
     int res = 0;
     int fSuccess = 0;
@@ -218,11 +294,11 @@ void EasySrv::server_communication_thread()
                         break;
 
                     case ERROR_IO_PENDING:
-                        Sleep(100);                
+                        Sleep( 100 );                
                         break;
 
                     default:
-                        Sleep(100);
+                        Sleep( 100 );
                         break;
                     }
                 break;
@@ -257,15 +333,15 @@ void EasySrv::server_communication_thread()
                 state = DISCONNECT;
                 break;
 
-            case READING_WAITING:
-                res = WaitForSingleObject( overlap.hEvent, 10000 );
+            case READING_WAITING:                
+                res = WaitForSingleObject( overlap.hEvent, 1000 );
                 if ( res == WAIT_OBJECT_0 )
-                	{
+                    {
                     //SecureZeroMemory(&overlap, sizeof(overlap));                
                     //overlap.hEvent = event;
 
                     state = WRITING;
-                	}
+                    }
                 else
                     {
                     res = GetLastError();
@@ -276,39 +352,105 @@ void EasySrv::server_communication_thread()
                 break;
 
             case WRITING:
+                {
+                static in_tag_info tag;
+                static GET_TAG_RES res_get_tag;
+                static TAG_VAL_TYPE tag_type;
+                static bool use_only_tag_id;
+
+                static int idx;
+                static int str_len;
+
+                use_only_tag_id = false;
+                idx = 1;
+
                 switch (request_buff[ 0 ])
                     {
-                    case 1: //Get tag value
-                        // Write the reply to the pipe. 
-                        *((int*) reply_buff) = 10;
+                    case SRV_CMD::GET_TAG_VALUE: //Get tag value
 
-                        fSuccess = WriteFile( 
-                            server_pipe,       // handle to pipe 
-                            reply_buff,        // buffer to write from 
-                            sizeof(int),       // number of bytes to write 
-                            &cbWritten,        // number of bytes written 
-                            &overlap );  
+                        memcpy( &tag, &request_buff[ idx ], sizeof( tag ) );
+                        idx += sizeof( tag );
 
-                        //Успешно считали данные.
-                        if (fSuccess && cbWritten != 0)
-                            {   
-                            state = READING;
-                            continue;
-                            }
+                        str_len = strlen( &request_buff[ idx ] ) + 1;
+                        tag.PAC_address = &request_buff[ idx ];
+                        idx += str_len;
 
-                        res = GetLastError();
-                        //Операция еще не завершена.
-                        if (!fSuccess && res == ERROR_IO_PENDING)
-                            {   
-                            Sleep(10);
-                            continue;
-                            }
+                        str_len = strlen( &request_buff[ idx ] ) + 1;
+                        tag.PAC_name = &request_buff[ idx ];
+                        idx += str_len;
 
-                        // An error occurred; disconnect from the client.
-                        state = DISCONNECT;
+                        str_len = strlen( &request_buff[ idx ] ) + 1;
+                        tag.tag_name = &request_buff[ idx ];
+                        idx += str_len;
+
+                        tag_type = ( TAG_VAL_TYPE ) request_buff[ idx++ ];
+                        use_only_tag_id = request_buff[ idx ] != 0;
+                        idx++; 
+                        break;
+
+                    case SRV_CMD::GET_TAG_VALUE_BY_ID: //Get tag value by ID                        
+                        tag_type = ( TAG_VAL_TYPE ) request_buff[ idx++ ];
+                        tag.PAC_descr_id = request_buff[ idx++ ];
+                        tag.tag_id = *( ( u_int* ) ( request_buff + idx ) );
+
+                        use_only_tag_id = true;
                         break;
                     }
+
+                void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
+                    use_only_tag_id );
+                
+                reply_buff[ 0 ] = ( char ) res_get_tag;
+                int size_to_write = 1;
+
+                switch (tag_type)
+                    {
+                    case T_NUMBER:
+                        // Write the reply to the pipe. 
+                        size_to_write += sizeof( double );
+                        memcpy( reply_buff + 1,
+                            ( double* )tag_val, sizeof( double ) );
+
+                        break;
+
+                    case T_STRING:
+                        size_to_write += strlen( ( char* ) tag_val ) + 1;
+                        memcpy( reply_buff + 1,
+                            tag_val, strlen( ( char* ) tag_val ) );                                
+                        break;
+
+                    default:
+                        break;
+                    }
+
+                fSuccess = WriteFile( 
+                    server_pipe,       // handle to pipe 
+                    reply_buff,        // buffer to write from 
+                    size_to_write,     // number of bytes to write 
+                    &cbWritten,        // number of bytes written 
+                    &overlap );  
+
+                //Успешно записали данные.
+                if ( fSuccess && cbWritten != 0 )
+                    {   
+                    state = READING;
+                    continue;
+                    }
+
+                res = GetLastError();
+
+                //Операция еще не завершена.
+                if ( !fSuccess && res == ERROR_IO_PENDING )
+                    {   
+                    state = READING;                    
+                    continue;
+                    }
+
+                // An error occurred; disconnect from the client.
+                state = DISCONNECT;
+
                 break;
+                }
 
             case DISCONNECT:
                 FlushFileBuffers(server_pipe); 
@@ -327,8 +469,159 @@ void EasySrv::server_communication_thread()
 
     // Signal the stopped event.
     SetEvent(server_cmmctr_stopped_event);
+
+    return 0;
     }
 
+//-----------------------------------------------------------------------------
+void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
+                             GET_TAG_RES &res_get_tag,
+                             bool use_only_tag_id )
+    {
+    // Проверяется, не превышает ли номер описания PAC максимальный (1). Далее
+    // есть ли описание данного PAC (2). Если нет, то тогда он добавляется в 
+    // список контроллеров проекта (3) и создается поток, который
+    // взаимодействует с контроллером (4).
+    // Проверяется есть ли значение tag.tag_id в интерпретаторе Lua (5),
+    // Если есть, тогда возвращается значение тега (6), иначе проверяется 
+    // есть ли переменная tag.tag_name в в интерпретаторе Lua (7). После ее
+    // нахождения добавляется новый тег в в интерпретатор (8), если же она 
+    // не найдена, добавляется новый тег (9), который всегда возвращает 
+    // значение 0.
+    static double tag_val;    
+    static char   str_tag_val[ 500 ];    
+    static void* res;
+
+    tag_val          = 0;
+    str_tag_val[ 0 ] = 0;    
+    res              = 0;
+    
+    switch ( tag_type )
+        {
+        case T_NUMBER:
+            res = ( void* ) &tag_val;   
+            break;
+
+        case T_STRING:
+            res = ( void* ) &str_tag_val;    
+            break;
+        }      
+
+    if ( tag.PAC_descr_id > PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER )       //1
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Ошибка get_tag_value(...) - номер описания "
+            "PAC %d превышает допустимый %d!",
+            tag.PAC_descr_id, PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER );
+
+        BUG_LOG.add_msg_once( "Driver", "" );
+
+        res_get_tag = GET_TAG_RES::GT_ERR;
+        return res;
+        }
+
+    PAC_cmmctr *current_PAC_cmmctr =
+        g_PAC_descriptions->get_PAC( tag.PAC_descr_id );
+    if ( 0 == current_PAC_cmmctr )                                         //2
+        {
+        if ( use_only_tag_id )
+            {
+            res_get_tag = GET_TAG_RES::GT_NEED_FUL_TAG_INFO;
+            return res;
+            }
+
+        current_PAC_cmmctr = g_PAC_descriptions->add_PAC(                  //3
+            tag.PAC_address,
+            tag.PAC_name, tag.PAC_descr_id, 
+            tag.PAC_port, tag.timeout );     
+
+        if ( 0 == current_PAC_cmmctr )
+            {
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                "get_tag_value(...) - ошибка добавления new_PAC_cmmctr = 0!" );
+            BUG_LOG.add_msg_once( "Driver", "" );
+
+            res_get_tag = GET_TAG_RES::GT_ERR;
+            return res;
+            }
+
+        g_commctr_threads_array[ g_commctr_threads_count++ ] = 
+            chBEGINTHREADEX( 0, 0, PAC_communication_thread, 
+            current_PAC_cmmctr, 0, 0 );						               //4
+        }
+
+    //-Получены ли устройства контроллера.
+    if ( current_PAC_cmmctr->is_got_PAC_devices() == 0 ) 
+        {        
+        res_get_tag = GET_TAG_RES::GT_OK;
+        return res; //Не получены устройства PAC.
+        }
+
+    current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();              //5
+    bool is_exist_tag = false;
+    switch ( tag_type )                                                    
+        {
+        case T_NUMBER:
+            tag_val = current_PAC_cmmctr->get_tag_value(                   
+                tag.tag_id, is_exist_tag );
+            break;
+
+        case T_STRING:
+            current_PAC_cmmctr->get_tag_str_value( tag.tag_id,
+                is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
+            break;
+        }    
+    current_PAC_cmmctr->get_dev_synch_access()->Done();
+
+    if ( false == is_exist_tag )                                           //7
+        {
+        if ( use_only_tag_id ) 
+            {
+            res_get_tag = GET_TAG_RES::GT_NEED_FUL_TAG_INFO;
+            return res;
+            }
+
+        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
+        switch ( tag_type )
+            {
+            case T_NUMBER:
+                tag_val = current_PAC_cmmctr->get_tag_value(                
+                    tag.tag_name, is_exist_tag );
+                break;
+
+            case T_STRING:
+                current_PAC_cmmctr->get_tag_str_value( tag.tag_name,
+                    is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
+                break;
+            }
+        current_PAC_cmmctr->get_dev_synch_access()->Done();
+
+        if ( true == is_exist_tag )                                        //8
+            {
+            current_PAC_cmmctr->add_exist_tag( tag.tag_name, tag.tag_id );
+            res_get_tag = GET_TAG_RES::GT_OK;
+            }
+
+        if ( false == is_exist_tag )                                       //9
+            {
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
+                "Тег \"%s\" не найден!", 
+                tag.tag_name );
+            BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
+                current_PAC_cmmctr->get_address() );
+
+            current_PAC_cmmctr->add_nill_tag( tag.tag_id );
+            res_get_tag = GET_TAG_RES::GT_NO_TAG_FOUND;
+            }
+        }
+    else
+        {
+        res_get_tag = GET_TAG_RES::GT_OK;
+        }
+
+    return res;
+    }
+//-----------------------------------------------------------------------------
 //
 //   FUNCTION: EasySrv::OnStop(void)
 //
@@ -350,15 +643,28 @@ void EasySrv::OnStop()
     // Indicate that the service is stopping and wait for the finish of the 
     // main service function (ServiceWorkerThread).
     m_fStopping = TRUE;
-    if (WaitForSingleObject(m_hStoppedEvent, INFINITE) != WAIT_OBJECT_0)
-        {
-        throw GetLastError();
-        }
 
     if (WaitForSingleObject(server_cmmctr_stopped_event, INFINITE) != WAIT_OBJECT_0)
         {
         throw GetLastError();
         }
+
+    //-Завершение всех потоков, работающих с контроллерами.
+    memset( g_thread_is_terminated, 1, sizeof( g_thread_is_terminated ) );
+    Sleep( 1 );
+
+    const int MAX_THREAD_END_WAIT_TIME = 15000;
+    for ( int i = 0; i < MAX_PROJECTS_CNT + 1; i++ )
+        {
+        if (  g_commctr_threads_array[ i ] )
+            {
+            WaitForSingleObject( g_commctr_threads_array[ i ],
+                MAX_THREAD_END_WAIT_TIME );
+            CloseHandle( g_commctr_threads_array[ i ] );
+            g_commctr_threads_array[ i ] = 0;
+            }
+        }
+    Sleep( 1 );
 
     delete g_PAC_descriptions;
     g_PAC_descriptions = 0;

@@ -539,14 +539,14 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
 EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
                                    UCHAR &result )
     {
-    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    //LARGE_INTEGER Frequency;
+    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    LARGE_INTEGER Frequency;
 
-    //if ( tag_id == 0xe13b0009 )
-    //    {
-    //    QueryPerformanceFrequency(&Frequency); 
-    //    QueryPerformanceCounter(&StartingTime);
-    //    }
+    if ( tag_id == 0xe13b0009 )
+        {
+        QueryPerformanceFrequency(&Frequency); 
+        QueryPerformanceCounter(&StartingTime);
+        }
     
     GET_TAG_RES res_get_tag;
     double tag_val = 0;        
@@ -568,14 +568,14 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
             }
         }
 
-    //if ( tag_id == 0xe13b0009 )
-    //    {
-    //    QueryPerformanceCounter(&EndingTime);
-    //    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    if ( tag_id == 0xe13b0009 )
+        {
+        QueryPerformanceCounter(&EndingTime);
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
 
-    //    bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
-    //    BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
-    //    }
+        bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
+        BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
+        }
 
     return tag_val;
     }
@@ -710,10 +710,10 @@ int load_from_stream( alarm &a, char *buff )
 
     return len;
     }
-
+//-----------------------------------------------------------------------------
 EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
     {  
-    static char cmd_str[ 500 ] = {};
+    char cmd_str[ 2 ] = {};
 
     int data_size = 0;
     cmd_str[ data_size++ ] = SRV_CMD::GET_ALARMS;
@@ -748,7 +748,26 @@ EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
                                    error_cmd *errors )
-    {
+    {       
+    char* cmd_str = new char[ 1 + 1 + 4 + count * sizeof( error_cmd ) ];
+
+    int data_size = 0;
+    cmd_str[ data_size++ ] = SRV_CMD::SET_ALARMS;
+    cmd_str[ data_size++ ] = PAC_id;
+
+    memcpy( cmd_str + data_size, &count, sizeof( count ) );
+    data_size += sizeof( count );
+
+    for ( int i = 0; i < count; i++)
+    	{
+        memcpy( cmd_str + data_size, &errors[ i ], sizeof( error_cmd ) );
+        data_size += sizeof( error_cmd );
+    	}
+
+    transact_pipe( cmd_str, data_size );    
+    
+    delete [] cmd_str;
+
     return 0;
     }
 //-----------------------------------------------------------------------------

@@ -82,7 +82,7 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>p:\PTUSA\common;p:\PTUSA\common\QuickLZ;p:\PTUSA\common\win_util;p:\PTUSA\common\PAC-driver;p:\PTUSA\common\lua;p:\PTUSA\common\tolua++;p:\PTUSA\common\util;$(IncludePath)</IncludePath>
+    <IncludePath>p:\PTUSA\common;p:\PTUSA\common\QuickLZ;p:\PTUSA\common\win_util;p:\PTUSA\common\PAC-driver;p:\PTUSA\common\lua;p:\PTUSA\common\tolua++;p:\PTUSA\common\util;P:\PTUSA\drivers\easy_srv;P:\PTUSA\drivers\easy_srv\common_src;$(IncludePath)</IncludePath>
     <EnableManagedIncrementalBuild>true</EnableManagedIncrementalBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

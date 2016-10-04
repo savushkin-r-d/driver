@@ -22,6 +22,7 @@ enum SRV_CMD
     SET_TAG_VALUE,
 
     GET_ALARMS,
+    SET_ALARMS,
     };
 
 /// @brief Типы значения тега.

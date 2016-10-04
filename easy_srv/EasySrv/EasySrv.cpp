@@ -298,8 +298,8 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     //Создаем поток, который будет следить, есть ли связь с 
     // контроллерами. В случае ее пропадания\появления 
     // устанавливать\сбрасывать соответствующую ошибку.
-    g_commctr_threads_array[ MAX_PROJECTS_CNT ] = 
-        chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
+    g_commctr_threads_array[ 0 ] = 
+        chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); 
 
     chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
         0, 0, 0 );	
@@ -352,11 +352,11 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         break;
 
                     case ERROR_IO_PENDING:
-                        Sleep( 0 );                
+                        Sleep( 1 );                
                         break;
 
                     default:
-                        Sleep( 0 );
+                        Sleep( 1 );
                         break;
                     }
                 break;
@@ -488,6 +488,21 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         state = READING;
                         continue;
                         }
+
+                    case SRV_CMD::SET_ALARMS:
+                        u_char PAC_descr_id = request_buff[ idx++ ];
+                        int err_cnt = *( ( int* ) ( request_buff + idx ) );
+                        idx += sizeof( int );                         
+                        error_cmd *errors = ( error_cmd* ) ( request_buff + idx );
+                       
+                        set_alarm_cmd( PAC_descr_id, err_cnt, errors );
+
+                        reply_buff[ 0 ] = 0;
+                        fSuccess = WriteFile( server_pipe, 
+                            reply_buff, 1, &cbWritten, &overlap );  
+
+                        state = READING;
+                        continue;
                     }
 
                 void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
@@ -716,8 +731,8 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     }
 
 //-----------------------------------------------------------------------------
-int EasySrv::set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
-    TAG_VAL_TYPE tag_type )
+int EasySrv::set_tag( const char *tag_name, u_char PAC_description_id,
+                     void *value, TAG_VAL_TYPE tag_type )
     {
     PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( PAC_description_id );
     if ( current_PAC_cmmctr )
@@ -741,6 +756,40 @@ int EasySrv::set_tag( const char *tag_name, UCHAR PAC_description_id, void *valu
         current_PAC_cmmctr->set_tag_Lua_cmd( cmd );
         current_PAC_cmmctr->get_dev_synch_access()->Done();
         }
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int EasySrv::set_alarm_cmd( u_char PAC_id, int count, error_cmd *errors )
+    {   
+    if ( g_PAC_descriptions->get_PAC( PAC_id ) != 0 )
+        {
+        std::string Lua_str = " ";
+        Lua_str[ 0 ] = 104;
+
+        for ( int i = 0; i < count; i++ )
+            {
+            char tmp_str[ 200 ];
+
+            snprintf( tmp_str, sizeof( tmp_str ),
+                "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+                errors[ i ].cmd, 
+                errors[ i ].object_type,
+                errors[ i ].object_number,
+                errors[ i ].object_alarm_number );
+
+            Lua_str += tmp_str;         
+            }
+
+        const int SERVICE_ID = 1;
+
+        g_PAC_descriptions->get_PAC( PAC_id )->get_cmmctr()->send_2_PAC( SERVICE_ID, 
+            Lua_str.c_str(), Lua_str.length() );
+
+        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->WaitToWrite();
+        g_PAC_descriptions->get_PAC( PAC_id )->get_PAC_errors();
+        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->Done();
+        }        
 
     return 0;
     }

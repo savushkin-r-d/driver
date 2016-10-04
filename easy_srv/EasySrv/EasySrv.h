@@ -23,6 +23,7 @@
 
 #include "common_src\exchange_data.h"
 #include "drv_srv_communication.h"
+#include "PAC-driver\errors.h"
 
 class EasySrv : public CServiceBase
 {
@@ -63,9 +64,10 @@ protected:
     /// @param [in] tag_type            - тип значения тега.
     ///
     /// @return 0 - ок.
-    static int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
-        TAG_VAL_TYPE tag_type );
+    static int set_tag( const char *tag_name, u_char PAC_description_id,
+        void *value,  TAG_VAL_TYPE tag_type );
 
+    static int set_alarm_cmd( u_char PAC_id, int count, error_cmd *errors );
 
 private:
     static BOOL m_fStopping;

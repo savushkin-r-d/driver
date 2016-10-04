@@ -19,7 +19,9 @@ enum SRV_CMD
     GET_TAG_VALUE = 1,
     GET_TAG_VALUE_BY_ID,
 
-    SET_TAG_VALUE
+    SET_TAG_VALUE,
+
+    GET_ALARMS,
     };
 
 /// @brief Типы значения тега.

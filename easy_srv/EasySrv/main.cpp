@@ -49,13 +49,6 @@
 // The password to the service account name
 #define SERVICE_PASSWORD         NULL
 
-const int        MAX_PROJECTS_CNT = 256;
-PAC_cmmctr_group *g_PAC_descriptions = 0;		///< Контроллеры сервера.
-
-alarm_manager    *g_alarm_manager = 0;          ///< Работа с ошибками контроллеров.
-alarm            *g_alarms[MAX_PROJECTS_CNT];   ///< Ошибки контроллеров.
-u_int_2           g_alarms_id[MAX_PROJECTS_CNT];///< Ошибки контроллеров.
-
 //-----------------------------------------------------------------------------
 // Используется для проверки соответствия DLL и версии в PAC.
 extern u_int_2 G_CURRENT_PROTOCOL_VERSION;

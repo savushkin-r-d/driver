@@ -33,11 +33,7 @@
 #define snprintf _snprintf
 #endif // _MSC_VER
 
-const int MAX_PROJECTS_CNT = 256;
-
 extern PAC_cmmctr_group *g_PAC_descriptions;
-extern alarm   *g_alarms[ MAX_PROJECTS_CNT ];
-extern u_int_2  g_alarms_id[ MAX_PROJECTS_CNT ];
 
 extern alarm_manager *g_alarm_manager; ///< Работа с ошибками контроллеров.
 
@@ -59,6 +55,14 @@ CSWMRG g_sync_PAC;
 
 /// @brief Количество потоков обмена с PAC.
 int g_commctr_threads_count = 0;
+
+PAC_cmmctr_group *g_PAC_descriptions = 0;		///< Контроллеры сервера.
+
+///< Работа с ошибками контроллеров.
+extern PAC_cmmctr_group *g_PAC_descriptions;  
+extern alarm  g_alarms[ MAX_PROJECTS_CNT ][ MAX_ALARMS_CNT ];
+
+
 //-----------------------------------------------------------------------------
 uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     {		        
@@ -151,6 +155,56 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
     return 0;
     }
 //-----------------------------------------------------------------------------
+uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
+    {
+    char server_PACs_connection_state[ MAX_PROJECTS_CNT ];
+    memset( server_PACs_connection_state, 1, MAX_PROJECTS_CNT );
+
+    while ( !g_thread_is_terminated[ 0 ] )   
+        {
+        g_sync_PAC.WaitToRead();
+        if ( g_thread_is_terminated[ 0 ] )
+            {            
+            g_sync_PAC.Done();
+            break;
+            }
+
+        //-Проверяем состояния контроллеров.
+        for ( unsigned int i = 0; i < PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER; i++ )
+            {   
+            PAC_cmmctr *PAC = g_PAC_descriptions->get_PAC( i );
+            if ( 0 == PAC )
+                {
+                continue;
+                }
+
+            if ( PAC->get_connection_state() != 
+                server_PACs_connection_state[ PAC->get_description_id() ] )
+                {
+                if ( 0 == PAC->get_connection_state() )
+                    {
+                    g_alarm_manager->add_no_PAC_connection_error( PAC->get_name(), 
+                        PAC->get_description_id() );
+                    }
+                else
+                    {
+                    g_alarm_manager->remove_no_PAC_connection_error(
+                        PAC->get_description_id() );
+                    }
+
+                server_PACs_connection_state[ PAC->get_description_id() ] = 
+                    PAC->get_connection_state();
+                }
+            }
+
+        g_sync_PAC.Done();
+        Sleep( 1000 );
+        }
+
+    _endthreadex( 0 );  
+    return 0;
+    }
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 EasySrv::EasySrv(PWSTR pszServiceName, 
                  BOOL fCanStop, 
@@ -212,8 +266,6 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
 
     g_PAC_descriptions = new PAC_cmmctr_group(); //Контроллеры сервера.
     g_alarm_manager = new alarm_manager();       //Работа с ошибками контроллеров.
-    memset(g_alarms_id, 0, sizeof(g_alarms_id));
-
 
     //Запускаем поток для работы с запросами от сервера.
     static SECURITY_ATTRIBUTES g_sa = {0};
@@ -242,6 +294,12 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
         {
         throw GetLastError();        
         }
+
+    //Создаем поток, который будет следить, есть ли связь с 
+    // контроллерами. В случае ее пропадания\появления 
+    // устанавливать\сбрасывать соответствующую ошибку.
+    g_commctr_threads_array[ MAX_PROJECTS_CNT ] = 
+        chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); //
 
     chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
         0, 0, 0 );	
@@ -294,11 +352,11 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         break;
 
                     case ERROR_IO_PENDING:
-                        Sleep( 100 );                
+                        Sleep( 0 );                
                         break;
 
                     default:
-                        Sleep( 100 );
+                        Sleep( 0 );
                         break;
                     }
                 break;
@@ -398,6 +456,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         break;
 
                     case SRV_CMD::SET_TAG_VALUE:
+                        {
                         tag_type = ( TAG_VAL_TYPE ) request_buff[ idx++ ];
                         u_char PAC_descr_id = request_buff[ idx++ ];
 
@@ -408,15 +467,27 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         set_tag( tag_name, PAC_descr_id, request_buff + idx, tag_type );
 
                         reply_buff[ 0 ] = 0;
-                        fSuccess = WriteFile( 
-                            server_pipe,       // handle to pipe 
-                            reply_buff,        // buffer to write from 
-                            1,                 // number of bytes to write 
-                            &cbWritten,        // number of bytes written 
-                            &overlap );  
+                        fSuccess = WriteFile( server_pipe, 
+                            reply_buff, 1, &cbWritten, &overlap );  
 
-                        state = READING;                    
-                        continue;                        
+                        state = READING;
+                        continue;
+                        }     
+
+                    case SRV_CMD::GET_ALARMS:
+                        {                    
+                        u_char PAC_descr_id = request_buff[ idx++ ];
+
+                        g_alarm_manager->sync_alarms( PAC_descr_id );
+                        int size = g_alarm_manager->save_to_stream(
+                            PAC_descr_id, reply_buff );
+                                                
+                        fSuccess = WriteFile( server_pipe,     
+                            reply_buff, size, &cbWritten, &overlap );  
+
+                        state = READING;
+                        continue;
+                        }
                     }
 
                 void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
@@ -673,7 +744,7 @@ int EasySrv::set_tag( const char *tag_name, UCHAR PAC_description_id, void *valu
 
     return 0;
     }
-//-----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 //
 //   FUNCTION: EasySrv::OnStop(void)
 //

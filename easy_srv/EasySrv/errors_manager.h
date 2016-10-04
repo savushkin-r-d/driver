@@ -14,6 +14,7 @@
 #ifndef ERRORS_MANAGER_H
 #define ERRORS_MANAGER_H
 
+#include "PAC-driver\errors.h"
 #include "exchange_data.h"
 #include "PAC_cmmctr.h"
 
@@ -32,11 +33,6 @@ extern "C"
 #include "tolua++.h"
     };
 
-extern PAC_cmmctr_group *g_PAC_descriptions;  
-extern alarm   *g_alarms[ 256 ];
-extern u_int_2  g_alarms_id[ 256 ];
-
-extern int  tolua_PAC_dev_open ( lua_State* tolua_S );
 //-----------------------------------------------------------------------------
 /// @brief Представление информации обо всех ошибках. 
 class alarm_manager
@@ -75,23 +71,39 @@ class alarm_manager
         /// @return 0 - ок.
         int remove_no_PAC_connection_error( UINT project_description_id );
 
-        /// @brief Получение ошибок для их передачи на сервер.
-        ///
-        /// @param project_description_id [ in ] - номер описания в базе 
-        /// каналов.
-        /// @param project_alarms [ out ] - ошибка для данного описания проекта.
-        ///
-        /// @return 0 - ок.
-        int get_alarms( unsigned char project_description_id, 
-            all_alarm &project_alarms );
-
-
         int add_PAC_errors( const char *LUA_str, 
             unsigned char project_description_id );
+
+        int save_to_stream( unsigned char PAC_description_id, char *buff );
+
+        int sync_alarms( u_char PAC_id );
+
+        int set_alarm( unsigned char PAC_description_id, int n,            
+            ALARM_TYPE a_type,
+            char * a_description,
+            char * a_group,
+            u_char a_enable,
+            bool   a_suppress,
+
+            u_char a_inhibit,
+            int    a_priority,
+            ALARM_STATE a_state,
+
+            u_char a_driver_id,
+
+            int a_id_object_type,
+            int a_id_object_number,
+            int a_id_object_alarm_number );
+
+        int set_alarms_id( unsigned char PAC_description_id, int id );
+        int set_alarms_cnt( unsigned char PAC_description_id, int cnt );
 
     private:
         lua_State *lua_state;        ///< Экземпляр Lua для работы с ошибками.
         CSWMRG    *lua_synch_access; ///< Синхронизация обращений к Lua.
     };
+
+
+alarm_manager* G_ALARM_MANAGER(); 
 
 #endif // ERRORS_MANAGER_H

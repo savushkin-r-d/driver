@@ -46,6 +46,9 @@
     <Filter Include="Source Files\util">
       <UniqueIdentifier>{d705f123-939e-47f6-8a26-e4a5539cf040}</UniqueIdentifier>
     </Filter>
+    <Filter Include="pkg">
+      <UniqueIdentifier>{3a31a1da-e4fd-403a-aa27-6c07d8c64ccc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ServiceBase.cpp">
@@ -200,9 +203,6 @@
     <ClInclude Include="EasySrv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="exchange_data.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="PAC_cmmctr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -305,8 +305,10 @@
     <ClInclude Include="bug_log.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tolua++\pkg\errors.hh">
+      <Filter>pkg</Filter>
+    </None>
   </ItemGroup>
 </Project>

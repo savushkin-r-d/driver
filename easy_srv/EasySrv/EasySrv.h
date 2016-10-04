@@ -21,7 +21,7 @@
 
 #include "ServiceBase.h"
 
-#include "exchange_data.h"
+#include "common_src\exchange_data.h"
 #include "drv_srv_communication.h"
 
 class EasySrv : public CServiceBase
@@ -55,7 +55,6 @@ protected:
     static void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
         GET_TAG_RES &res, bool use_only_tag_id = false );
 
-    //-----------------------------------------------------------------------------
     /// @brief Запись в тег.
     ///
     /// @param [in] tag_name            - имя тега.
@@ -66,6 +65,7 @@ protected:
     /// @return 0 - ок.
     static int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
         TAG_VAL_TYPE tag_type );
+
 
 private:
     static BOOL m_fStopping;

@@ -124,7 +124,6 @@
     <ClInclude Include="..\common_src\drv_srv_communication.h" />
     <ClInclude Include="..\common_src\exchange_data.h" />
     <ClInclude Include="bug_log.h" />
-    <ClInclude Include="exchange_data.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

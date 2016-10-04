@@ -4,6 +4,7 @@
 
 #include "bug_log.h"
 #include "exchange_data.h"
+#include "PAC-driver\errors.h"
 
 #include "drv_srv_communication.h"
 
@@ -31,6 +32,8 @@ int connect_to_srv();
 
 bool g_connected = false;
 int g_chbase_nodes_cont_count = 0;
+
+all_alarm   g_all_alarms[ MAX_PROJECTS_CNT ];
 //-----------------------------------------------------------------------------
 HANDLE g_pipe;
 OVERLAPPED g_overlap;
@@ -65,6 +68,19 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                 NULL);   // unnamed event object 
             g_overlap.hEvent = g_event;
 
+
+            for ( int i = 0; i < MAX_PROJECTS_CNT; i++ )
+            	{
+                g_all_alarms[ i ].alarms = new alarm[ MAX_ALARMS_CNT ];
+                for ( int j = 0; j < MAX_ALARMS_CNT; j++ )
+                    {
+                    g_all_alarms[ i ].alarms[ j ].description = 
+                        new char[ MAX_DESCR_LEN ];
+                    g_all_alarms[ i ].alarms[ j ].group = 
+                        new char[ MAX_GROUP_LEN ];
+                    }
+            	}
+            
             break;
 
         case DLL_THREAD_ATTACH:  
@@ -74,6 +90,21 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             break;
 
         case DLL_PROCESS_DETACH:  
+            for ( int i = 0; i < MAX_PROJECTS_CNT; i++ )
+                {                
+                for ( int j = 0; j < MAX_ALARMS_CNT; j++ )
+                    {
+                    delete [] g_all_alarms[ i ].alarms[ j ].description;
+                    delete [] g_all_alarms[ i ].alarms[ j ].group;
+
+                    g_all_alarms[ i ].alarms[ j ].description = 0;
+                    g_all_alarms[ i ].alarms[ j ].group = 0;
+                    }
+
+                delete [] g_all_alarms[ i ].alarms;
+                g_all_alarms[ i ].alarms = 0;
+                }
+
             final();
 
             bug_log::free_instance();
@@ -160,6 +191,16 @@ int connect_to_srv()
 //-----------------------------------------------------------------------------
 void* transact_pipe( void* buff, int size )
     {
+    if ( !g_connected )
+        {
+        g_connected = connect_to_srv() == 0;
+        }
+
+    if ( !g_connected )
+        {
+        return 0;
+        }
+
     BOOL fSuccess; 
     DWORD cbRead; 
     const int BUFSIZE = 512;
@@ -464,7 +505,6 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
 EXPORT double __stdcall get_value( in_tag_info &tag )
     {
     GET_TAG_RES res_get_tag;
-
     void *res = get_tag_value( tag, T_NUMBER, res_get_tag );
 
     if ( res_get_tag == GT_OK )
@@ -499,39 +539,19 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
 EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
                                    UCHAR &result )
     {
-    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    LARGE_INTEGER Frequency;
+    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    //LARGE_INTEGER Frequency;
 
-    if ( tag_id == 0xe13b0009 )
-        {
-        QueryPerformanceFrequency(&Frequency); 
-        QueryPerformanceCounter(&StartingTime);
-        }
+    //if ( tag_id == 0xe13b0009 )
+    //    {
+    //    QueryPerformanceFrequency(&Frequency); 
+    //    QueryPerformanceCounter(&StartingTime);
+    //    }
     
     GET_TAG_RES res_get_tag;
     double tag_val = 0;        
 
-    if ( !g_connected )
-        {
-        g_connected = connect_to_srv() == 0;
-        }
-
-    if ( !g_connected )
-        {
-        return 0;
-        }
-
-    static char cmd_str[ 500 ];
-
-    int data_size = 0;
-    cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
-    cmd_str[ data_size++ ] = T_NUMBER;
-
-    cmd_str[ data_size++ ] = PAC_description_id;    
-    memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
-    data_size += sizeof( tag_id );
-
-    void *res_buff = transact_pipe( cmd_str, data_size );    
+    void *res_buff = get_tag_value_by_id( tag_id, PAC_description_id, T_NUMBER, res_get_tag );
 
     if ( res_buff!= 0 )
         {
@@ -548,14 +568,14 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
             }
         }
 
-    if ( tag_id == 0xe13b0009 )
-        {
-        QueryPerformanceCounter(&EndingTime);
-        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+    //if ( tag_id == 0xe13b0009 )
+    //    {
+    //    QueryPerformanceCounter(&EndingTime);
+    //    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
 
-        bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
-        BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
-        }
+    //    bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
+    //    BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
+    //    }
 
     return tag_val;
     }
@@ -579,8 +599,9 @@ EXPORT char* __stdcall get_str_value( in_tag_info &tag )
         {
         if ( res_get_tag == GT_NO_TAG_FOUND )
             {
-            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), 
-                tag.tag_name );
+            wchar_t tmp[ 50 ];
+            mbstowcs( tmp, tag.tag_name, sizeof( tmp ) );
+            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), tmp );
             BUG_LOG.add_msg_once( tag.PAC_name, tag.PAC_address );
             }
         }
@@ -603,12 +624,8 @@ EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
                                       UCHAR &result )
     {
     GET_TAG_RES res_get_tag;
+    void *res = get_tag_value_by_id( tag_id, PAC_description_id, T_STRING, res_get_tag );
 
-    in_tag_info tag;
-    tag.tag_id = tag_id;
-    tag.PAC_descr_id = PAC_description_id;
-
-    void *res = get_tag_value( tag, T_STRING, res_get_tag, true );
     if ( res_get_tag == GT_NEED_FUL_TAG_INFO )
         {
         result = 1;
@@ -619,6 +636,9 @@ EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
         }
     
     return ( char* ) res;
+    
+    result = 1;
+    return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief Запись в тег на основе его полного описания.
@@ -654,8 +674,75 @@ int final()
     return 0;
     }
 //-----------------------------------------------------------------------------
+int load_from_stream( alarm &a, char *buff )
+    {
+    int len = 0;
+    int str_len_0 = 0;
+
+    memcpy( &a.params, buff + len, sizeof( a.params ) );
+    len += sizeof( a.params );    
+    memcpy( &a.type, buff + len, sizeof( a.type ) );
+    len += sizeof( a.type );
+
+    str_len_0 = strlen( buff + len ) + 1; 
+    memcpy( a.description, buff + len, str_len_0 );
+    len += str_len_0;
+
+    memcpy( &a.enable, buff + len, sizeof( a.enable ) );
+    len += sizeof( a.enable );
+
+    str_len_0 = strlen( buff + len ) + 1; 
+    memcpy( a.group, buff + len, str_len_0 );
+    len += str_len_0;
+
+    memcpy( &a.inhibit, buff + len, sizeof( a.inhibit ) );
+    len += sizeof( a.inhibit );
+    memcpy( &a.priority, buff + len, sizeof( a.priority ) );
+    len += sizeof( a.priority );
+    memcpy( &a.state, buff + len, sizeof( a.state ) );
+    len += sizeof( a.state );
+    memcpy( &a.suppress, buff + len, sizeof( a.suppress ) );
+    len += sizeof( a.suppress );
+    memcpy( &a.id, buff + len, sizeof( a.id ) );
+    len += sizeof( a.id );
+    memcpy( &a.driver_id, buff + len, sizeof( a.driver_id ) );
+    len += sizeof( a.driver_id );
+
+    return len;
+    }
+
 EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
-    {   
+    {  
+    static char cmd_str[ 500 ] = {};
+
+    int data_size = 0;
+    cmd_str[ data_size++ ] = SRV_CMD::GET_ALARMS;
+    cmd_str[ data_size++ ] = PAC_id;
+
+    char *res = ( char* ) transact_pipe( cmd_str, data_size );
+    int idx = 0;
+
+    if ( res != 0 )
+        {
+        alarms.cnt = ( ( int* ) res )[ 0 ];
+        idx += sizeof( int );
+        alarms.id = ( ( int* ) ( res + idx ) )[ 0 ];
+        idx += sizeof( int );
+
+        if ( g_all_alarms[ PAC_id ].id != alarms.id )
+            {
+            g_all_alarms[ PAC_id ].id = alarms.id;
+            g_all_alarms[ PAC_id ].cnt = alarms.cnt;
+
+            for ( int i = 0; i < alarms.cnt; i++ )
+                {
+                idx += load_from_stream ( g_all_alarms[ PAC_id ].alarms[ i ], res + idx );
+                }    
+            }
+
+        alarms.alarms = g_all_alarms[ PAC_id ].alarms;
+        }
+
     return 0;        
     }
 //-----------------------------------------------------------------------------

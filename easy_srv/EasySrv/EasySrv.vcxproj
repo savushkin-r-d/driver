@@ -71,7 +71,7 @@
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>p:\PTUSA\common;p:\PTUSA\common\QuickLZ;p:\PTUSA\common\win_util;p:\PTUSA\common\PAC-driver;p:\PTUSA\common\lua;p:\PTUSA\common\tolua++;p:\PTUSA\common\util;P:\PTUSA\drivers\easy_srv\common_src;$(IncludePath)</IncludePath>
+    <IncludePath>p:\PTUSA\common;p:\PTUSA\common\QuickLZ;p:\PTUSA\common\win_util;p:\PTUSA\common\PAC-driver;p:\PTUSA\common\lua;p:\PTUSA\common\tolua++;p:\PTUSA\common\util;P:\PTUSA\drivers\easy_srv;P:\PTUSA\drivers\easy_srv\common_src;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
@@ -108,6 +108,12 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
+    <PreBuildEvent>
+      <Command>tolua++ -n PAC_dev -o "errors_lua.cpp" "tolua++\pkg\errors.hh"</Command>
+    </PreBuildEvent>
+    <PreBuildEvent>
+      <Message>Генерация скрипта Lua</Message>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -254,12 +260,15 @@
     <ClInclude Include="..\..\..\common\win_util\WSA_err_decode.h" />
     <ClInclude Include="bug_log.h" />
     <ClInclude Include="EasySrv.h" />
-    <ClInclude Include="exchange_data.h" />
     <ClInclude Include="PAC_cmmctr.h" />
-    <ClInclude Include="resource.h" />
     <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="ServiceInstaller.h" />
     <ClInclude Include="ThreadPool.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="tolua++\pkg\errors.hh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

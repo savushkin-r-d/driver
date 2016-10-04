@@ -340,13 +340,15 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
                           TAG_VAL_TYPE tag_type, 
                           GET_TAG_RES &res_get_tag )
     {   
-    //LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-    //LARGE_INTEGER Frequency;
-    //if ( tag_id == 0xe13b0009 )
-    //    {        
-    //    QueryPerformanceFrequency(&Frequency); 
-    //    QueryPerformanceCounter(&StartingTime);
-    //    }
+#ifdef DEBUG
+    LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+    LARGE_INTEGER Frequency;
+    if ( tag_id == 0xe13b0009 )
+        {        
+        QueryPerformanceFrequency(&Frequency); 
+        QueryPerformanceCounter(&StartingTime);
+        }
+#endif // DEBUG
 
     static double tag_val            = 0;    
     static char   str_tag_val[ 500 ] = { 0 };    
@@ -407,14 +409,18 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
             } 
         }
 
-    //if ( tag_id == 0xe13b0009 )
-    //    {
-    //    QueryPerformanceCounter(&EndingTime);
-    //    ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+#ifdef DEBUG
+    if ( tag_id == 0xe13b0009 )
+        {
+        QueryPerformanceCounter(&EndingTime);
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
+            StartingTime.QuadPart;
 
-    //    bug_log::msg.Format( _T( "transact_pipe time = %d!" ), ElapsedMicroseconds.QuadPart );
-    //    BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
-    //    }
+        bug_log::msg.Format( _T( "transact_pipe time = %d!" ),
+            ElapsedMicroseconds.QuadPart );
+        BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
+        }
+#endif // DEBUG
 
     return res;
     }
@@ -539,6 +545,7 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
 EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
                                    UCHAR &result )
     {
+#ifdef DEBUG
     LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
     LARGE_INTEGER Frequency;
 
@@ -547,16 +554,17 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
         QueryPerformanceFrequency(&Frequency); 
         QueryPerformanceCounter(&StartingTime);
         }
-    
+#endif // DEBUG
+
     GET_TAG_RES res_get_tag;
     double tag_val = 0;        
 
-    void *res_buff = get_tag_value_by_id( tag_id, PAC_description_id, T_NUMBER, res_get_tag );
+    void *res_buff = get_tag_value_by_id( tag_id,
+        PAC_description_id, T_NUMBER, res_get_tag );
 
     if ( res_buff!= 0 )
         {
-        res_get_tag = ( GET_TAG_RES ) ( ( char* ) res_buff )[ 0 ];
-        tag_val     = *( ( double* )( ( char* ) res_buff + 1 ) ) ;     
+        tag_val = *( ( double* ) res_buff ) ;     
 
         if ( res_get_tag == GT_NEED_FUL_TAG_INFO )
             {
@@ -568,14 +576,17 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
             }
         }
 
+#ifdef DEBUG
     if ( tag_id == 0xe13b0009 )
         {
         QueryPerformanceCounter(&EndingTime);
-        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - StartingTime.QuadPart;
+        ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
+            StartingTime.QuadPart;
 
         bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
         BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
         }
+#endif // DEBUG
 
     return tag_val;
     }

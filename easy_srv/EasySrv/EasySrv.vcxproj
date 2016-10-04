@@ -154,6 +154,12 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\$(TargetFileName)"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Копирование сервиса</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
@@ -261,6 +267,7 @@
     <ClInclude Include="bug_log.h" />
     <ClInclude Include="EasySrv.h" />
     <ClInclude Include="PAC_cmmctr.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="ServiceBase.h" />
     <ClInclude Include="ServiceInstaller.h" />
     <ClInclude Include="ThreadPool.h" />
@@ -269,6 +276,9 @@
     <None Include="tolua++\pkg\errors.hh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="EasySrv.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

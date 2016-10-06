@@ -41,7 +41,10 @@ const wchar_t *EasySrv::server_pipe_name = TEXT( "\\\\.\\pipe\\EasySrvPipe" );
 char EasySrv::request_buff[ EasySrv::BUFSIZE_PIPE ];
 char EasySrv::reply_buff[ EasySrv::BUFSIZE_PIPE ];
 
-BOOL EasySrv::m_fStopping;
+double EasySrv::tag_val;    
+char EasySrv::str_tag_val[ 500 ];
+
+BOOL EasySrv::m_fStopping = FALSE;
 HANDLE EasySrv::server_pipe;
 HANDLE EasySrv::server_cmmctr_stopped_event;
 
@@ -79,8 +82,8 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
         {
         sleep_time *= 3;
         }
-    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-        "Поток работы с описанием PAC [ $%X ] запущен. Интервал опроса - %d мсек.",
+    bug_log::msg.Format( 
+        _T( "Поток работы с описанием PAC [ $%X ] запущен. Интервал опроса - %d мсек." ),
         PAC_com->get_description_id(), sleep_time );
     BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
@@ -95,8 +98,8 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
 
         //Состояния устройств будут доступны после того, как мы получим 
         //всю необходимую информацию от контроллера.
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Устройства PAC изменились." );
+        bug_log::msg.Format( 
+            _T( "Устройства PAC изменились." ) );
         BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
         PAC_com->get_dev_synch_access()->WaitToWrite();
@@ -112,13 +115,13 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
 
             if ( PAC_cmmctr::LOAD_OK == res )
                 {
-                snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
-                    "Получены устройства PAC." );
+                bug_log::msg.Format( 
+                    _T( "Получены устройства PAC." ) );
                 BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );                
                 break;
                 }  
 
-            Sleep( sleep_time );
+            Sleep( 4 * sleep_time );
             }
 
         //Пытаемся получить состояния всех устройств контроллера.
@@ -133,13 +136,13 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 break;
                 }
 
-            //Пытаемся получить параметры всех устройств контроллера.
-            int CRC = PAC_com->get_PAC_params_CRC();
-            if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
-                {                
-                PAC_com->backup_PAC_params();
-                PAC_com->set_saved_CRC( CRC );
-                }
+            ////Пытаемся получить параметры всех устройств контроллера.
+            //int CRC = PAC_com->get_PAC_params_CRC();
+            //if ( CRC >= 0 && CRC != PAC_com->get_saved_CRC() ) 
+            //    {                
+            //    PAC_com->backup_PAC_params();
+            //    PAC_com->set_saved_CRC( CRC );
+            //    }
 
             //Получаем ошибки устройств и объектов.
             PAC_com->get_dev_synch_access()->WaitToWrite();
@@ -268,7 +271,7 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     g_alarm_manager = new alarm_manager();       //Работа с ошибками контроллеров.
 
     //Запускаем поток для работы с запросами от сервера.
-    static SECURITY_ATTRIBUTES g_sa = {0};
+    SECURITY_ATTRIBUTES g_sa = {0};
     g_sa.nLength = sizeof(g_sa);
     HGLOBAL g_hsa = GlobalAlloc (GHND,SECURITY_DESCRIPTOR_MIN_LENGTH);
     g_sa.lpSecurityDescriptor = GlobalLock(g_hsa);
@@ -411,13 +414,13 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
 
             case WRITING:
                 {
-                static in_tag_info tag;
-                static GET_TAG_RES res_get_tag;
-                static TAG_VAL_TYPE tag_type;
-                static bool use_only_tag_id;
+                in_tag_info tag;
+                GET_TAG_RES res_get_tag;
+                TAG_VAL_TYPE tag_type;
+                bool use_only_tag_id;
 
-                static int idx;
-                static int str_len;
+                int idx;
+                int str_len;
 
                 use_only_tag_id = false;
                 idx = 1;
@@ -490,6 +493,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         }
 
                     case SRV_CMD::SET_ALARMS:
+                        {                        
                         u_char PAC_descr_id = request_buff[ idx++ ];
                         int err_cnt = *( ( int* ) ( request_buff + idx ) );
                         idx += sizeof( int );                         
@@ -503,6 +507,19 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
 
                         state = READING;
                         continue;
+                        }
+
+                    default:
+                        {                        
+                        reply_buff[ 0 ] = 0;
+                        WriteFile( 
+                            server_pipe,       // handle to pipe 
+                            reply_buff,        // buffer to write from 
+                            1,                 // number of bytes to write 
+                            &cbWritten,        // number of bytes written 
+                            &overlap );  
+                        continue;
+                        }
                     }
 
                 void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
@@ -596,9 +613,9 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     // нахождения добавляется новый тег в в интерпретатор (8), если же она 
     // не найдена, добавляется новый тег (9), который всегда возвращает 
     // значение 0.
-    static double tag_val;    
-    static char   str_tag_val[ 500 ];    
-    static void* res;
+    double tag_val;
+    char   str_tag_val[ 500 ];
+    void* res;
 
     tag_val          = 0;
     str_tag_val[ 0 ] = 0;    
@@ -617,11 +634,10 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
     if ( tag.PAC_descr_id > PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER )       //1
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка get_tag_value(...) - номер описания "
-            "PAC %d превышает допустимый %d!",
+        bug_log::msg.Format( 
+            L"Ошибка get_tag_value(...) - номер описания PAC %d превышает "
+            L"допустимый %d!",
             tag.PAC_descr_id, PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER );
-
         BUG_LOG.add_msg_once( "Driver", "" );
 
         res_get_tag = GET_TAG_RES::GT_ERR;
@@ -645,8 +661,8 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( 0 == current_PAC_cmmctr )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "get_tag_value(...) - ошибка добавления new_PAC_cmmctr = 0!" );
+            bug_log::msg.Format( 
+                _T( "get_tag_value(...) - ошибка добавления new_PAC_cmmctr = 0!" ) );
             BUG_LOG.add_msg_once( "Driver", "" );
 
             res_get_tag = GET_TAG_RES::GT_ERR;
@@ -712,8 +728,8 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( false == is_exist_tag )                                       //9
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
-                "Тег \"%s\" не найден!", 
+            bug_log::msg.Format( 
+                _T( "Тег \"%s\" не найден!" ), 
                 tag.tag_name );
             BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
                 current_PAC_cmmctr->get_address() );
@@ -737,7 +753,7 @@ int EasySrv::set_tag( const char *tag_name, u_char PAC_description_id,
     PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( PAC_description_id );
     if ( current_PAC_cmmctr )
         {	
-        static char cmd[ 1000 ];
+        char cmd[ 1000 ];
 
         switch ( tag_type )
             {

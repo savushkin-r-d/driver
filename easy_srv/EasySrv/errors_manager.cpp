@@ -100,8 +100,8 @@ alarm_manager::alarm_manager(): lua_synch_access( new CSWMRG )
     lua_state = lua_open();  /* create state */
     if ( lua_state == NULL )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot create Lua state: not enough memory!" );
+        bug_log::msg.Format( _T( "%s" ), 
+            _T( "Cannot create Lua state: not enough memory!" ) );
 
         BUG_LOG.add_error_msg( "System", "" );
 
@@ -137,13 +137,16 @@ alarm_manager::~alarm_manager()
         {
         for ( int j = 0; j < MAX_ALARMS_CNT; j++ )
             {
-            delete g_alarms[ i ][ j ].description;
-            delete g_alarms[ i ][ j ].group;
+            delete [] g_alarms[ i ][ j ].description;
+            delete [] g_alarms[ i ][ j ].group;
 
             g_alarms[ i ][ j ].description = 0;
             g_alarms[ i ][ j ].group = 0;
             }
         }
+
+    delete lua_synch_access;
+    lua_synch_access = 0;
     }
 //-----------------------------------------------------------------------------
 int alarm_manager::add_no_PAC_connection_error( const char *PAC_name, 
@@ -177,8 +180,8 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
 
     if( res != 0 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot create ""NO PAC RESPOND"", error - ""%s""!",
+        bug_log::msg.Format(
+            _T( "Cannot create \"NO PAC RESPOND\", error - \"%s\"!" ),            
             lua_tostring( lua_state, -1 ) );
 
         BUG_LOG.add_error_msg( "System", 
@@ -211,8 +214,9 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
 
     if( res != 0 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot remove ""NO PAC RESPOND"" error!" );
+        bug_log::msg.Format(
+            _T( "Cannot remove \"NO PAC RESPOND\", error - \"%s\"!" ),            
+            lua_tostring( lua_state, -1 ) );
         BUG_LOG.add_error_msg( "System", 
             g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
 #ifdef DEBUG
@@ -253,8 +257,8 @@ int alarm_manager::sync_alarms( u_char PAC_id )
 
     if( res != 0 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "get_alarms(...) error - '%s'!",
+        bug_log::msg.Format(
+            _T( "get_alarms(...) error - '%s'!" ),            
             lua_tostring( lua_state, -1 ) );
 
         BUG_LOG.add_error_msg( "System", "" );
@@ -278,7 +282,7 @@ int alarm_manager::add_PAC_errors( const char *LUA_str,
     if ( gc_counter > AM_GARBAGE_CYCLE )
         {
         // Полная уборка мусора каждые n итераций.
-        lua_gc( lua_state, LUA_GCCOLLECT, 0 ); 
+        //lua_gc( lua_state, LUA_GCCOLLECT, 0 ); 
         gc_counter = 0;
         }
 
@@ -286,16 +290,12 @@ int alarm_manager::add_PAC_errors( const char *LUA_str,
 
     if( res != 0 )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot process PAC errors, error - ""%s""!",
+        bug_log::msg.Format(
+            _T( "Cannot process PAC errors, error - \"%s\"!" ),            
             lua_tostring( lua_state, -1 ) );
-
-        BUG_LOG.add_error_msg( "System", 
+        BUG_LOG.add_msg_once( "System", 
             g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
 
-        BUG_LOG.add_msg_once( "System", 
-            g_PAC_descriptions->get_PAC( project_description_id )->get_address(),
-            LUA_str );
 #ifdef DEBUG
         DebugBreak();
 #endif // DEBUG

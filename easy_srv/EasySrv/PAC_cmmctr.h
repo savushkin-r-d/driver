@@ -84,12 +84,7 @@ class PAC_cmmctr
             int port = 10000,
             int timeout = 1500 );
 
-         ~PAC_cmmctr()
-             {
-             lua_close( PAC_Lua_state );
-             
-             PAC_Lua_state = 0;
-             }
+         ~PAC_cmmctr();
 
         /// @brief Очистка таблицы тегов.
         ///
@@ -133,7 +128,7 @@ class PAC_cmmctr
         /// @param is_exist_tag [ out ] - найден ли данный тег.
         /// @param str_value [ out ]    - строковое значение тега.
         /// @param max_length [ in ]    - максимальная длина значение тега.
-        void get_tag_str_value( int tag_id, bool &is_exist_tag, char *str_value,
+        void get_tag_str_value( u_int tag_id, bool &is_exist_tag, char *str_value,
             int max_length );
 
         /// @brief Получение строкового значения тега на основе имени тега.
@@ -151,7 +146,7 @@ class PAC_cmmctr
         /// @param is_exist_tag [ out ] - найден ли данный тег.
         ///
         /// @return Числовое значение тега.
-        double get_tag_value( int tag_id, bool &is_exist_tag );
+        double get_tag_value( u_int tag_id, bool &is_exist_tag );
 
         /// @brief Получение числового значения тега на основе имени тега.
         ///
@@ -164,13 +159,13 @@ class PAC_cmmctr
         /// @brief Добавление тега, которого нет в PAC, в Lua.
         ///
         /// @param tag_id [ in ] - номер тега.
-        void add_nill_tag( int tag_id );
+        void add_nill_tag( u_int tag_id );
 
         /// @brief Добавление тега в Lua для быстрого доступа через номер тега.
         ///
         /// @param tag_name [ in ] - имя тега.
         /// @param tag_id [ in ]   - номер тега.
-        void add_exist_tag( const char *tag_name, int tag_id );
+        void add_exist_tag( const char *tag_name, u_int tag_id );
         //- Получение значений тегов через Lua.
 
 

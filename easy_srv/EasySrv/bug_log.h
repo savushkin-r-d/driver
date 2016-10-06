@@ -23,6 +23,30 @@
 #include <deque>
 
 //-----------------------------------------------------------------------------
+//  Служит для записи ошибок в файл.
+class bug_log_f
+    {
+    public:
+        bug_log_f();
+        ~bug_log_f()
+            {
+            close();
+            }
+
+        int	 open( CString bug_log_filename );
+        void start_new_log_section();
+        int  save_msg( CString msg );
+        void close();
+
+    private:
+        enum L_CONST
+            {
+            MAX_LOGFILE_SIZE = 1000 * 1024, //Максимальный размер файла логов, байт.
+            };
+
+        FILE *bug_log_stream;
+    };
+//-----------------------------------------------------------------------------
 class log_message
     {     
     public:
@@ -74,7 +98,7 @@ class bug_log
             C_MSG_SIZE = 1000,
             };
 
-        static char msg[ C_MSG_SIZE ];
+        static CString msg;
 
         int add_error_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );

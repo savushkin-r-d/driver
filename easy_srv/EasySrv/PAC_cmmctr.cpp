@@ -52,8 +52,8 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
     PAC_Lua_state = lua_open();  /* create state */
     if ( PAC_Lua_state == NULL )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot create Lua state: not enough memory!" );
+        bug_log::msg.Format( _T( "%s" ), 
+            _T( "Cannot create Lua state: not enough memory!" ) );
 
         BUG_LOG.add_error_msg( PAC_name, PAC_address );
 
@@ -137,9 +137,9 @@ int PAC_cmmctr::get_int_param_from_Lua( const char *param_name,
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, param_name );
     if ( lua_isnil( PAC_Lua_state, -1 ) )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!", 
-            c_function_name, param_name );
+        bug_log::msg.Format( 
+            _T( "Ошибка вызова (%s) - переменная \"%s\" не найдена в Lua!" ), 
+            c_function_name, param_name);
         BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
         }
 
@@ -158,9 +158,8 @@ int PAC_cmmctr::exec_Lua_str( const char *Lua_str,
         {
         if ( is_print_error_msg )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "%s -> %s!",
-                error_str, lua_tostring( PAC_Lua_state, -1 ) );
+            bug_log::msg.Format( _T( "%s -> %s!" ),
+                error_str, lua_tostring( PAC_Lua_state, -1 ) );            
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             }
 
@@ -232,9 +231,10 @@ int PAC_cmmctr::get_PAC_info()
 
         if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Протокол PAC версии %d - должна быть %u!",
+            bug_log::msg.Format( 
+                _T( "Протокол PAC версии %d - должна быть %u!" ),
                 PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION );
+
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
 
             *is_connected = false;
@@ -246,16 +246,17 @@ int PAC_cmmctr::get_PAC_info()
         
         if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
+            bug_log::msg.Format( 
+                _T( "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!" ), 
                 PAC_address.c_str(), in_name, PAC_name.c_str() );
+
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = false;
             return -3;
             }
 
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Версия драйвера: PAC - %d, сервер - %u; имя PAC - \"%s\".",
+        bug_log::msg.Format( 
+            _T( "Версия драйвера: PAC - %d, сервер - %u; имя PAC - \"%s\"." ),
             PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION,
             PAC_name.c_str() );
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
@@ -381,7 +382,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     return OTHER_ERROR;
     }
 //-----------------------------------------------------------------------------
-void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag, 
+void PAC_cmmctr::get_tag_str_value( u_int tag_id, bool &is_exist_tag, 
     char *str_value, int max_length )
     {
     str_value[ 0 ] = 0;
@@ -398,7 +399,15 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
 
             strncpy( str_value, val, max_length );  
             is_exist_tag = true;
+            } if ( lua_isnumber( PAC_Lua_state, -1 ) )
+            {
+            bug_log::msg.Format( 
+                _T( "Тег %u имеет числовой тип, а на сервере указан как строковый!" ),
+                tag_id );
+
+            BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
             }
+
         lua_remove( PAC_Lua_state, -1 );
         }
     lua_remove( PAC_Lua_state, -1 );
@@ -426,7 +435,7 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
         }
     }
 //-----------------------------------------------------------------------------
-double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
+double PAC_cmmctr::get_tag_value( u_int tag_id, bool &is_exist_tag )
     {
     is_exist_tag = false;
     double res = 0;
@@ -434,13 +443,21 @@ double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
     if ( !lua_isnil( PAC_Lua_state, -1 ) )
         {
-        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_pushinteger( PAC_Lua_state, tag_id );        
         lua_gettable( PAC_Lua_state, -2 );
         if ( lua_isnumber( PAC_Lua_state, -1 ) )
             {
             res = lua_tonumber( PAC_Lua_state, -1 );
             is_exist_tag = true;
             }     
+        else if ( lua_isstring( PAC_Lua_state, -1 ) )
+            {
+            bug_log::msg.Format( 
+                _T( "Тег %u имеет строковый тип, а на сервере указан как числовой!" ),
+                tag_id );
+
+            BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+            }
 
         lua_remove( PAC_Lua_state, -1 );
         }
@@ -483,11 +500,11 @@ double PAC_cmmctr::get_double_param_from_Lua( const char *param_name,
     return res;
     }
 //-----------------------------------------------------------------------------
-void PAC_cmmctr::add_nill_tag( int tag_id )
+void PAC_cmmctr::add_nill_tag( u_int tag_id )
     { 
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=0\n", tag_id );
+    snprintf( cmd, MAX_CMD_SIZE, "tags[%u]=0\n", tag_id );
 
     exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );    
     }
@@ -497,13 +514,24 @@ bool PAC_cmmctr::is_got_PAC_devices()
     return *has_got_PAC_devices;
     }
 //-----------------------------------------------------------------------------
-void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
+void PAC_cmmctr::add_exist_tag( const char *tag_name, u_int tag_id )
     {
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
+    
+    snprintf( cmd, MAX_CMD_SIZE, "tags[%u]=t.%s\n", tag_id, tag_name );
 
-    snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=t.%s\n", tag_id, tag_name );
-    tags_str += cmd;
+    if ( tags_str.find( cmd ) != std::string::npos )
+    	{
+        bug_log::msg.Format( 
+            _T( "Тег \'%s\' уже добавлен в список тегов (возможно имеет неверный тип)!" ),
+            tag_name );
+        BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+    	}
+    else
+        {
+        tags_str += cmd;
+        }
     }
 //-----------------------------------------------------------------------------
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()
@@ -579,8 +607,8 @@ int PAC_cmmctr::check_PAC_params()
     if ( f == NULL ) 
         {
         // Не восстанавливаем параметры.
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Файл параметров \"%s\" отсутствует - не восстанавливаем их.",
+        bug_log::msg.Format( 
+            _T( "Файл параметров \"%s\" отсутствует - не восстанавливаем их." ),
             file_name );
         BUG_LOG.add_msg( get_name(), get_address() );  
 
@@ -597,9 +625,8 @@ int PAC_cmmctr::check_PAC_params()
           
     if ( is_reset_params )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Параметры в PAC были сброшены к значениям по умолчанию." );
-
+        bug_log::msg.Format( 
+            _T( "Параметры в PAC были сброшены к значениям по умолчанию." ) );
         BUG_LOG.add_warning_msg( PAC_name.c_str(), PAC_address.c_str() );
 
         //Передача в PAC сохраненных ранее параметров.
@@ -629,8 +656,8 @@ int PAC_cmmctr::check_PAC_params()
                     char file_name[ 100 ];
                     get_param_file_name( file_name, sizeof( file_name ) );
 
-                    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                        "Параметры в PAC были успешно восстановлены из \"%s\".",
+                    bug_log::msg.Format( 
+                        _T( "Параметры в PAC были успешно восстановлены из \"%s\"." ),
                         file_name );
                     BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
                     params_restore_flag = true;
@@ -642,8 +669,9 @@ int PAC_cmmctr::check_PAC_params()
 
         if ( false == params_restore_flag )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Ошибка восстановления параметров в PAC." );
+            bug_log::msg.Format( 
+                _T( "Ошибка восстановления параметров в PAC." ) );
+
             BUG_LOG.add_error_msg( PAC_name.c_str(), PAC_address.c_str() );
             }
         }
@@ -700,8 +728,8 @@ int PAC_cmmctr::save_to_file( const char* file_name, const char * str )
     FILE *f = fopen( file_name, "w+t" );
     if ( f == NULL ) 
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Не удалось сохранить параметры в файл \"%s\" - %s.",
+        bug_log::msg.Format( 
+            _T( "Не удалось сохранить параметры в файл \"%s\" - %s." ),
             file_name, strerror( GetLastError() ) );
         BUG_LOG.add_error_msg( get_name(), get_address() );
 
@@ -711,14 +739,14 @@ int PAC_cmmctr::save_to_file( const char* file_name, const char * str )
     fprintf( f, "%s", str );
     fclose( f );
 
-    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-        "Файл параметров \"%s\" обновлен.",
+    bug_log::msg.Format( 
+        _T( "Файл параметров \"%s\" обновлен." ),
         file_name );
     BUG_LOG.add_msg( get_name(), get_address() );
 
     return 0;
     }
-
+//-----------------------------------------------------------------------------
 int PAC_cmmctr::get_PAC_errors()
     {
     char cmd[ 2 ];
@@ -738,7 +766,23 @@ int PAC_cmmctr::get_PAC_errors()
 
     return 0;
     }
+//-----------------------------------------------------------------------------
+PAC_cmmctr::~PAC_cmmctr()
+    {
+    lua_close( PAC_Lua_state );
 
+    PAC_Lua_state = 0;
+
+    delete cmmctr;
+    cmmctr = 0;
+
+    delete dev_synch_access;
+    dev_synch_access = 0;
+    delete has_got_PAC_devices;
+    has_got_PAC_devices = 0;
+    delete is_connected;    
+    is_connected = 0;
+    }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PAC_cmmctr_group::PAC_cmmctr_group()
@@ -756,8 +800,8 @@ PAC_cmmctr* PAC_cmmctr_group::add_PAC( char* const PAC_address,
     PAC_cmmctr *res = new PAC_cmmctr( PAC_address, PAC_name, PAC_descr_id,
         PAC_port, timeout );  
 
-    snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-        "Новое описание PAC (№%d) было добавлено. Таймаут опроса - %d мсек.",
+    bug_log::msg.Format( 
+        _T( "Новое описание PAC (№%d) было добавлено. Таймаут опроса - %d мсек." ),
         res->get_description_id(), timeout );
     BUG_LOG.add_msg( res->get_name(), res->get_address() );
 
@@ -805,10 +849,9 @@ int tcp_cmmctr::InitLib()
         {
         if ( WSAStartup( 0x202, &tmpWSAData ) )
             {
-            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
-                "Ошибка инициализации сетевой библиотеки: %s\n",
+            bug_log::msg.Format( 
+                _T( "Ошибка инициализации сетевой библиотеки: %s\n" ),
                 WSA_Err_Decode( WSAGetLastError() ) );
-
             BUG_LOG.add_error_msg( "Driver", "" );            
             return 0;
             }
@@ -847,6 +890,9 @@ tcp_cmmctr::~tcp_cmmctr()
         DeinitLib();
         }
     instancesCount--;
+
+    free( state_decompress );
+    state_decompress = 0;
     }
 //-----------------------------------------------------------------------------
 int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
@@ -858,8 +904,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         {
         if (!InitLib() )
             {
-            sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Фатальная ошибка. Сетевая библиотека не инициализирована." );
+            bug_log::msg.Format( 
+                _T( "Фатальная ошибка. Сетевая библиотека не инициализирована." ) );
             BUG_LOG.add_error_msg( "Driver", "" );
 
             LeaveCriticalSection( &m_cs );
@@ -911,8 +957,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( 0 == res )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
-            "PAC закрыл соединение." );
+        bug_log::msg.Format( 
+            _T( "PAC закрыл соединение." ) );
         BUG_LOG.add_msg( PAC_name, ip_address );
         Disconnect();
 
@@ -943,8 +989,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( in_buff[ 1 ] == 7 )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Возвращена ошибка!" );
+        bug_log::msg.Format( 
+            _T( "Возвращена ошибка!" ) );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
         LeaveCriticalSection( &m_cs );
@@ -955,8 +1001,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     //-Проверка на правильность заголовка блока данных от PAC.
     if ( work_buff[ 0 ] != 's' )                  //NetId         
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Возвращен ответ с неверным заголовком!" );        
+        bug_log::msg.Format( 
+            _T( "Возвращен ответ с неверным заголовком!" ) );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
         Disconnect();
 #ifdef DEBUG
@@ -969,9 +1015,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( pidx != work_buff[ 2 ] )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Возвращен ответ номер %d, а ожидался %d!",
-            work_buff[ 2 ], pidx );        
+        bug_log::msg.Format( 
+            _T( "Возвращен ответ номер %d, а ожидался %d!" ),
+            work_buff[ 2 ], pidx );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
         Disconnect();
 #ifdef DEBUG
@@ -986,8 +1032,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     answer_size = work_buff[ 3 ] * 256 + work_buff[ 4 ];
     if ( 0 == answer_size )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Длина ответа - 0!" );
+        bug_log::msg.Format( 
+            _T( "Длина ответа - 0!")  );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
 #ifdef DEBUG
         //_DebugBreak();
@@ -998,9 +1044,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
     if ( answer_size > P_MAX_BUFFER_SIZE )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Длина ответа[ %d ] > максимальной длины[ %d ]!", 
-            answer_size, P_MAX_BUFFER_SIZE );        
+        bug_log::msg.Format( 
+            _T( "Длина ответа[ %d ] > максимальной длины[ %d ]!" ), 
+            answer_size, P_MAX_BUFFER_SIZE );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
         answer_size = 0;
 
@@ -1019,8 +1065,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
         if ( res <= 0 /*res == SOCKET_ERROR*/ )
             {
-            sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Получена часть ответа от PAC!" );
+            bug_log::msg.Format( 
+                _T( "Получена часть ответа от PAC!" ) );
             BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
             answer_size = 0;
@@ -1037,9 +1083,9 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
     
     if ( 0 == r )
     	{
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Размер исходный/после декомпрессии (%d/%d)! Возможно, превышен размер буфера!", 
-            answer_size, r );
+        bug_log::msg.Format( 
+            _T( "Размер исходный/после декомпрессии (%d/%d)! Возможно, превышен размер буфера!" ), 
+            answer_size, r  );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
     	}
     
@@ -1066,8 +1112,8 @@ int tcp_cmmctr::Connect()
     sock = socket(AF_INET,SOCK_STREAM,IPPROTO_IP);
     if (sock == INVALID_SOCKET)
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
-            "Ошибка создания сокета!" );        
+        bug_log::msg.Format( 
+            _T( "Ошибка создания сокета!" ) );
         BUG_LOG.add_error_msg( PAC_name, ip_address );
         return 0;
         }
@@ -1077,8 +1123,8 @@ int tcp_cmmctr::Connect()
     if ( setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, ( char* )&timeout, vlen) == SOCKET_ERROR ||
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, ( char* )&timeout, vlen) == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
-            "Ошибка установления параметров сокета!" );        
+        bug_log::msg.Format( 
+            _T( "Ошибка установления параметров сокета!" ) );
         BUG_LOG.add_error_msg( PAC_name, ip_address );
         return 0;
         }
@@ -1088,8 +1134,8 @@ int tcp_cmmctr::Connect()
     int res = ioctlsocket( sock, FIONBIO, &mode );
     if ( res == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка перевода сокета в неблокирующий режим!" );        
+        bug_log::msg.Format( 
+            _T( "Ошибка перевода сокета в неблокирующий режим!" ) );
         BUG_LOG.add_error_msg( PAC_name, ip_address );
 
         closesocket( sock );
@@ -1126,8 +1172,8 @@ int tcp_cmmctr::Connect()
     res = ioctlsocket( sock, FIONBIO, &mode );
     if ( res == SOCKET_ERROR )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка перевода сокета в блокирующий режим!" );
+        bug_log::msg.Format( 
+            _T( "Ошибка перевода сокета в блокирующий режим!" ) );
         BUG_LOG.add_error_msg( PAC_name, ip_address );
         }   
 
@@ -1145,8 +1191,8 @@ int tcp_cmmctr::Connect()
     res = recv( sock, in_buff, 255, 0 );
     if (SOCKET_ERROR == res)
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Ошибка получения ответа при подключении!" );
+        bug_log::msg.Format( 
+            _T( "Ошибка получения ответа при подключении!" ) );
         BUG_LOG.add_warning_msg( PAC_name, ip_address );
 
         closesocket( sock );

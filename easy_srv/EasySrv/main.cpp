@@ -85,12 +85,27 @@ int wmain(int argc, wchar_t *argv[])
 				SERVICE_PASSWORD            // Password of the account
 				);
 		}
-		else if (_wcsicmp(L"remove", argv[1] + 1) == 0)
-		{
-			// Uninstall the service when the command is 
-			// "-remove" or "/remove".
-			UninstallService(SERVICE_NAME);
-		}
+		else 
+            {
+            if (_wcsicmp(L"remove", argv[1] + 1) == 0)
+		        {
+			    // Uninstall the service when the command is 
+			    // "-remove" or "/remove".
+			    UninstallService(SERVICE_NAME);
+		        }
+            else if (_wcsicmp(L"debug", argv[1] + 1) == 0)
+                {
+                EasySrv srv( _T( "Test" ) );
+                srv.OnStart( 0, 0 );
+
+                while ( !getchar() )
+                    {
+                    Sleep( 0 );                    
+                    }
+
+                srv.OnStop();
+                }
+            }
 	}
 	else
 	{

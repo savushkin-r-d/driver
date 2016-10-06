@@ -34,11 +34,11 @@ public:
         BOOL fCanShutdown = TRUE, 
         BOOL fCanPauseContinue = FALSE);
     virtual ~EasySrv(void);
-
-protected:
-
+    
     virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv);
     virtual void OnStop();
+
+    protected:
 
     //Поток взаимодействия с сервером.
     static uintptr_t WINAPI server_communication_thread( LPVOID lpParameter );
@@ -80,4 +80,7 @@ private:
     static const int BUFSIZE_PIPE = 1024;
     static char request_buff[ BUFSIZE_PIPE ];
     static char reply_buff[ BUFSIZE_PIPE ];
+
+    static double tag_val;
+    static char str_tag_val[ 500 ];
 };

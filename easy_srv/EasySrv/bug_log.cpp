@@ -7,9 +7,60 @@
 using namespace std;
 
 
-char	 bug_log::msg[ bug_log::C_MSG_SIZE ] = { 0 };
+CString	 bug_log::msg;
 bug_log* bug_log::instance = 0;
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+bug_log_f::bug_log_f()
+    {
+    bug_log_stream = 0;
+    }
+//-----------------------------------------------------------------------------
+int bug_log_f::open( CString bug_log_filename )
+    {		
 
+    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) 
+        {        
+        return 1;               
+        }   
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int bug_log_f::save_msg( CString msg )
+    {
+    if ( bug_log_stream )
+        {
+        SYSTEMTIME st;
+        GetLocalTime( &st ); 
+
+        ATL::CString str;
+        str.Format( _T( "%.2d.%.2d.%.4d %.2d:%.2d:%.2d   %s\n" ), 
+            st.wDay, st.wMonth, st.wYear, 
+            st.wHour, st.wMinute, st.wSecond, msg );
+
+        fwrite( str, sizeof( str[ 0 ] ), str.GetLength(), bug_log_stream );
+        fflush( bug_log_stream );
+
+        return 0;
+        }
+
+    return 1;
+    }
+//-----------------------------------------------------------------------------
+void bug_log_f::close()
+    {
+    if ( bug_log_stream )
+        {
+        fclose( bug_log_stream );
+        bug_log_stream = 0;
+        }
+    }
+//-----------------------------------------------------------------------------
+void bug_log_f::start_new_log_section()
+    {
+    fwrite( "\n\n", sizeof( char ), 2, bug_log_stream );
+    }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int bug_log::add_msg( CString object_name, CString IP4_address, 
@@ -53,9 +104,9 @@ void bug_log::set_error( char &is_set_error, const char* PAC_name,
     {
     if ( 0 == is_set_error )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg );
         add_error_msg( PAC_name, ip_address );
+
         is_set_error = 1;
 
         errors_flags.push_back( &is_set_error );
@@ -67,12 +118,10 @@ void bug_log::reset_error( char &is_set_error, const char* PAC_name,
     {
     if ( 1 == is_set_error )
         {
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg );
         commit_error_msg( PAC_name, ip_address );
 
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "RESET: %s", msg );
+        bug_log::msg.Format( _T( "RESET  : %s" ), msg );
         add_error_msg( PAC_name, ip_address );
         commit_error_msg( PAC_name, ip_address );
 

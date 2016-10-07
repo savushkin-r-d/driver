@@ -146,7 +146,7 @@ class PAC_cmmctr
         /// @param is_exist_tag [ out ] - найден ли данный тег.
         ///
         /// @return „исловое значение тега.
-        double get_tag_value( u_int tag_id, bool &is_exist_tag );
+        double get_tag_value( lua_Integer tag_id, bool &is_exist_tag );
 
         /// @brief ѕолучение числового значени€ тега на основе имени тега.
         ///

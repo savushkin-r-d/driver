@@ -149,7 +149,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
             PAC_com->get_PAC_errors();
             PAC_com->get_dev_synch_access()->Done();
 
-            Sleep( sleep_time );
+            Sleep( 3 * sleep_time );
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
 
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
@@ -306,6 +306,8 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
 
     chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
         0, 0, 0 );	
+
+    BUG_LOG.add_msg(  _T( "System" ),  _T( "" ), _T( "Сервис запущен." ) );
     }
 //-----------------------------------------------------------------------------
 uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
@@ -414,6 +416,14 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
 
             case WRITING:
                 {
+#ifdef DEBUG
+                LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+                LARGE_INTEGER Frequency;
+
+                QueryPerformanceFrequency(&Frequency); 
+                QueryPerformanceCounter(&StartingTime);
+#endif // DEBUG
+
                 in_tag_info tag;
                 GET_TAG_RES res_get_tag;
                 TAG_VAL_TYPE tag_type;
@@ -554,6 +564,14 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                     size_to_write,     // number of bytes to write 
                     &cbWritten,        // number of bytes written 
                     &overlap );  
+
+#ifdef DEBUG
+
+                QueryPerformanceCounter(&EndingTime);
+                ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
+                    StartingTime.QuadPart;
+                printf( "%u\n", ElapsedMicroseconds.QuadPart );
+#endif // DEBUG
 
                 //Успешно записали данные.
                 if ( fSuccess && cbWritten != 0 )
@@ -728,9 +746,10 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( false == is_exist_tag )                                       //9
             {
-            bug_log::msg.Format( 
-                _T( "Тег \"%s\" не найден!" ), 
-                tag.tag_name );
+            wchar_t tmp[ 50 ];
+            mbstowcs( tmp, tag.tag_name, sizeof( tmp ) );
+
+            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), tmp );
             BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
                 current_PAC_cmmctr->get_address() );
 

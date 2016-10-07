@@ -45,6 +45,7 @@ class bug_log_f
             };
 
         FILE *bug_log_stream;
+        CString bug_log_filename;
     };
 //-----------------------------------------------------------------------------
 class log_message
@@ -124,6 +125,8 @@ class bug_log
         std::vector < char* > errors_flags;
 
         static bug_log *instance;
+
+        bug_log_f	bug_log_file;
     };
 
 #define BUG_LOG bug_log::get_instance()

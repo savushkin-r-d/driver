@@ -3,6 +3,8 @@
 
 #include <algorithm>
 
+#include <stdio.h>
+#include <io.h>
 
 using namespace std;
 
@@ -19,10 +21,12 @@ bug_log_f::bug_log_f()
 int bug_log_f::open( CString bug_log_filename )
     {		
 
-    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) 
+    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+,ccs=UTF-8" ) ) ) == NULL ) 
         {        
         return 1;               
         }   
+    
+    this->bug_log_filename = bug_log_filename;
 
     return 0;
     }
@@ -42,6 +46,16 @@ int bug_log_f::save_msg( CString msg )
         fwrite( str, sizeof( str[ 0 ] ), str.GetLength(), bug_log_stream );
         fflush( bug_log_stream );
 
+        int size = ftell( bug_log_stream );
+
+        if ( size > 1024 * 1024 )
+            {
+            fclose( bug_log_stream );
+            _wremove( bug_log_filename + _T( ".old" ) );
+            _wrename( bug_log_filename, bug_log_filename + _T( ".old" ) );            
+            bug_log_stream  = _wfopen( bug_log_filename, _T( "a+,ccs=UTF-8" ) ); 
+            }
+
         return 0;
         }
 
@@ -59,22 +73,24 @@ void bug_log_f::close()
 //-----------------------------------------------------------------------------
 void bug_log_f::start_new_log_section()
     {
-    fwrite( "\n\n", sizeof( char ), 2, bug_log_stream );
+    fwrite( _T( "\n\n" ), sizeof( wchar_t ), 2, bug_log_stream );
     }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int bug_log::add_msg( CString object_name, CString IP4_address, 
     CString msg )
     {
-	//TODO Fix later.
-    #pragma chMSG( Реализовать запись в файл! )
+    bug_log_file.save_msg( object_name + _T( " - " ) + msg );
+
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_error_msg( CString object_name, CString IP4_address, 
     CString msg /*= msg*/ )
     {
-	//TODO Fix later.
+    bug_log_file.save_msg( _T( "ERROR: " ) + object_name +  
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -88,14 +104,18 @@ int bug_log::commit_error_msg( CString object_name, CString IP4_address,
 int bug_log::add_warning_msg( CString object_name, CString IP4_address,
     CString msg /*= msg */ )
     {
-	//TODO Fix later.
+    bug_log_file.save_msg( _T( "WARNING: " ) + object_name +  
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_msg_once( CString object_name, 
     CString IP4_address, CString msg /*= msg */ )
     {
-	//TODO Fix later.
+    bug_log_file.save_msg( _T( "MESSAGE: " ) + object_name +  
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -160,6 +180,15 @@ bug_log& bug_log::get_instance()
 bug_log::bug_log()
     {
     errors_flags.clear();
+
+    const int MAX_PATH_LENGTH = 200;
+    wchar_t path[ MAX_PATH_LENGTH ];
+    GetCurrentDirectory( MAX_PATH_LENGTH, path );
+    StrCatW( path, _T( "\\drv_buglog.log" ) );
+
+    bug_log_file.open( path );
+    bug_log_file.start_new_log_section();
+    bug_log_file.save_msg( _T( "Driver is initialized." ) );
     }
 //-----------------------------------------------------------------------------
 bug_log::~bug_log()

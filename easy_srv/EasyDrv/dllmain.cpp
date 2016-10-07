@@ -549,7 +549,7 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
     LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
     LARGE_INTEGER Frequency;
 
-    if ( tag_id == 0xe13b0009 )
+    if ( tag_id == 0xe1000000 )
         {
         QueryPerformanceFrequency(&Frequency); 
         QueryPerformanceCounter(&StartingTime);
@@ -577,7 +577,7 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
         }
 
 #ifdef DEBUG
-    if ( tag_id == 0xe13b0009 )
+    if ( tag_id == 0xe1000000 )
         {
         QueryPerformanceCounter(&EndingTime);
         ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 

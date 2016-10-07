@@ -68,7 +68,7 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
 
     const char* Lua_F =
         "function make_lua_str( str, val )\n"
-        "	local DEB = 0\n"
+        "	local DEB = nil\n"
         "\n"
         "	str =  str or ''\n"
         "	val =  val or 0\n"
@@ -241,14 +241,15 @@ int PAC_cmmctr::get_PAC_info()
             return -2;
             }
 
-        const char *in_name = get_str_param_from_Lua( "PAC_name", 
+        CString in_name = get_str_param_from_Lua( "PAC_name", 
             "int PAC_cmmctr::get_PAC_info()" );
+        CString wPAC_name = PAC_name.c_str();
         
-        if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
+        if ( StrCmpW( in_name, wPAC_name ) != 0 )
             {
             bug_log::msg.Format( 
                 _T( "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!" ), 
-                PAC_address.c_str(), in_name, PAC_name.c_str() );
+                PAC_address.c_str(), in_name, wPAC_name );
 
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = false;
@@ -257,15 +258,15 @@ int PAC_cmmctr::get_PAC_info()
 
         bug_log::msg.Format( 
             _T( "Версия драйвера: PAC - %d, сервер - %u; имя PAC - \"%s\"." ),
-            PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION,
-            PAC_name.c_str() );
+            PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION, wPAC_name );
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
         
+        //Новая функциональность, для доработки.
         //Проверка на сброс параметров в PAC.
-        PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
-            "int PAC_cmmctr::get_PAC_info()" );
+        //PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
+        //    "int PAC_cmmctr::get_PAC_info()" );
 
-        check_PAC_params();
+        //check_PAC_params();
 
         return PAC_protocol_version;
         }    
@@ -391,7 +392,7 @@ void PAC_cmmctr::get_tag_str_value( u_int tag_id, bool &is_exist_tag,
     lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
     if ( !lua_isnil( PAC_Lua_state, -1 ) )
         {
-        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_pushnumber( PAC_Lua_state, tag_id );
         lua_gettable( PAC_Lua_state, -2 );
         if ( lua_isstring( PAC_Lua_state, -1 ) )
             {
@@ -435,33 +436,43 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
         }
     }
 //-----------------------------------------------------------------------------
-double PAC_cmmctr::get_tag_value( u_int tag_id, bool &is_exist_tag )
+double PAC_cmmctr::get_tag_value( lua_Integer tag_id, bool &is_exist_tag )
     {
     is_exist_tag = false;
     double res = 0;
 
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
-    if ( !lua_isnil( PAC_Lua_state, -1 ) )
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %u ]", tag_id );    
+
+    if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
         {
-        lua_pushinteger( PAC_Lua_state, tag_id );        
-        lua_gettable( PAC_Lua_state, -2 );
-        if ( lua_isnumber( PAC_Lua_state, -1 ) )
-            {
-            res = lua_tonumber( PAC_Lua_state, -1 );
-            is_exist_tag = true;
-            }     
-        else if ( lua_isstring( PAC_Lua_state, -1 ) )
-            {
-            bug_log::msg.Format( 
-                _T( "Тег %u имеет строковый тип, а на сервере указан как числовой!" ),
-                tag_id );
-
-            BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
-            }
-
-        lua_remove( PAC_Lua_state, -1 );
+        res = get_double_param_from_Lua( "res",
+            "double PAC_cmmctr::get_tag_value", is_exist_tag );
         }
-    lua_remove( PAC_Lua_state, -1 );
+
+    //lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
+    //if ( !lua_isnil( PAC_Lua_state, -1 ) )
+    //    {
+    //    lua_pushnumber( PAC_Lua_state, tag_id );        
+    //    lua_gettable( PAC_Lua_state, -2 );
+    //    if ( lua_isnumber( PAC_Lua_state, -1 ) )
+    //        {
+    //        res = lua_tonumber( PAC_Lua_state, -1 );
+    //        is_exist_tag = true;
+    //        }     
+    //    else if ( lua_isstring( PAC_Lua_state, -1 ) )
+    //        {
+    //        bug_log::msg.Format( 
+    //            _T( "Тег %u имеет строковый тип, а на сервере указан как числовой!" ),
+    //            tag_id );
+
+    //        BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+    //        }
+
+    //    lua_remove( PAC_Lua_state, -1 );
+    //    }
+    //lua_remove( PAC_Lua_state, -1 );
 
     return res;
     }
@@ -520,6 +531,8 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, u_int tag_id )
     char cmd[ MAX_CMD_SIZE ];
     
     snprintf( cmd, MAX_CMD_SIZE, "tags[%u]=t.%s\n", tag_id, tag_name );
+
+    //tags_str += cmd;
 
     if ( tags_str.find( cmd ) != std::string::npos )
     	{

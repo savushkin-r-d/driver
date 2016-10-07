@@ -476,13 +476,18 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall init_driver_thread( int prj_id )
     {    
-    if ( BUG_LOG.init_window_complete() )
-        {         
-        bug_log::msg.Format( 
-            _T( "Драйвер для узла базы каналов [ $%X ] загружен." ), 
-            prj_id );
+    if ( !BUG_LOG.init_window_complete() )
+        {
+        Sleep( 100 );
 
-        BUG_LOG.add_msg( "Driver", "" );
+        if ( BUG_LOG.init_window_complete() )
+            {         
+            bug_log::msg.Format( 
+                _T( "Драйвер для узла базы каналов [ $%X ] загружен." ), 
+                prj_id );
+
+            BUG_LOG.add_msg( "Driver", "" );
+            }
         }
 
     g_chbase_nodes_cont_count++;
@@ -491,6 +496,12 @@ EXPORT int __stdcall init_driver_thread( int prj_id )
 //-----------------------------------------------------------------------------
 EXPORT int __stdcall stop_driver_thread( int prj_id )
     {
+    bug_log::msg.Format( 
+        _T( "Драйвер для узла базы каналов [ $%X ] выгружен." ), 
+        prj_id );
+
+    BUG_LOG.add_msg( "Driver", "" );
+
     g_chbase_nodes_cont_count--;
     if ( g_chbase_nodes_cont_count <= 0 )
     	{

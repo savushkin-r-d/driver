@@ -149,7 +149,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
             PAC_com->get_PAC_errors();
             PAC_com->get_dev_synch_access()->Done();
 
-            Sleep( 3 * sleep_time );
+            Sleep( 4 * sleep_time );
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
 
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
@@ -304,9 +304,15 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     g_commctr_threads_array[ 0 ] = 
         chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); 
 
+#ifdef DEBUG
+    if ( dwArgc > 0 && StrCmpW( _T( "debug" ), ( LPCWSTR ) lpszArgv ) == 0 )
+        {
+        return;
+        }
+#endif // DEBUG
+
     chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
         0, 0, 0 );	
-
     BUG_LOG.add_msg(  _T( "System" ),  _T( "" ), _T( "—ервис запущен." ) );
     }
 //-----------------------------------------------------------------------------
@@ -340,7 +346,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
     while (!m_fStopping) 
         {
         switch ( state )
-            {
+            {            
             case WAITING_SERVER: //ќжидание подключени€ сервера.
 
                 ConnectNamedPipe( server_pipe, &overlap);
@@ -528,6 +534,8 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                             1,                 // number of bytes to write 
                             &cbWritten,        // number of bytes written 
                             &overlap );  
+
+                        state = READING;
                         continue;
                         }
                     }
@@ -631,13 +639,10 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     // нахождени€ добавл€етс€ новый тег в в интерпретатор (8), если же она 
     // не найдена, добавл€етс€ новый тег (9), который всегда возвращает 
     // значение 0.
-    double tag_val;
-    char   str_tag_val[ 500 ];
-    void* res;
+    void* res = 0;
 
     tag_val          = 0;
     str_tag_val[ 0 ] = 0;    
-    res              = 0;
     
     switch ( tag_type )
         {

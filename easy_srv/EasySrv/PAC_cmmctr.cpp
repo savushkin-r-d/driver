@@ -451,6 +451,9 @@ double PAC_cmmctr::get_tag_value( lua_Integer tag_id, bool &is_exist_tag )
             "double PAC_cmmctr::get_tag_value", is_exist_tag );
         }
 
+    //TODO. Некорректно работает с номерами, получающимися отрицательными для
+    // типа int.
+    //
     //lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
     //if ( !lua_isnil( PAC_Lua_state, -1 ) )
     //    {
@@ -529,18 +532,18 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, u_int tag_id )
     {
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
-    
+
     snprintf( cmd, MAX_CMD_SIZE, "tags[%u]=t.%s\n", tag_id, tag_name );
-
-    //tags_str += cmd;
-
+    exec_Lua_str( cmd, "Ошибка обновления добавленного тега" );
+        
     if ( tags_str.find( cmd ) != std::string::npos )
-    	{
+        {
+        CString tmp = tag_name;
         bug_log::msg.Format( 
             _T( "Тег \'%s\' уже добавлен в список тегов (возможно имеет неверный тип)!" ),
-            tag_name );
+            tmp );
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
-    	}
+        }
     else
         {
         tags_str += cmd;

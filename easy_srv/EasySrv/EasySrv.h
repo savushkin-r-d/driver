@@ -36,12 +36,12 @@ public:
     virtual ~EasySrv(void);
     
     virtual void OnStart(DWORD dwArgc, PWSTR *pszArgv);
-    virtual void OnStop();
-
-    protected:
+    virtual void OnStop();    
 
     //ѕоток взаимодействи€ с сервером.
     static uintptr_t WINAPI server_communication_thread( LPVOID lpParameter );
+
+    protected:
 
     /// @brief ѕолучение значени€ тега на основе его полного описани€.
     ///

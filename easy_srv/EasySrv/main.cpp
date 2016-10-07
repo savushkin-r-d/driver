@@ -87,20 +87,20 @@ int wmain(int argc, wchar_t *argv[])
 		}
 		else 
             {
-            if (_wcsicmp(L"remove", argv[1] + 1) == 0)
+            if ( _wcsicmp( L"remove", argv[ 1 ] + 1 ) == 0 )
 		        {
 			    // Uninstall the service when the command is 
 			    // "-remove" or "/remove".
 			    UninstallService(SERVICE_NAME);
 		        }
-            else if (_wcsicmp(L"debug", argv[1] + 1) == 0)
+            else if ( _wcsicmp( L"debug", argv[ 1 ] + 1 ) == 0 )
                 {
-                EasySrv srv( _T( "Test" ) );
-                srv.OnStart( 0, 0 );
+                EasySrv srv( SERVICE_NAME );
+                srv.OnStart( 1, ( PWSTR* ) argv[ 1 ] + 1 );
 
-                while ( !getchar() )
+                while (true)
                     {
-                    Sleep( 0 );                    
+                    srv.server_communication_thread( 0 );
                     }
 
                 srv.OnStop();

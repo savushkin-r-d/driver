@@ -181,10 +181,12 @@ bug_log::bug_log()
     {
     errors_flags.clear();
 
-    const int MAX_PATH_LENGTH = 200;
-    wchar_t path[ MAX_PATH_LENGTH ];
-    GetCurrentDirectory( MAX_PATH_LENGTH, path );
-    StrCatW( path, _T( "\\drv_buglog.log" ) );
+    TCHAR szFileName[ MAX_PATH ];
+    GetModuleFileName( 0, szFileName, MAX_PATH );
+    *wcsrchr(szFileName, '\\') = '\0';
+
+    CString path = szFileName;
+    path += _T( "\\drv_buglog.log" );
 
     bug_log_file.open( path );
     bug_log_file.start_new_log_section();

@@ -305,7 +305,7 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
         chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); 
 
 #ifdef DEBUG
-    if ( dwArgc > 0 && StrCmpW( _T( "debug" ), ( LPCWSTR ) lpszArgv ) == 0 )
+    if ( dwArgc > 0 && _wcsicmp( L"debug", lpszArgv[ 1 ] + 1 ) == 0 )
         {
         return;
         }

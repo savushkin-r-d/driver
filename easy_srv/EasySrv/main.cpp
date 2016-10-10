@@ -96,7 +96,7 @@ int wmain(int argc, wchar_t *argv[])
             else if ( _wcsicmp( L"debug", argv[ 1 ] + 1 ) == 0 )
                 {
                 EasySrv srv( SERVICE_NAME );
-                srv.OnStart( 1, ( PWSTR* ) argv[ 1 ] + 1 );
+                srv.OnStart( 2, argv );
 
                 while (true)
                     {

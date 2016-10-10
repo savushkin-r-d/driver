@@ -225,8 +225,7 @@ void* transact_pipe( void* buff, int size )
         int err = GetLastError();
         if ( err == ERROR_IO_PENDING )
             {       
-            err = WaitForSingleObject( g_overlap.hEvent, 1000 );
-            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, false );
+            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
 
             if ( fSuccess )
                 {
@@ -608,8 +607,7 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
         {
         int err = GetLastError();
         if ( err == ERROR_IO_PENDING )
-            {       
-            err = WaitForSingleObject( g_overlap.hEvent, 1000 );
+            {
             fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
 
             if ( fSuccess )

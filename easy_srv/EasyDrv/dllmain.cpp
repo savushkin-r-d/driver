@@ -224,8 +224,9 @@ void* transact_pipe( void* buff, int size )
         {
         int err = GetLastError();
         if ( err == ERROR_IO_PENDING )
-            {            
-            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
+            {       
+            err = WaitForSingleObject( g_overlap.hEvent, 1000 );
+            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, false );
 
             if ( fSuccess )
                 {
@@ -343,7 +344,7 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
 #ifdef DEBUG
     LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
     LARGE_INTEGER Frequency;
-    if ( tag_id == 0xe13b0009 )
+    if ( tag_id == 0xe1000000 )
         {        
         QueryPerformanceFrequency(&Frequency); 
         QueryPerformanceCounter(&StartingTime);
@@ -410,13 +411,15 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
         }
 
 #ifdef DEBUG
-    if ( tag_id == 0xe13b0009 )
+    if ( tag_id == 0xe1000000 )
         {
         QueryPerformanceCounter(&EndingTime);
         ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
             StartingTime.QuadPart;
+        ElapsedMicroseconds.QuadPart *= 1000000;
+        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
 
-        bug_log::msg.Format( _T( "transact_pipe time = %d!" ),
+        bug_log::msg.Format( _T( "get_tag_value_by_id time = %d!" ),
             ElapsedMicroseconds.QuadPart );
         BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
         }
@@ -570,12 +573,66 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
     GET_TAG_RES res_get_tag;
     double tag_val = 0;        
 
-    void *res_buff = get_tag_value_by_id( tag_id,
-        PAC_description_id, T_NUMBER, res_get_tag );
+    char cmd_str[ 10 ];
+    int data_size = 0;
+
+    cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
+    cmd_str[ data_size++ ] = T_NUMBER;
+
+    cmd_str[ data_size++ ] = PAC_description_id;    
+    memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
+    data_size += sizeof( tag_id );
+        
+    void* res_buff = 0;
+
+    BOOL fSuccess; 
+    DWORD cbRead; 
+    const int BUFSIZE = 10;
+    char chReadBuf[ BUFSIZE ];
+
+    // Send a message to the pipe server and read the response. 
+    fSuccess = TransactNamedPipe( 
+        g_pipe,                 // pipe handle 
+        cmd_str,                // message to server
+        data_size,              // message length 
+        chReadBuf,              // buffer to receive reply
+        sizeof( chReadBuf ),    // size of read buffer
+        &cbRead,                // bytes read
+        &g_overlap);            // overlapped 
+
+    if ( fSuccess )
+        {      
+        res_buff = chReadBuf;
+        }
+    else
+        {
+        int err = GetLastError();
+        if ( err == ERROR_IO_PENDING )
+            {       
+            err = WaitForSingleObject( g_overlap.hEvent, 1000 );
+            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, false );
+
+            if ( fSuccess )
+                {
+                res_buff = chReadBuf;
+                }
+            else
+                {
+                bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ), 
+                    FormatErrorMessage( GetLastError() ) ); 
+                BUG_LOG.add_warning_msg( "Driver", "" );
+
+                CloseHandle( g_pipe );
+                g_pipe = 0;
+                g_connected = 0;
+                }
+            }
+        }
 
     if ( res_buff!= 0 )
         {
-        tag_val = *( ( double* ) res_buff ) ;     
+        res_get_tag = ( GET_TAG_RES ) ( ( char* ) res_buff )[ 0 ];
+        tag_val = *( ( double* )( ( char* ) res_buff + 1 ) ) ;
 
         if ( res_get_tag == GT_NEED_FUL_TAG_INFO )
             {
@@ -594,7 +651,10 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
         ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
             StartingTime.QuadPart;
 
-        bug_log::msg.Format( _T( "dt = %d!" ), ElapsedMicroseconds.QuadPart );
+        ElapsedMicroseconds.QuadPart *= 1000000;
+        ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+
+        bug_log::msg.Format( _T( "get_value2 = %d!" ), ElapsedMicroseconds.QuadPart );
         BUG_LOG.add_msg( _T( "Driver" ), _T( "" ) );
         }
 #endif // DEBUG

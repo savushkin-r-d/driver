@@ -7,6 +7,7 @@
 #include "PAC_cmmctr.h"
 #include "errors_manager.h"
 
+#include <algorithm>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -375,6 +376,22 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
 
         res = exec_Lua_str( tags_str.c_str(), 
             "Ошибка обновления тегов состояния объектов PAC" );
+
+        for ( u_int i = 0 ; i < tags_v.size(); i++ )
+            { 
+            const int MAX_CMD_SIZE = 200;
+            char cmd[ MAX_CMD_SIZE ];
+            bool is_exist_tag;
+            double v;
+
+            snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %u ]", tags_v[ i ].first );
+            if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
+                {                
+                v = get_double_param_from_Lua( "res",
+                    "PAC_cmmctr::get_PAC_all_devices_states()", is_exist_tag );
+                }
+            tags_v[ i ].second = v;
+            }
        
       
         return LOAD_OK;
@@ -436,46 +453,24 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
         }
     }
 //-----------------------------------------------------------------------------
-double PAC_cmmctr::get_tag_value( lua_Integer tag_id, bool &is_exist_tag )
+double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
     {
     is_exist_tag = false;
     double res = 0;
-
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %u ]", tag_id );    
-
-    if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
+    
+    auto res_p = 
+        std::lower_bound( tags_v.begin(), tags_v.end(),
+        std::pair< int , double >( tag_id, 0 ),
+        []( std::pair< int , double > lhs, std::pair< int , double > rhs) ->
+        bool { return lhs.first < rhs.first; } );
+    if ( res_p != tags_v.end() )
         {
-        res = get_double_param_from_Lua( "res",
-            "double PAC_cmmctr::get_tag_value", is_exist_tag );
+        if ( res_p->first == tag_id )
+             {
+            is_exist_tag = true;
+            res = res_p->second;
+            }   
         }
-
-    //TODO. Некорректно работает с номерами, получающимися отрицательными для
-    // типа int.
-    //
-    //lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
-    //if ( !lua_isnil( PAC_Lua_state, -1 ) )
-    //    {
-    //    lua_pushnumber( PAC_Lua_state, tag_id );        
-    //    lua_gettable( PAC_Lua_state, -2 );
-    //    if ( lua_isnumber( PAC_Lua_state, -1 ) )
-    //        {
-    //        res = lua_tonumber( PAC_Lua_state, -1 );
-    //        is_exist_tag = true;
-    //        }     
-    //    else if ( lua_isstring( PAC_Lua_state, -1 ) )
-    //        {
-    //        bug_log::msg.Format( 
-    //            _T( "Тег %u имеет строковый тип, а на сервере указан как числовой!" ),
-    //            tag_id );
-
-    //        BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
-    //        }
-
-    //    lua_remove( PAC_Lua_state, -1 );
-    //    }
-    //lua_remove( PAC_Lua_state, -1 );
 
     return res;
     }
@@ -521,6 +516,9 @@ void PAC_cmmctr::add_nill_tag( u_int tag_id )
     snprintf( cmd, MAX_CMD_SIZE, "tags[%u]=0\n", tag_id );
 
     exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );    
+
+    tags_v.push_back( std::pair< int , double >( tag_id, 0 ) );
+    std::sort( tags_v.begin(), tags_v.end() );
     }
 //-----------------------------------------------------------------------------
 bool PAC_cmmctr::is_got_PAC_devices()
@@ -547,7 +545,11 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, u_int tag_id )
     else
         {
         tags_str += cmd;
+
+        tags_v.push_back( std::pair< int , double >( tag_id, 0 ) );
+        std::sort( tags_v.begin(), tags_v.end() );
         }
+    
     }
 //-----------------------------------------------------------------------------
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()
@@ -564,6 +566,7 @@ int PAC_cmmctr::clear_tags()
     int res = exec_Lua_str( "tags = {}", "clear_tags" );
 
     tags_str.clear();
+    tags_v.clear();
 
     // Уборка мусора.
     lua_gc( PAC_Lua_state, LUA_GCRESTART, 0 );

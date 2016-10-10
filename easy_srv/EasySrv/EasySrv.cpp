@@ -304,7 +304,7 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     g_commctr_threads_array[ 0 ] = 
         chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); 
 
-    if ( dwArgc > 0 && _wcsicmp( L"debug", lpszArgv[ 1 ] + 1 ) == 0 )
+    if ( dwArgc > 1 && _wcsicmp( L"debug", lpszArgv[ 1 ] + 1 ) == 0 )
         {
         return;
         }
@@ -420,13 +420,13 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
 
             case WRITING:
                 {
-#ifdef DEBUG
-                LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
-                LARGE_INTEGER Frequency;
-
-                QueryPerformanceFrequency(&Frequency); 
-                QueryPerformanceCounter(&StartingTime);
-#endif // DEBUG
+//#ifdef DEBUG
+//                LARGE_INTEGER StartingTime, EndingTime, ElapsedMicroseconds;
+//                LARGE_INTEGER Frequency;
+//
+//                QueryPerformanceFrequency(&Frequency); 
+//                QueryPerformanceCounter(&StartingTime);
+//#endif // DEBUG
 
                 in_tag_info tag;
                 GET_TAG_RES res_get_tag;
@@ -492,7 +492,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         }     
 
                     case SRV_CMD::GET_ALARMS:
-                        {                    
+                        {
                         u_char PAC_descr_id = request_buff[ idx++ ];
 
                         g_alarm_manager->sync_alarms( PAC_descr_id );
@@ -571,13 +571,16 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                     &cbWritten,        // number of bytes written 
                     &overlap );  
 
-#ifdef DEBUG
-
-                QueryPerformanceCounter(&EndingTime);
-                ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
-                    StartingTime.QuadPart;
-                printf( "%u\n", ElapsedMicroseconds.QuadPart );
-#endif // DEBUG
+//#ifdef DEBUG
+//
+//                QueryPerformanceCounter(&EndingTime);
+//                ElapsedMicroseconds.QuadPart = EndingTime.QuadPart - 
+//                    StartingTime.QuadPart;
+//                ElapsedMicroseconds.QuadPart *= 1000000;
+//                ElapsedMicroseconds.QuadPart /= Frequency.QuadPart;
+//
+//                printf( "%u\n", ElapsedMicroseconds.QuadPart );
+//#endif // DEBUG
 
                 //Успешно записали данные.
                 if ( fSuccess && cbWritten != 0 )
@@ -649,7 +652,7 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             break;
 
         case T_STRING:
-            res = ( void* ) &str_tag_val;    
+            res = ( void* ) &str_tag_val;
             break;
         }      
 
@@ -701,10 +704,9 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
         res_get_tag = GET_TAG_RES::GT_OK;
         return res; //Не получены устройства PAC.
         }
-
-    current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();              //5
+        
     bool is_exist_tag = false;
-    switch ( tag_type )                                                    
+    switch ( tag_type )                                                    //5                                       
         {
         case T_NUMBER:
             tag_val = current_PAC_cmmctr->get_tag_value(                   
@@ -712,11 +714,13 @@ void* EasySrv::get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             break;
 
         case T_STRING:
+            current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
             current_PAC_cmmctr->get_tag_str_value( tag.tag_id,
                 is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
+            current_PAC_cmmctr->get_dev_synch_access()->Done();
             break;
         }    
-    current_PAC_cmmctr->get_dev_synch_access()->Done();
+    
 
     if ( false == is_exist_tag )                                           //7
         {

@@ -304,12 +304,10 @@ void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     g_commctr_threads_array[ 0 ] = 
         chBEGINTHREADEX( 0, 0, PAC_control_thread, 0, 0, 0 ); 
 
-#ifdef DEBUG
     if ( dwArgc > 0 && _wcsicmp( L"debug", lpszArgv[ 1 ] + 1 ) == 0 )
         {
         return;
         }
-#endif // DEBUG
 
     chBEGINTHREADEX( 0, 0, &EasySrv::server_communication_thread, 
         0, 0, 0 );	

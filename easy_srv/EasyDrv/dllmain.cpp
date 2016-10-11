@@ -1,7 +1,7 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "windows.h"
 
-
+#include "SWMRG.h"
 #include "bug_log.h"
 #include "exchange_data.h"
 #include "PAC-driver\errors.h"
@@ -39,6 +39,9 @@ HANDLE g_pipe;
 OVERLAPPED g_overlap;
 HANDLE g_event;
 
+CSWMRG* connect_to_srv_cs; 
+CSWMRG* transact_pipe_cs; 
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                       DWORD  ul_reason_for_call,
                       LPVOID lpReserved )
@@ -51,6 +54,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             try
                 {
                 BUG_LOG.get_instance();
+
+                connect_to_srv_cs = new CSWMRG();
+                transact_pipe_cs = new CSWMRG();
                 }
             catch (...)
                 {
@@ -105,6 +111,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
                 g_all_alarms[ i ].alarms = 0;
                 }
 
+            delete transact_pipe_cs;
+            delete connect_to_srv_cs;
+
             final();
 
             bug_log::free_instance();
@@ -140,6 +149,8 @@ CString FormatErrorMessage(DWORD ErrorCode)
 //-----------------------------------------------------------------------------
 int connect_to_srv()
     {
+    connect_to_srv_cs->WaitToWrite();
+
     static CString err_str;
     static char is_srv_connect_err = 0;
 
@@ -164,6 +175,8 @@ int connect_to_srv()
                 FormatErrorMessage( GetLastError() ) );     
             BUG_LOG.set_error( is_srv_connect_err, "Driver", "", err_str );
             }
+
+        connect_to_srv_cs->Done();
         return 1; 
         }
 
@@ -186,6 +199,7 @@ int connect_to_srv()
             }
         CloseHandle( g_pipe );
         g_pipe = 0;
+        connect_to_srv_cs->Done();
         return 1;
         }
 
@@ -194,15 +208,18 @@ int connect_to_srv()
         BUG_LOG.reset_error( is_srv_connect_err, "Driver", "", err_str );
         }
 
+    connect_to_srv_cs->Done();
     return 0;
     }
 //-----------------------------------------------------------------------------
 void* transact_pipe( void* buff, int size )
     {
+    transact_pipe_cs->WaitToWrite(); 
+
     BOOL fSuccess; 
     DWORD cbRead; 
-    const int BUFSIZE = 512;
-    static char chReadBuf[ BUFSIZE ];    
+    const int BUFSIZE = 1024;
+    static char chReadBuf[ BUFSIZE ];
     int err_cnt = 0;
 
     while ( err_cnt < 3 )
@@ -222,6 +239,7 @@ void* transact_pipe( void* buff, int size )
                 }
             else
                 {
+                transact_pipe_cs->Done();
                 return 0;
                 }
             }
@@ -238,6 +256,7 @@ void* transact_pipe( void* buff, int size )
 
         if ( fSuccess )
             {
+            transact_pipe_cs->Done();
             return chReadBuf;
             }
         else
@@ -248,7 +267,8 @@ void* transact_pipe( void* buff, int size )
                 fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
                 if ( fSuccess )
                     {
-                    return chReadBuf;                   
+                    transact_pipe_cs->Done();
+                    return chReadBuf;
                     }
                 }
 
@@ -264,6 +284,8 @@ void* transact_pipe( void* buff, int size )
     bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ),
         FormatErrorMessage( GetLastError() ) );
     BUG_LOG.add_warning_msg( "Driver", "" );
+
+    transact_pipe_cs->Done();
 
     return 0;
     }
@@ -311,7 +333,7 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
         return res;
         }
 
-    static char cmd_str[ 500 ];
+    char cmd_str[ 500 ];
     int data_size = 1;
 
     cmd_str[ 0 ] = SRV_CMD::GET_TAG_VALUE;
@@ -402,7 +424,7 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
         return res;
         }
 
-    static char cmd_str[ 500 ];
+    char cmd_str[ 500 ];
     
     int data_size = 0;
     cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
@@ -469,7 +491,7 @@ enum SET_TAG_VAL_TYPE
 int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value, 
             TAG_VAL_TYPE tag_type )
     {
-    static char cmd_str[ 500 ];
+    char cmd_str[ 500 ];
 
     int data_size = 0;
     cmd_str[ data_size++ ] = SRV_CMD::SET_TAG_VALUE;
@@ -650,6 +672,7 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
 EXPORT char* __stdcall get_str_value( in_tag_info &tag )
     {
     GET_TAG_RES res_get_tag;
+
     void *res = get_tag_value( tag, T_STRING, res_get_tag );
 
     if ( res_get_tag == GT_OK )

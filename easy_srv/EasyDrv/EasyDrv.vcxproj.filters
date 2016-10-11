@@ -34,6 +34,9 @@
     <Filter Include="Header Files\common_src">
       <UniqueIdentifier>{036b461a-57df-4cfe-8597-e0e1750368af}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\win_util">
+      <UniqueIdentifier>{3e954534-eff9-44bc-8565-fb55dc96fbd4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -41,6 +44,9 @@
     </ClCompile>
     <ClCompile Include="bug_log.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp">
+      <Filter>Source Files\win_util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

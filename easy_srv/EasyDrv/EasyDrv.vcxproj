@@ -89,6 +89,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp" />
     <ClCompile Include="bug_log.cpp" />
     <ClCompile Include="dllmain.cpp" />
   </ItemGroup>

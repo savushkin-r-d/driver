@@ -2,6 +2,8 @@
 #include "windows.h"
 
 #include "SWMRG.h"
+#include "CmnHdr.h"
+
 #include "bug_log.h"
 #include "exchange_data.h"
 #include "PAC-driver\errors.h"
@@ -221,7 +223,10 @@ void* transact_pipe( void* buff, int size )
 
     BOOL fSuccess; 
     DWORD cbRead; 
+
+    #pragma chMSG( Добавить проверки на переполнение буфера )
     const int BUFSIZE = 30 * 1024;
+
     static char chReadBuf[ BUFSIZE ];
     int err_cnt = 0;
 
@@ -350,7 +355,7 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     strcpy( &cmd_str[ data_size ], tag.tag_name );
     data_size += strlen( tag.tag_name ) + 1;
 
-    cmd_str[ data_size++ ] = tag_type;
+    cmd_str[ data_size++ ] = ( char ) tag_type;
     cmd_str[ data_size++ ] = use_only_tag_id;
 
     void *res_buff = transact_pipe( cmd_str, data_size );    
@@ -431,7 +436,7 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
     
     int data_size = 0;
     cmd_str[ data_size++ ] = SRV_CMD::GET_TAG_VALUE_BY_ID;
-    cmd_str[ data_size++ ] = tag_type;
+    cmd_str[ data_size++ ] = ( char ) tag_type;
 
     cmd_str[ data_size++ ] = PAC_description_id;    
     memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
@@ -498,7 +503,7 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
 
     int data_size = 0;
     cmd_str[ data_size++ ] = SRV_CMD::SET_TAG_VALUE;
-    cmd_str[ data_size++ ] = tag_type;
+    cmd_str[ data_size++ ] = ( char ) tag_type;
 
     cmd_str[ data_size++ ] = PAC_description_id;   
     strcpy( &cmd_str[ data_size ], tag_name );    

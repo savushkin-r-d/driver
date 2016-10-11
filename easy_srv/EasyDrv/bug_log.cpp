@@ -353,26 +353,15 @@ bug_log_f::bug_log_f()
     bug_log_stream = 0;
     }
 //-----------------------------------------------------------------------------
-int bug_log_f::open( CString bug_log_filename )
+int bug_log_f::open( CString bug_log_filename_ )
     {		
-
-    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+" ) ) ) == NULL ) // C4996
+    if( ( bug_log_stream  = 
+        _wfopen( bug_log_filename_, _T( "a+,ccs=UTF-8" ) ) ) == NULL )
         {        
         return 1;               
         }   
 
-    fseek( bug_log_stream, 0, SEEK_END );
-    unsigned int file_size = ftell( bug_log_stream );
-    fseek( bug_log_stream, 0, SEEK_SET );
-    if ( file_size > MAX_LOGFILE_SIZE )
-        {
-        fclose( bug_log_stream );
-        if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "w+" ) ) ) == NULL ) // C4996
-            {        
-            return 1;               
-            }   
-        }
-
+    this->bug_log_filename = bug_log_filename_;
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -390,6 +379,17 @@ int bug_log_f::save_msg( CString msg )
 
         fwrite( str, sizeof( str[ 0 ] ), str.GetLength(), bug_log_stream );
         fflush( bug_log_stream );
+
+        int size = ftell( bug_log_stream );
+
+        if ( size > 1024 * 1024 )
+            {
+            fclose( bug_log_stream );
+            _wremove( bug_log_filename + _T( ".old" ) );
+            _wrename( bug_log_filename, bug_log_filename + _T( ".old" ) );            
+            bug_log_stream  = _wfopen( bug_log_filename, _T( "a+,ccs=UTF-8" ) ); 
+            }
+
         return 0;
         }
     return 1;

@@ -60,6 +60,7 @@ class bug_log_f
             };
 
         FILE *bug_log_stream;
+        CString bug_log_filename;
     };
 //-----------------------------------------------------------------------------
 class log_message

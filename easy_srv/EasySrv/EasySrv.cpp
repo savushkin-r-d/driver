@@ -378,7 +378,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                 fSuccess = ReadFile( 
                     server_pipe,                // handle to pipe 
                     request_buff,               // buffer to receive data 
-                    BUFSIZE_PIPE*sizeof(TCHAR), // size of buffer 
+                    BUFSIZE_PIPE*sizeof( char ),// size of buffer 
                     &cbBytesRead,               // number of bytes read 
                     &overlap);                  // not overlapped I/O 
 

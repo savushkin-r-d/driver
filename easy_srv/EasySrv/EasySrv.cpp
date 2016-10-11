@@ -38,6 +38,8 @@ extern PAC_cmmctr_group *g_PAC_descriptions;
 extern alarm_manager *g_alarm_manager; ///< Работа с ошибками контроллеров.
 
 const wchar_t *EasySrv::server_pipe_name = TEXT( "\\\\.\\pipe\\EasySrvPipe" );
+
+#pragma chMSG( Добавить проверки на переполнение буфера )
 char EasySrv::request_buff[ EasySrv::BUFSIZE_PIPE ];
 char EasySrv::reply_buff[ EasySrv::BUFSIZE_PIPE ];
 

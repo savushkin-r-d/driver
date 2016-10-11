@@ -538,7 +538,7 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         }
                     }
 
-                void* tag_val = get_tag_value( tag, tag_type, res_get_tag,
+                void* t_val = get_tag_value( tag, tag_type, res_get_tag,
                     use_only_tag_id );
                 
                 reply_buff[ 0 ] = ( char ) res_get_tag;
@@ -550,14 +550,14 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         // Write the reply to the pipe. 
                         size_to_write += sizeof( double );
                         memcpy( reply_buff + 1,
-                            ( double* )tag_val, sizeof( double ) );
+                            ( double* ) t_val, sizeof( double ) );
 
                         break;
 
                     case T_STRING:
-                        size_to_write += strlen( ( char* ) tag_val ) + 1;
+                        size_to_write += strlen( ( char* )t_val) + 1;
                         memcpy( reply_buff + 1,
-                            tag_val, strlen( ( char* ) tag_val ) );                                
+							t_val, strlen( ( char* )t_val) );
                         break;
 
                     default:

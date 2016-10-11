@@ -18,15 +18,15 @@ bug_log_f::bug_log_f()
     bug_log_stream = 0;
     }
 //-----------------------------------------------------------------------------
-int bug_log_f::open( CString bug_log_filename )
+int bug_log_f::open( CString bug_log_filename_ )
     {		
 
-    if( ( bug_log_stream  = _wfopen( bug_log_filename, _T( "a+,ccs=UTF-8" ) ) ) == NULL ) 
+    if( ( bug_log_stream  = _wfopen( bug_log_filename_, _T( "a+,ccs=UTF-8" ) ) ) == NULL ) 
         {        
         return 1;               
         }   
     
-    this->bug_log_filename = bug_log_filename;
+    this->bug_log_filename = bug_log_filename_;
 
     return 0;
     }
@@ -78,53 +78,53 @@ void bug_log_f::start_new_log_section()
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int bug_log::add_msg( CString object_name, CString IP4_address, 
-    CString msg )
+    CString msg_ )
     {
-    bug_log_file.save_msg( object_name + _T( " - " ) + msg );
+    bug_log_file.save_msg( object_name + _T( " - " ) + msg_ );
 
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_error_msg( CString object_name, CString IP4_address, 
-    CString msg /*= msg*/ )
+    CString msg_ /*= msg*/ )
     {
     bug_log_file.save_msg( _T( "ERROR: " ) + object_name +  
-        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg_ );
 
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::commit_error_msg( CString object_name, CString IP4_address, 
-    CString msg /*= msg */ )
+    CString msg_ /*= msg */ )
     {
 	//TODO Fix later.
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_warning_msg( CString object_name, CString IP4_address,
-    CString msg /*= msg */ )
+    CString msg_ /*= msg */ )
     {
     bug_log_file.save_msg( _T( "WARNING: " ) + object_name +  
-        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg_ );
 
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_msg_once( CString object_name, 
-    CString IP4_address, CString msg /*= msg */ )
+    CString IP4_address, CString msg_ /*= msg */ )
     {
     bug_log_file.save_msg( _T( "MESSAGE: " ) + object_name +  
-        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg );
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg_ );
 
     return 0;
     }
 //-----------------------------------------------------------------------------
 void bug_log::set_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, const char* msg_ )
     {
     if ( 0 == is_set_error )
         {
-        bug_log::msg.Format( _T( "SET  : %s" ), msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg_ );
         add_error_msg( PAC_name, ip_address );
 
         is_set_error = 1;
@@ -134,14 +134,14 @@ void bug_log::set_error( char &is_set_error, const char* PAC_name,
     }
 //-----------------------------------------------------------------------------
 void bug_log::reset_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, const char* msg_ )
     {
     if ( 1 == is_set_error )
         {
-        bug_log::msg.Format( _T( "SET  : %s" ), msg );
+        bug_log::msg.Format( _T( "SET  : %s" ), msg_ );
         commit_error_msg( PAC_name, ip_address );
 
-        bug_log::msg.Format( _T( "RESET  : %s" ), msg );
+        bug_log::msg.Format( _T( "RESET  : %s" ), msg_ );
         add_error_msg( PAC_name, ip_address );
         commit_error_msg( PAC_name, ip_address );
 

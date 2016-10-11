@@ -77,7 +77,7 @@ private:
     
     static HANDLE server_pipe;
     static const wchar_t *server_pipe_name; 
-    static const int BUFSIZE_PIPE = 1024;
+    static const int BUFSIZE_PIPE = 30 * 1024;
     static char request_buff[ BUFSIZE_PIPE ];
     static char reply_buff[ BUFSIZE_PIPE ];
 

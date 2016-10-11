@@ -263,6 +263,8 @@ EasySrv::~EasySrv(void)
 //
 void EasySrv::OnStart(DWORD dwArgc, LPWSTR *lpszArgv)
     {
+    setlocale( LC_CTYPE, "");
+
     // Log a service start message to the Application log.
     WriteEventLogEntry(L"CppWindowsService in OnStart", 
         EVENTLOG_INFORMATION_TYPE);

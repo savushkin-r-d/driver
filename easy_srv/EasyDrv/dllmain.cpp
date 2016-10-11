@@ -119,14 +119,22 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 CString FormatErrorMessage(DWORD ErrorCode)
     {
     TCHAR   *pMsgBuf = NULL;
-    DWORD   nMsgLen = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+    DWORD   nMsgLen = FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER |
         FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, ErrorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-        reinterpret_cast<LPTSTR>(&pMsgBuf), 0, NULL);
-    if (!nMsgLen)
-        return _T("FormatMessage fail");
-    CString sMsg(pMsgBuf, nMsgLen);
-    LocalFree(pMsgBuf);
+        NULL, ErrorCode, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+        reinterpret_cast<LPTSTR>( &pMsgBuf ), 0, NULL );
+    if ( !nMsgLen )
+        return _T( "FormatMessage fail" );
+    
+    //Удаляем CR\LF.
+    if ( nMsgLen > 2 )
+        {
+        pMsgBuf[ nMsgLen - 1 ] = 0;
+        pMsgBuf[ nMsgLen - 2 ] = 0;
+        }
+
+    CString sMsg( pMsgBuf );
+    LocalFree( pMsgBuf );
     return sMsg;
     }
 //-----------------------------------------------------------------------------
@@ -191,56 +199,71 @@ int connect_to_srv()
 //-----------------------------------------------------------------------------
 void* transact_pipe( void* buff, int size )
     {
-    if ( !g_connected )
-        {
-        g_connected = connect_to_srv() == 0;
-        }
-
-    if ( !g_connected )
-        {
-        return 0;
-        }
-
     BOOL fSuccess; 
     DWORD cbRead; 
     const int BUFSIZE = 512;
-    static char chReadBuf[ BUFSIZE ];
+    static char chReadBuf[ BUFSIZE ];    
+    int err_cnt = 0;
 
-    // Send a message to the pipe server and read the response. 
-    fSuccess = TransactNamedPipe( 
-        g_pipe,                 // pipe handle 
-        buff,                   // message to server
-        size,                   // message length 
-        chReadBuf,              // buffer to receive reply
-        sizeof( chReadBuf ),    // size of read buffer
-        &cbRead,                // bytes read
-        &g_overlap);            // overlapped 
-
-    if ( fSuccess )
+    while ( err_cnt < 3 )
         {
-        return chReadBuf;
-        }
-    else
-        {
-        int err = GetLastError();
-        if ( err == ERROR_IO_PENDING )
-            {       
-            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
+        if ( !g_connected )
+            {
+            g_connected = connect_to_srv() == 0;
+            }
 
-            if ( fSuccess )
+        if ( !g_connected )
+            {
+            if ( err_cnt < 2 )
                 {
-                return chReadBuf;
+                err_cnt++;
+                Sleep( 1000 );
+                continue;       
                 }
+            else
+                {
+                return 0;
+                }
+            }
+
+        // Send a message to the pipe server and read the response. 
+        fSuccess = TransactNamedPipe( 
+            g_pipe,                 // pipe handle 
+            buff,                   // message to server
+            size,                   // message length 
+            chReadBuf,              // buffer to receive reply
+            sizeof( chReadBuf ),    // size of read buffer
+            &cbRead,                // bytes read
+            &g_overlap );           // overlapped 
+
+        if ( fSuccess )
+            {
+            return chReadBuf;
+            }
+        else
+            {
+            int err = GetLastError();
+            if ( err == ERROR_IO_PENDING )
+                {
+                fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
+                if ( fSuccess )
+                    {
+                    return chReadBuf;                   
+                    }
+                }
+
+            CloseHandle( g_pipe );
+            g_pipe = 0;
+            g_connected = 0;
+
+            err_cnt++;
+            Sleep( 1000 );
             }
         }
 
-    bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ), 
-        FormatErrorMessage( GetLastError() ) ); 
+    bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ),
+        FormatErrorMessage( GetLastError() ) );
     BUG_LOG.add_warning_msg( "Driver", "" );
-
-    CloseHandle( g_pipe );
-    g_pipe = 0;
-    g_connected = 0;
 
     return 0;
     }
@@ -389,7 +412,7 @@ void* get_tag_value_by_id( UINT tag_id, UCHAR PAC_description_id,
     memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
     data_size += sizeof( tag_id );
 
-    void *res_buff = transact_pipe( cmd_str, data_size );    
+    void *res_buff = transact_pipe( cmd_str, data_size );
 
     if ( res_buff!= 0 )
         {
@@ -582,50 +605,7 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
     memcpy( &cmd_str[ data_size ], &tag_id, sizeof( tag_id ) );    
     data_size += sizeof( tag_id );
         
-    void* res_buff = 0;
-
-    BOOL fSuccess; 
-    DWORD cbRead; 
-    const int BUFSIZE = 10;
-    char chReadBuf[ BUFSIZE ];
-
-    // Send a message to the pipe server and read the response. 
-    fSuccess = TransactNamedPipe( 
-        g_pipe,                 // pipe handle 
-        cmd_str,                // message to server
-        data_size,              // message length 
-        chReadBuf,              // buffer to receive reply
-        sizeof( chReadBuf ),    // size of read buffer
-        &cbRead,                // bytes read
-        &g_overlap);            // overlapped 
-
-    if ( fSuccess )
-        {      
-        res_buff = chReadBuf;
-        }
-    else
-        {
-        int err = GetLastError();
-        if ( err == ERROR_IO_PENDING )
-            {
-            fSuccess = GetOverlappedResult( g_pipe, &g_overlap, &cbRead, true );
-
-            if ( fSuccess )
-                {
-                res_buff = chReadBuf;
-                }
-            else
-                {
-                bug_log::msg.Format( _T( "Нет ответа от сервиса. %s" ), 
-                    FormatErrorMessage( GetLastError() ) ); 
-                BUG_LOG.add_warning_msg( "Driver", "" );
-
-                CloseHandle( g_pipe );
-                g_pipe = 0;
-                g_connected = 0;
-                }
-            }
-        }
+    void *res_buff = transact_pipe( cmd_str, data_size );
 
     if ( res_buff!= 0 )
         {

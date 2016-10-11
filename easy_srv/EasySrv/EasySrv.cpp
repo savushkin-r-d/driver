@@ -555,9 +555,8 @@ uintptr_t WINAPI EasySrv::server_communication_thread( LPVOID lpParameter )
                         break;
 
                     case T_STRING:
-                        size_to_write += strlen( ( char* )t_val) + 1;
-                        memcpy( reply_buff + 1,
-							t_val, strlen( ( char* )t_val) );
+                        size_to_write += strlen( ( char* ) t_val ) + 1;
+                        strcpy( reply_buff + 1, ( char* ) t_val );
                         break;
 
                     default:

@@ -9,6 +9,7 @@
 #include "drv_srv_communication.h"
 
 #include <ctime>
+#include <locale.h>
 
 #pragma comment(linker, "/export:get_alarms=_get_alarms@8")
 #pragma comment(linker, "/export:set_alarm_cmd=_set_alarm_cmd@12")
@@ -50,7 +51,9 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
     switch ( ul_reason_for_call )
         {
-        case DLL_PROCESS_ATTACH:          
+        case DLL_PROCESS_ATTACH:
+            setlocale( LC_CTYPE, "");
+
             try
                 {
                 BUG_LOG.get_instance();
@@ -218,7 +221,7 @@ void* transact_pipe( void* buff, int size )
 
     BOOL fSuccess; 
     DWORD cbRead; 
-    const int BUFSIZE = 1024;
+    const int BUFSIZE = 30 * 1024;
     static char chReadBuf[ BUFSIZE ];
     int err_cnt = 0;
 
@@ -581,7 +584,7 @@ EXPORT double __stdcall get_value( in_tag_info &tag )
             {
             wchar_t tmp[ 50 ];
             mbstowcs( tmp, tag.tag_name, sizeof( tmp ) );
-            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), tmp );                
+            bug_log::msg.Format( _T( "Тег \"%s\" не найден!" ), tmp );
             BUG_LOG.add_msg_once( tag.PAC_name, tag.PAC_address );
             }
         }

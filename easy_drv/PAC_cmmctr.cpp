@@ -364,7 +364,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         res = exec_Lua_str( answer + 2,
             "Ошибка получения состояния объектов PAC" );
 
-        if( res != 0 )
+        if ( res != 0 )
             {
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
                 answer + 2 );
@@ -374,10 +374,9 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         res = exec_Lua_str( tags_str.c_str(), 
             "Ошибка обновления тегов состояния объектов PAC" );
        
-        if( res != 0 )
+        if ( res != 0 )
             {
-            //Сохраняем строку, вызвавшую ошибку.
-            BUG_LOG.bug_log_file.save_msg( tags_str.c_str() );
+            return OTHER_ERROR;
             }
        
         return LOAD_OK;
@@ -434,24 +433,19 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
 double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
     {
     is_exist_tag = false;
-    double res = 0;
 
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
-    if ( !lua_isnil( PAC_Lua_state, -1 ) )
+    const int MAX_CMD_SIZE = 200;
+    char cmd[ MAX_CMD_SIZE ];
+    double v = 0;
+
+    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %d ]", tag_id );
+    if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
         {
-        lua_pushinteger( PAC_Lua_state, tag_id );
-        lua_gettable( PAC_Lua_state, -2 );
-        if ( lua_isnumber( PAC_Lua_state, -1 ) )
-            {
-            res = lua_tonumber( PAC_Lua_state, -1 );
-            is_exist_tag = true;
-            }     
-
-        lua_remove( PAC_Lua_state, -1 );
+        v = get_double_param_from_Lua( "res",
+            "PAC_cmmctr::get_PAC_all_devices_states()", is_exist_tag );
         }
-    lua_remove( PAC_Lua_state, -1 );
 
-    return res;
+    return v;
     }
 //-----------------------------------------------------------------------------
 double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
@@ -508,7 +502,19 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
     char cmd[ MAX_CMD_SIZE ];
 
     snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=t.%s\n", tag_id, tag_name );
-    tags_str += cmd;
+    exec_Lua_str( cmd, "Ошибка обновления добавленного тега" );
+
+    if ( tags_str.find( cmd ) != std::string::npos )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
+            _T( "Тег \'%s\' уже добавлен в список тегов (возможно имеет неверный тип)!" ),
+            tag_name );
+        BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
+        }
+    else
+        {
+        tags_str += cmd;
+        }
     }
 //-----------------------------------------------------------------------------
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()

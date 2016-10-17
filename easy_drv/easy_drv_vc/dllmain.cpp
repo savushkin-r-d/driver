@@ -362,7 +362,9 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
 
         if ( true == is_exist_tag )                                    //8
             {
+            current_PAC_cmmctr->get_dev_synch_access()->WaitToWrite();
             current_PAC_cmmctr->add_exist_tag( tag.tag_name, tag.tag_id );
+            current_PAC_cmmctr->get_dev_synch_access()->Done();
             }
 
         if ( false == is_exist_tag )                                   //9
@@ -373,7 +375,9 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
                 current_PAC_cmmctr->get_address() );
 
+            current_PAC_cmmctr->get_dev_synch_access()->WaitToWrite();
             current_PAC_cmmctr->add_nill_tag( tag.tag_id );
+            current_PAC_cmmctr->get_dev_synch_access()->Done();
             }
         }
 

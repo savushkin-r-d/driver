@@ -355,25 +355,13 @@ bug_log_f::bug_log_f()
     bug_log_stream = 0;
     }
 //-----------------------------------------------------------------------------
-int bug_log_f::open( char* bug_log_filename )
-    {		
-
+int bug_log_f::open( char* fname )
+    {
+    bug_log_filename = fname;
     if( ( bug_log_stream  = fopen( bug_log_filename, "a+" ) ) == NULL ) // C4996
-        {        
-        return 1;               
-        }   
-
-    fseek( bug_log_stream, 0, SEEK_END );
-    unsigned int file_size = ftell( bug_log_stream );
-    fseek( bug_log_stream, 0, SEEK_SET );
-    if ( file_size > MAX_LOGFILE_SIZE )
         {
-        fclose( bug_log_stream );
-        if( ( bug_log_stream  = fopen( bug_log_filename, "w+" ) ) == NULL ) // C4996
-            {        
-            return 1;               
-            }   
-        }
+        return 1;
+        }   
 
     return 0;
     }
@@ -392,6 +380,16 @@ int bug_log_f::save_msg( const char* msg )
 
         fwrite( str, sizeof( str[ 0 ] ), str.GetLength(), bug_log_stream );
         fflush( bug_log_stream );
+
+        int size = ftell( bug_log_stream );
+        if ( size > MAX_LOGFILE_SIZE )
+            {
+            fclose( bug_log_stream );
+            remove( bug_log_filename + _T( ".old" ) );
+            rename( bug_log_filename, bug_log_filename + _T( ".old" ) );
+            bug_log_stream = fopen( bug_log_filename, _T( "a+" ) );
+            }
+
         return 0;
         }
     return 1;

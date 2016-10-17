@@ -56,10 +56,12 @@ class bug_log_f
     private:
         enum L_CONST
             {
-            MAX_LOGFILE_SIZE = 1000 * 1024, //Максимальный размер файла логов, байт.
+            //Максимальный размер файла логов, байт.
+            MAX_LOGFILE_SIZE = 20 * 1024 * 1024, 
             };
 
         FILE *bug_log_stream;
+        CString bug_log_filename;
     };
 //-----------------------------------------------------------------------------
 class log_message

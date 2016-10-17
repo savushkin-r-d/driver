@@ -150,9 +150,6 @@
     <ClInclude Include="..\PAC_cmmctr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\common\util\snprintf.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\common\win_util\SWMRG.h">
       <Filter>Header Files\win_util</Filter>
     </ClInclude>
@@ -262,9 +259,6 @@
     </ClCompile>
     <ClCompile Include="..\PAC_cmmctr.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\common\util\snprintf.c">
-      <Filter>Source Files\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp">
       <Filter>Source Files\win_util</Filter>

@@ -1,6 +1,6 @@
 /*
 ** Lua binding: PAC_dev
-** Generated automatically by tolua++-1.0.92 on 03/13/13 16:22:02.
+** Generated automatically by tolua++-1.0.92 on 10/17/16 12:24:35.
 */
 
 #ifndef __cplusplus
@@ -15,6 +15,7 @@ TOLUA_API int  tolua_PAC_dev_open (lua_State* tolua_S);
 
 #include "errors.h"
 #include "exchange_data.h"
+#pragma warning(disable:4800)
 
 /* function to release collected object via destructor */
 #ifdef __cplusplus
@@ -690,7 +691,7 @@ static int tolua_set_alarm_suppress(lua_State* tolua_S)
   if (!tolua_isboolean(tolua_S,2,0,&tolua_err))
    tolua_error(tolua_S,"#vinvalid type in variable assignment.",&tolua_err);
 #endif
-  self->suppress = tolua_toboolean(tolua_S,2,0) != 0;
+  self->suppress = ((bool)  tolua_toboolean(tolua_S,2,0))
 ;
  return 0;
 }

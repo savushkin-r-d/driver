@@ -215,9 +215,9 @@ class PAC_cmmctr
             return PAC_params_CRC;
             }
 
-        int set_saved_CRC( int PAC_params_CRC )
+        int set_saved_CRC( int _PAC_params_CRC )
             {
-            return this->PAC_params_CRC = PAC_params_CRC;
+            return this->PAC_params_CRC = _PAC_params_CRC;
             }
 
 

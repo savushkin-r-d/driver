@@ -254,7 +254,6 @@ class bug_log
 
     private:
         HANDLE   bug_log_window_thread_handle;
-        char     tmp_str[ C_MSG_SIZE ];
 
         static bug_log_wnd* bug_log_window;        
 

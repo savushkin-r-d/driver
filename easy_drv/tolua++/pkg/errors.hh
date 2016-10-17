@@ -1,6 +1,8 @@
 $#include "errors.h"
 $#include "exchange_data.h"
 
+$#pragma warning(disable:4800)
+
 enum ALARM_STATE
     {
     AS_NORMAL,

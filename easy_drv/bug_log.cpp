@@ -190,62 +190,62 @@ uintptr_t WINAPI bug_log::bug_log_thread( LPVOID lpParameter )
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int bug_log::add_msg( CString object_name, CString IP4_address, 
-    CString msg )
+    CString str )
     {
-    bug_log_file.save_msg( ( object_name + _T( " - " ) + msg ).GetBuffer( 0 ) );
-    bug_log_window->add_msg_to_grid( object_name, IP4_address, msg );
+    bug_log_file.save_msg( ( object_name + _T( " - " ) + str ).GetBuffer( 0 ) );
+    bug_log_window->add_msg_to_grid( object_name, IP4_address, str );
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_error_msg( CString object_name, CString IP4_address, 
-    CString msg /*= msg*/ )
+    CString str /*= msg*/ )
     {
     bug_log_file.save_msg( ( _T( "ERROR: " ) + object_name +  
-        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg ).GetBuffer( 0 ) );
-    bug_log_window->add_error_to_grid( object_name, IP4_address, msg );
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + str ).GetBuffer( 0 ) );
+    bug_log_window->add_error_to_grid( object_name, IP4_address, str );
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::commit_error_msg( CString object_name, CString IP4_address, 
-    CString msg /*= msg */ )
+    CString str /*= msg */ )
     {
-    bug_log_window->commit_error_msg_to_grid( object_name, IP4_address, msg );
+    bug_log_window->commit_error_msg_to_grid( object_name, IP4_address, str );
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_warning_msg( CString object_name, CString IP4_address,
-    CString msg /*= msg */ )
+    CString str /*= msg */ )
     {
     bug_log_file.save_msg( ( _T( "WARNING: " ) + object_name +  
-        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg ).GetBuffer( 0 ) );
+        _T( "[ " ) + IP4_address + _T( " ]\t - " ) + str ).GetBuffer( 0 ) );
 
 
-    bug_log_window->add_warning_msg_to_grid( object_name, IP4_address, msg );
+    bug_log_window->add_warning_msg_to_grid( object_name, IP4_address, str );
     return 0;
     }
 //-----------------------------------------------------------------------------
 int bug_log::add_msg_once( CString object_name, 
-    CString IP4_address, CString msg /*= msg */ )
+    CString IP4_address, CString str /*= msg */ )
     {
     int res = bug_log_window->add_msg_to_grid_once( object_name, 
-        IP4_address, msg );
+        IP4_address, str );
 
     if ( res != -1 )
         {
         bug_log_file.save_msg( ( _T( "MESSAGE: " ) + object_name +  
-            _T( "[ " ) + IP4_address + _T( " ]\t - " ) + msg ).GetBuffer( 0 ) );
+            _T( "[ " ) + IP4_address + _T( " ]\t - " ) + str ).GetBuffer( 0 ) );
 
         }
     return 0;
     }
 //-----------------------------------------------------------------------------
 void bug_log::set_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, const char* str )
     {
     if ( 0 == is_set_error )
         {
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+            "SET  : %s", str );
         add_error_msg( PAC_name, ip_address );
         is_set_error = 1;
 
@@ -254,16 +254,16 @@ void bug_log::set_error( char &is_set_error, const char* PAC_name,
     }
 //-----------------------------------------------------------------------------
 void bug_log::reset_error( char &is_set_error, const char* PAC_name, 
-    const char* ip_address, const char* msg )
+    const char* ip_address, const char* str )
     {
     if ( 1 == is_set_error )
         {
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "SET  : %s", msg );
+            "SET  : %s", str );
         commit_error_msg( PAC_name, ip_address );
 
         sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "RESET: %s", msg );
+            "RESET: %s", str );
         add_error_msg( PAC_name, ip_address );
         commit_error_msg( PAC_name, ip_address );
 
@@ -309,8 +309,7 @@ bug_log::bug_log()
     bug_log_window_thread_handle = chBEGINTHREADEX( 0, 0, bug_log_thread, 0, 0, 0 );	
 
     if ( bug_log_file.open( path ) )
-        {
-        char msg[ 200 ];
+        {       
         sprintf_s( msg, 200, "Не удалось открыть файл логов %s!",
             path );
         add_warning_msg( "Driver", msg );                

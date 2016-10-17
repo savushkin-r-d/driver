@@ -217,7 +217,7 @@ int PAC_cmmctr::get_PAC_info()
 
     if ( answer_size > 0 )
         { 
-        int res = exec_Lua_str( answer,
+        res = exec_Lua_str( answer,
             "Ошибка получения данных о PAC" );
 
         if( res != 0 )
@@ -361,7 +361,7 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
             return PAC_DEVICES_CHANGING;
             }
 
-        int res = exec_Lua_str( answer + 2,
+        res = exec_Lua_str( answer + 2,
             "Ошибка получения состояния объектов PAC" );
 
         if( res != 0 )
@@ -630,8 +630,7 @@ int PAC_cmmctr::check_PAC_params()
             if ( answer_size > 0 )
                 { 
                 if ( 0 == answer[ 0 ] && 0 == answer[ 1 ] )
-                    {
-                    char file_name[ 100 ];
+                    {                    
                     get_param_file_name( file_name, sizeof( file_name ) );
 
                     snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
@@ -678,10 +677,10 @@ int PAC_cmmctr::get_PAC_params_CRC()
                 return -2;
                 }
 
-            int PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
+            int crc = get_int_param_from_Lua( "params_CRC", 
                 "int PAC_cmmctr::get_PAC_params_CRC()" );
 
-            return PAC_params_CRC;
+            return crc;
             }
         }
 
@@ -1162,7 +1161,7 @@ int tcp_cmmctr::Connect()
     return 1;
     }
 //-----------------------------------------------------------------------------
-int tcp_cmmctr::recvtimeout( UINT s, char *buf, int len, int timeout, int usec ) 
+int tcp_cmmctr::recvtimeout( UINT s, char *buf, int len, int _timeout, int usec ) 
     { 
     fd_set fds; 
     int n; 
@@ -1173,7 +1172,7 @@ int tcp_cmmctr::recvtimeout( UINT s, char *buf, int len, int timeout, int usec )
     FD_SET( s, &fds ); 
 
     // настраиваем время на таймаут 
-    tv.tv_sec = timeout; 
+    tv.tv_sec = _timeout; 
     tv.tv_usec = usec; 
 
     // ждем таймаута или полученных данных

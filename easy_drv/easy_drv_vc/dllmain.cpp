@@ -33,7 +33,6 @@ int final();
 
 uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter );
 //-----------------------------------------------------------------------------
-const int        MAX_PROJECTS_CNT    = 256;
 PAC_cmmctr_group *g_PAC_descriptions = 0;   ///< Контроллеры сервера.
 
 alarm_manager    *g_alarm_manager = 0;            ///< Работа с ошибками контроллеров.
@@ -617,8 +616,7 @@ int final()
     //-Завершение всех потоков, работающих с контроллерами.
     memset( g_thread_is_terminated, 1, sizeof( g_thread_is_terminated ) );
     Sleep( 1 );
-
-    const int MAX_THREAD_END_WAIT_TIME = 15000;
+	    
     for ( int i = 0; i < MAX_PROJECTS_CNT + 1; i++ )
         {
         if (  g_commctr_threads_array[ i ] )

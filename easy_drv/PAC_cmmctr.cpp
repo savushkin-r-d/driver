@@ -781,6 +781,14 @@ PAC_cmmctr* PAC_cmmctr_group::get_PAC( int descr_id )
     return PAC_descriptions[ descr_id ];    
     }
 //-----------------------------------------------------------------------------
+int PAC_cmmctr_group::remove_PAC( UCHAR PAC_descr_id )
+    {
+    delete PAC_descriptions[PAC_descr_id];
+    PAC_descriptions[PAC_descr_id] = 0;
+    
+    return 0;
+    }
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 char* abstract_cmmctr::get_out_data( unsigned int &cnt ) 
     {    

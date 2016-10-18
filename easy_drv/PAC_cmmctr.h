@@ -342,7 +342,10 @@ class PAC_cmmctr_group
                 
         /// @brief Получение описания PAC с заданным номером.
         PAC_cmmctr* get_PAC( int descr_id );
-                     
+            
+        /// @brief Удаление описания PAC из группы описаний сервера.
+        int remove_PAC( UCHAR PAC_descr_id );
+
         enum CONSTANTS
             {
             MAX_PAC_DESCR_NUMBER = 255, ///< Максимальный номер описания PAC.

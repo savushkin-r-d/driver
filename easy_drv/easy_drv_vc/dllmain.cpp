@@ -47,8 +47,6 @@ int    g_chbase_nodes_cont_count                        = 0;
 /// @brief Синхронизатор доступа к PAC-ам.
 CSWMRG g_sync_PAC;
 
-/// @brief Количество потоков обмена с PAC.
-int    g_commctr_threads_count = 0;
 //-----------------------------------------------------------------------------
 // Используется для проверки соответствия DLL и версии в PAC.
 extern u_int_2 G_CURRENT_PROTOCOL_VERSION;
@@ -62,9 +60,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
     switch ( ul_reason_for_call )
         {
-    case DLL_PROCESS_ATTACH:          
+    case DLL_PROCESS_ATTACH:
         try
             {
+            hRes = _Module.Init( 0, (HINSTANCE)hModule );            // Инициализируем модуль.
+            ATLASSERT( SUCCEEDED( hRes ) );
+
             BUG_LOG.get_instance();
 
             g_PAC_descriptions = new PAC_cmmctr_group(); //Контроллеры сервера.
@@ -83,8 +84,6 @@ BOOL APIENTRY DllMain( HMODULE hModule,
             return false;
             }
 
-        hRes = _Module.Init( 0, ( HINSTANCE ) hModule );            // Инициализируем модуль.
-        ATLASSERT( SUCCEEDED( hRes ) );
 
         //Создаем поток, который будет следить, есть ли связь с 
         // контроллерами. В случае ее пропадания\появления 
@@ -306,7 +305,7 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             return 0;
             }
 
-        g_commctr_threads_array[ g_commctr_threads_count ] = 
+        g_commctr_threads_array[ tag.PAC_descr_id ] =
             chBEGINTHREADEX( 0, 0, PAC_communication_thread, 
             current_PAC_cmmctr, 0, 0 );						           //4
         }
@@ -460,6 +459,10 @@ EXPORT int __stdcall stop_driver_thread( int prj_id )
 
     g_thread_is_terminated[ prj_id ] = 0;
     g_chbase_nodes_cont_count--;
+
+    g_sync_PAC.WaitToWrite();
+    g_PAC_descriptions->remove_PAC( ( u_char ) prj_id );
+    g_sync_PAC.Done();
 
     sprintf( bug_log::msg, "Драйвер для узла базы каналов [ $%X ] выгружен.", 
         prj_id ); 

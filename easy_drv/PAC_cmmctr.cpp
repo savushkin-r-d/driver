@@ -385,27 +385,32 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     return OTHER_ERROR;
     }
 //-----------------------------------------------------------------------------
-void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag, 
+void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
     char *str_value, int max_length )
     {
-    str_value[ 0 ] = 0;
+    if ( str_value == 0 )
+        {
+        return;
+        }
+
+    str_value[0] = 0;
     is_exist_tag = false;
 
-    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
-    if ( !lua_isnil( PAC_Lua_state, -1 ) )
+    const int MAX_CMD_SIZE = 200;
+    char cmd[MAX_CMD_SIZE];
+
+    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %d ]", tag_id );
+    if ( exec_Lua_str( cmd, "void PAC_cmmctr::get_tag_str_value", false ) == 0 )
         {
-        lua_pushinteger( PAC_Lua_state, tag_id );
-        lua_gettable( PAC_Lua_state, -2 );
+        lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "res" );
         if ( lua_isstring( PAC_Lua_state, -1 ) )
             {
-            const char* val = lua_tostring( PAC_Lua_state, -1 );
-
-            strncpy( str_value, val, max_length );  
             is_exist_tag = true;
+            const char* val = lua_tostring( PAC_Lua_state, -1 );
+            strncpy( str_value, val, max_length );
             }
         lua_remove( PAC_Lua_state, -1 );
         }
-    lua_remove( PAC_Lua_state, -1 );
     }
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,

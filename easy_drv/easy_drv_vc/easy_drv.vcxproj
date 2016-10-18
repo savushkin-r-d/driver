@@ -102,7 +102,7 @@
     <PostBuildEvent>
       <Message>Копирование в папку драйверов + сжатие  Upx'ом.</Message>
       <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_LZ.dll"
-"p:\Monitor\drivers\upx" -9 "p:\Monitor\drivers\PAC_easy_drv_LZ.dll"</Command>
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>

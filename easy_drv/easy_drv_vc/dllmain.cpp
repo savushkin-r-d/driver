@@ -51,6 +51,7 @@ CSWMRG g_sync_PAC;
 // »спользуетс€ дл€ проверки соответстви€ DLL и версии в PAC.
 extern u_int_2 G_CURRENT_PROTOCOL_VERSION;
 
+const int MAX_STR_RES_LENGTH = 500;
 //-----------------------------------------------------------------------------
 BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -263,7 +264,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
 /// @param [in] use_only_tag_id - использовать только номер тега.
 ///
 /// @return «начение тега.
-void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type, 
+int get_tag_value( double &res, char* str_res, in_tag_info &tag, TAG_VAL_TYPE tag_type, 
     bool use_only_tag_id = false )
     {
     // ѕровер€етс€, не превышает ли номер описани€ PAC максимальный (1). ƒалее
@@ -284,13 +285,13 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             tag.PAC_descr_id, PAC_cmmctr_group::MAX_PAC_DESCR_NUMBER );
 
         BUG_LOG.add_msg_once( "Driver", "" );
-        return 0;
+        return 1;
         }
 
     PAC_cmmctr *current_PAC_cmmctr = g_PAC_descriptions->get_PAC( tag.PAC_descr_id );
     if ( 0 == current_PAC_cmmctr )                                     //2
         {
-        if ( use_only_tag_id ) return 0;
+        if ( use_only_tag_id ) return 1;
 
         current_PAC_cmmctr = g_PAC_descriptions->add_PAC(              //3
             tag.PAC_address,
@@ -302,7 +303,7 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "get_tag_value(...) - ошибка добавлени€ new_PAC_cmmctr = 0!" );
             BUG_LOG.add_msg_once( "Driver", "" );
-            return 0;
+            return 1;
             }
 
         g_commctr_threads_array[ tag.PAC_descr_id ] =
@@ -313,47 +314,42 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
     //-ѕолучены ли устройства контроллера.
     if ( current_PAC_cmmctr->is_got_PAC_devices() == 0 ) 
         {        
-        return 0; //Ќе получены устройства PAC.
+        return 1; //Ќе получены устройства PAC.
         }
 
     current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
     bool   is_exist_tag = false;
-
-    static double tag_val            = 0;    
-    static char   str_tag_val[ 500 ] = { 0 };    
-    tag_val          = 0;
-    str_tag_val[ 0 ] = 0;
-
+   
     switch ( tag_type )
         {
     case T_NUMBER:
-        tag_val = current_PAC_cmmctr->get_tag_value(                   //5
+        res = current_PAC_cmmctr->get_tag_value(                       //5
             tag.tag_id, is_exist_tag );
         break;
 
     case T_STRING:
         current_PAC_cmmctr->get_tag_str_value(                         //5
-            tag.tag_id, is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
+            tag.tag_id, is_exist_tag, str_res, MAX_STR_RES_LENGTH );
         break;
         }
     current_PAC_cmmctr->get_dev_synch_access()->Done();
 
     if ( false == is_exist_tag )                                       //7
         {
-        if ( use_only_tag_id ) return 0;
+        if ( use_only_tag_id ) return 1;
 
         current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
 
         switch ( tag_type )
             {
         case T_NUMBER:
-            tag_val = current_PAC_cmmctr->get_tag_value(                
+            res = current_PAC_cmmctr->get_tag_value(                
                 tag.tag_name, is_exist_tag );
             break;
 
         case T_STRING:
             current_PAC_cmmctr->get_tag_str_value(          
-                tag.tag_name, is_exist_tag, str_tag_val, sizeof( str_tag_val ) );
+                tag.tag_name, is_exist_tag, str_res, MAX_STR_RES_LENGTH );
             break;
             }
 
@@ -379,15 +375,6 @@ void* get_tag_value( in_tag_info &tag, TAG_VAL_TYPE tag_type,
             current_PAC_cmmctr->get_dev_synch_access()->Done();
             }
         }
-
-    switch ( tag_type )
-        {
-    case T_NUMBER:
-        return ( void* ) &tag_val;    
-
-    case T_STRING:
-        return ( void* ) &str_tag_val;    
-        }  
 
     return 0;
     }
@@ -504,14 +491,10 @@ EXPORT int __stdcall init_driver_thread( int prj_id )
 /// @return «начение тега.
 EXPORT double __stdcall get_value( in_tag_info &tag )
     {
-    void *res = get_tag_value( tag, T_NUMBER );
+    double value = 0;
+    get_tag_value( value, 0, tag, T_NUMBER );
 
-    if ( res )
-        {
-        return *( double* ) res;
-        }
-
-    return 0;
+    return value;
     }
 //-----------------------------------------------------------------------------
 /// @brief ѕолучение значени€ тега на основе его частичного описани€.
@@ -532,15 +515,16 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
     tag.tag_id = tag_id;
     tag.PAC_descr_id = PAC_description_id;
 
-    void *res = get_tag_value( tag, T_NUMBER, true );
-    if ( res )
+    double value = 0;
+    int res = get_tag_value( value, 0, tag, T_NUMBER, true );
+    if ( res == 0 )
         {
         result = 0;
-        return *( double* ) res;
+        return value;
         }
 
     result = 1;
-    return 1;
+    return 0;
     }
 //-----------------------------------------------------------------------------
 /// @brief ѕолучение строкового значени€ тега на основе его полного описани€.
@@ -552,14 +536,13 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
 /// @return «начение тега.
 EXPORT char* __stdcall get_str_value( in_tag_info &tag )
     {
-    void *res = get_tag_value( tag, T_NUMBER );
+    double tmp;
+    static char str_value[MAX_STR_RES_LENGTH];
+    str_value[0] = 0;
 
-    if ( res )
-        {
-        return ( char* ) res;
-        }
+    get_tag_value( tmp, str_value, tag, T_NUMBER );
 
-    return 0;
+    return str_value;
     }
 //-----------------------------------------------------------------------------
 /// @brief ѕолучение строкового значени€ тега на основе его частичного описани€.
@@ -580,11 +563,15 @@ EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
     tag.tag_id = tag_id;
     tag.PAC_descr_id = PAC_description_id;
 
-    void *res = get_tag_value( tag, T_STRING, true );
-    if ( res )
+    double tmp;
+    static char str_value[MAX_STR_RES_LENGTH];
+    str_value[0] = 0;
+
+    int res = get_tag_value( tmp, str_value, tag, T_STRING, true );
+    if ( res == 0 )
         {
         result = 0;
-        return ( char* ) res;
+        return str_value;
         }
 
     result = 1;

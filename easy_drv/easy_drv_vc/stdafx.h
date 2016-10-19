@@ -25,6 +25,9 @@
 #include <shellapi.h> 
 
 // Additional headers program requires.
+#if _MSC_VER == 1700
+#define snprintf _snprintf
+#endif // _MSC_VER
 #include <string>
 
 #include "CmnHdr.h"

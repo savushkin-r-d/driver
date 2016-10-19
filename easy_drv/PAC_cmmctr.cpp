@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "snprintf.h"
-
 #include    "lua.h"
 #include    "lauxlib.h"
 #include    "lualib.h"
@@ -393,29 +391,35 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
         return;
         }
 
-    str_value[0] = 0;
+    str_value[ 0 ] = 0;
     is_exist_tag = false;
 
-    const int MAX_CMD_SIZE = 200;
-    char cmd[MAX_CMD_SIZE];
-
-    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %d ]", tag_id );
-    if ( exec_Lua_str( cmd, "void PAC_cmmctr::get_tag_str_value", false ) == 0 )
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
+    if ( !lua_isnil( PAC_Lua_state, -1 ) )
         {
-        lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "res" );
+        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_gettable( PAC_Lua_state, -2 );
+      
         if ( lua_isstring( PAC_Lua_state, -1 ) )
             {
             is_exist_tag = true;
             const char* val = lua_tostring( PAC_Lua_state, -1 );
-            strncpy( str_value, val, max_length );
+            strncpy( str_value, val, max_length );            
             }
         lua_remove( PAC_Lua_state, -1 );
-        }
+        }    
+    lua_remove( PAC_Lua_state, -1 );
+
     }
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
     char *str_value, int max_length )
     {
+    if ( str_value == 0 )
+        {
+        return;
+        }
+
     is_exist_tag = false;    
     str_value[ 0 ] = 0;
 
@@ -438,19 +442,24 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
 double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
     {
     is_exist_tag = false;
+    double res = 0;
 
-    const int MAX_CMD_SIZE = 200;
-    char cmd[ MAX_CMD_SIZE ];
-    double v = 0;
-
-    snprintf( cmd, MAX_CMD_SIZE, "res = tags[ %d ]", tag_id );
-    if ( exec_Lua_str( cmd, "double PAC_cmmctr::get_tag_value", false ) == 0 )
+    lua_getfield( PAC_Lua_state, LUA_GLOBALSINDEX, "tags" );
+    if ( !lua_isnil( PAC_Lua_state, -1 ) )
         {
-        v = get_double_param_from_Lua( "res",
-            "PAC_cmmctr::get_PAC_all_devices_states()", is_exist_tag );
-        }
+        lua_pushinteger( PAC_Lua_state, tag_id );
+        lua_gettable( PAC_Lua_state, -2 );
+        if ( lua_isnumber( PAC_Lua_state, -1 ) )
+            {
+            res = lua_tonumber( PAC_Lua_state, -1 );
+            is_exist_tag = true;
+            }
 
-    return v;
+        lua_remove( PAC_Lua_state, -1 );
+        }
+    lua_remove( PAC_Lua_state, -1 );
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )

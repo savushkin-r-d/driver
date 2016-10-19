@@ -1,11 +1,6 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
 
-extern "C" 
-    {
-#include "snprintf.h"
-    };
-
 #pragma comment(linker, "/export:get_alarms=_get_alarms@8")
 #pragma comment(linker, "/export:set_alarm_cmd=_set_alarm_cmd@12")
 

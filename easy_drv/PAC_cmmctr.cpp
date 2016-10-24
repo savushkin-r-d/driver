@@ -1065,15 +1065,30 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
         tmp_answer_size -= res;   
         }     
 
-    int r = qlz_decompress( in_buff + 5, buff, state_decompress );
-    
-    if ( 0 == r )
+    int buff_req_size = qlz_size_decompressed( in_buff + 5 );
+    if ( buff_req_size >= P_MAX_BUFFER_SIZE )
     	{
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Размер исходный/после декомпрессии (%d/%d)! Возможно, превышен размер буфера!", 
-            answer_size, r );
-        BUG_LOG.add_warning_msg( PAC_name, ip_address );
+        CString tmp;
+        tmp.Format( "Размер после декомпрессии превышает размер буфера (%d>%d)! "
+            "Данные от PAC потеряны.",
+            buff_req_size, P_MAX_BUFFER_SIZE );
+        BUG_LOG.add_warning_msg( PAC_name, ip_address, tmp );
+        
+        answer_size = 0;
     	}
+    else
+        {
+        int r = qlz_decompress( in_buff + 5, buff, state_decompress );
+
+        if ( 0 == r )
+            {
+            sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
+                "Ошибка декомпрессии!" );
+            BUG_LOG.add_warning_msg( PAC_name, ip_address );
+
+            answer_size = 0;
+            }
+        }
     
     LeaveCriticalSection( &m_cs );
     return 0;

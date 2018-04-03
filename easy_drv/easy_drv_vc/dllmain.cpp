@@ -175,8 +175,8 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
         }
 
     sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE, 
-        "Поток работы с описанием PAC [ $%X ] запущен. Интервал опроса - %d мсек.",
-        PAC_com->get_description_id(), sleep_time );
+        "Поток работы с описанием PAC [ $%X ] запущен. Порт - %d, интервал опроса - %d мсек.",
+        PAC_com->get_description_id(), PAC_com->get_cmmctr()->get_port(),sleep_time );
     BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
     

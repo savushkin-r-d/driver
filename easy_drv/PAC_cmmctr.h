@@ -376,6 +376,8 @@ class abstract_cmmctr
         virtual int send_2_PAC( UCHAR service_ID, const char *buff,
             UINT length ) = 0;
 
+        virtual int get_port() const = 0;
+
     protected:        
         int id;         ///< Номер.
 
@@ -410,6 +412,11 @@ class tcp_cmmctr : public abstract_cmmctr
         char* get_out_data( UINT &cnt );
 
         int send_2_PAC( UCHAR Service_ID, const char *data, UINT length );
+
+        int get_port() const
+            {
+            return port;
+            }
 
     private:
         CRITICAL_SECTION m_cs;

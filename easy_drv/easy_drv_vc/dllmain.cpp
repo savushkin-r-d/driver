@@ -532,12 +532,12 @@ EXPORT double __stdcall get_value2( UINT tag_id, UCHAR PAC_description_id,
 EXPORT char* __stdcall get_str_value( in_tag_info &tag )
     {
     double tmp;
-    static char str_value[MAX_STR_RES_LENGTH];
-    str_value[0] = 0;
+    static char str_value[ UCHAR_MAX + 1 ][ MAX_STR_RES_LENGTH ];
+    str_value[ tag.PAC_descr_id ][ 0 ] = 0;
 
-    get_tag_value( tmp, str_value, tag, T_NUMBER );
+    get_tag_value( tmp, str_value[ tag.PAC_descr_id ], tag, T_NUMBER );
 
-    return str_value;
+    return str_value[ tag.PAC_descr_id ];
     }
 //-----------------------------------------------------------------------------
 /// @brief Получение строкового значения тега на основе его частичного описания.
@@ -559,14 +559,14 @@ EXPORT char* __stdcall get_str_value2( UINT tag_id, UCHAR PAC_description_id,
     tag.PAC_descr_id = PAC_description_id;
 
     double tmp;
-    static char str_value[MAX_STR_RES_LENGTH];
-    str_value[0] = 0;
+    static char str_value[ UCHAR_MAX + 1][MAX_STR_RES_LENGTH];
+    str_value[ PAC_description_id ][0] = 0;
 
-    int res = get_tag_value( tmp, str_value, tag, T_STRING, true );
+    int res = get_tag_value( tmp, str_value[ PAC_description_id ], tag, T_STRING, true );
     if ( res == 0 )
         {
         result = 0;
-        return str_value;
+        return str_value[ PAC_description_id ];
         }
 
     result = 1;

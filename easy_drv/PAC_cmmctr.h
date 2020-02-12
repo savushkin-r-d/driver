@@ -24,7 +24,9 @@
 #include "SWMRG.h"
 #include "WSA_err_decode.h"
 
-#include "quicklz.h"
+extern "C" {
+#include "zlib.h"
+    };
 
 #include "g_device.h"
 
@@ -388,7 +390,7 @@ class abstract_cmmctr
 
         enum PARAMS
             {
-            P_MAX_BUFFER_SIZE = 500*1024,
+            P_MAX_BUFFER_SIZE = 500 * 1024,
             };
 
         /// @brief Буфер для обмена данными с контроллером.
@@ -450,7 +452,6 @@ class tcp_cmmctr : public abstract_cmmctr
         int  recvtimeout( UINT s, char *buf, int len, int timeout, int usec );
 
     private:
-        qlz_state_decompress *state_decompress;
         char buff[ P_MAX_BUFFER_SIZE + 400 ];
     };
 //-----------------------------------------------------------------------------

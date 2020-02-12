@@ -1,6 +1,8 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.329
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "easy_drv", "easy_drv.vcxproj", "{E4659251-9640-4F45-8EA2-4E3814D7E34A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_easy_drv_vc", "..\test_easy_drv_vc\test_easy_drv_vc.vcxproj", "{4B729E50-697D-4466-9201-D4AFC9AE59FD}"
@@ -10,19 +12,26 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test_easy_drv_vc", "..\test
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug_|Win32 = Debug_|Win32
 		Debug|Win32 = Debug|Win32
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Debug_|Win32.ActiveCfg = Debug_|Win32
+		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Debug_|Win32.Build.0 = Debug_|Win32
 		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Debug|Win32.ActiveCfg = Debug|Win32
 		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Debug|Win32.Build.0 = Debug|Win32
 		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Release|Win32.ActiveCfg = Release|Win32
 		{E4659251-9640-4F45-8EA2-4E3814D7E34A}.Release|Win32.Build.0 = Release|Win32
+		{4B729E50-697D-4466-9201-D4AFC9AE59FD}.Debug_|Win32.ActiveCfg = Debug_|Win32
 		{4B729E50-697D-4466-9201-D4AFC9AE59FD}.Debug|Win32.ActiveCfg = Debug|Win32
 		{4B729E50-697D-4466-9201-D4AFC9AE59FD}.Debug|Win32.Build.0 = Debug|Win32
 		{4B729E50-697D-4466-9201-D4AFC9AE59FD}.Release|Win32.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {68ECE768-6EFC-4605-9C29-4CAC79D5A441}
 	EndGlobalSection
 EndGlobal

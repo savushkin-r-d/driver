@@ -62,6 +62,8 @@ LRESULT bug_log_wnd::on_close(UINT, WPARAM, LPARAM, BOOL& bHandled )
 //-----------------------------------------------------------------------------
 void bug_log_wnd::create( CString window_title )
     {    
+    synch_access->WaitToWrite();
+
     Create( NULL, CWindow::rcDefault, window_title );
     //CreateWindowExA( 0, 0, 0);
 
@@ -89,6 +91,8 @@ void bug_log_wnd::create( CString window_title )
 #else
     ShowWindow( SW_MINIMIZE );
 #endif // DEBUG    
+
+    synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 void bug_log_wnd::close()
@@ -102,8 +106,10 @@ void bug_log_wnd::close()
 //-----------------------------------------------------------------------------
 void bug_log_wnd::clear_log()
     {
+    synch_access->WaitToWrite();
     message_list.clear_messages();  
     BUG_LOG.clear_errors();
+    synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 int bug_log_wnd::add_msg_to_grid( CString &object_name, CString &IP4_address,
@@ -113,9 +119,12 @@ int bug_log_wnd::add_msg_to_grid( CString &object_name, CString &IP4_address,
         {
         ShowWindow( SW_SHOW );
         }
-
-    return message_list.add_message( 
+    synch_access->WaitToWrite();
+    int res =  message_list.add_message( 
         log_message( object_name, IP4_address, msg, log_message::MSG_NORMAL ) );
+    synch_access->Done();
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 int bug_log_wnd::add_error_to_grid( CString &object_name, 
@@ -126,8 +135,12 @@ int bug_log_wnd::add_error_to_grid( CString &object_name,
         ShowWindow( SW_SHOW );
         }
 
-    return message_list.add_message( 
+    synch_access->WaitToWrite();
+    int res = message_list.add_message( 
         log_message( object_name, IP4_address, msg, log_message::MSG_ERROR ) );
+    synch_access->Done();
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 int bug_log_wnd::commit_error_msg_to_grid( CString &object_name,
@@ -138,8 +151,12 @@ int bug_log_wnd::commit_error_msg_to_grid( CString &object_name,
         ShowWindow( SW_SHOW );
         }
 
-    return message_list.commit_error_message( 
+    synch_access->WaitToWrite();
+    int res = message_list.commit_error_message( 
         log_message( object_name, IP4_address, msg, log_message::MSG_ERROR ) );
+    synch_access->Done();
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 int bug_log_wnd::add_warning_msg_to_grid( CString &object_name, 
@@ -150,8 +167,12 @@ int bug_log_wnd::add_warning_msg_to_grid( CString &object_name,
         ShowWindow( SW_SHOW );
         }
 
-    return message_list.add_message( 
+    synch_access->WaitToWrite();
+    int res = message_list.add_message( 
         log_message( object_name, IP4_address, msg, log_message::MSG_WARNING ) );
+    synch_access->Done();
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 int bug_log_wnd::add_msg_to_grid_once( CString &object_name, 
@@ -162,12 +183,18 @@ int bug_log_wnd::add_msg_to_grid_once( CString &object_name,
         ShowWindow( SW_SHOW );
         }
 
-    return message_list.add_message_once( 
+    synch_access->WaitToWrite();
+    int res = message_list.add_message_once( 
         log_message( object_name, IP4_address, msg, log_message::MSG_WARNING ) );
+    synch_access->Done();
+
+    return res;
     }
 //-----------------------------------------------------------------------------
 bug_log_wnd::~bug_log_wnd()
-    {            
+    {       
+    delete synch_access;
+    synch_access = 0;
     }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------    
@@ -176,7 +203,6 @@ uintptr_t WINAPI bug_log::bug_log_thread( LPVOID lpParameter )
     bug_log_window = new bug_log_wnd();
     bug_log_window->create();           // Создаём окно приложения.
     is_init_window = 1;
-
 
     CMessageLoop loop;                  // Запускаем цикл сообщений
     BUG_LOG.add_msg( _T( "Driver" ), _T(""), _T( "Инициализация завершена." ) );

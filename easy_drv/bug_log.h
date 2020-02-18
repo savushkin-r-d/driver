@@ -35,6 +35,8 @@
 
 #include <ListCtrl.h>
 
+#include "SWMRG.h"
+
 extern CAppModule _Module; 
 //-----------------------------------------------------------------------------
 //Œ¡Ÿ≈≈ Œœ»—¿Õ»≈.
@@ -203,6 +205,8 @@ class bug_log_wnd : public CWindowImpl< bug_log_wnd, CWindow, CFrameWinTraits >
         CButton           clear_btn;
         int				  is_close;                
         list_message_data message_list;
+
+        CSWMRG* synch_access = new CSWMRG();
     };
 ////-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

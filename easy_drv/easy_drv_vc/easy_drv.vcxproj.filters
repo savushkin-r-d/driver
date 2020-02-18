@@ -70,6 +70,12 @@
     <Filter Include="Source Files\zlib">
       <UniqueIdentifier>{203d1eae-78d2-4b97-b853-1238ef6f91cd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\QuickLZ">
+      <UniqueIdentifier>{4ede3059-e012-4349-9ae2-0c5f234ccdc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QuickLZ">
+      <UniqueIdentifier>{ed174ac4-4d85-45bd-baa8-c7cf27feff50}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -273,6 +279,9 @@
     <ClInclude Include="..\zlib\zutil.h">
       <Filter>Header Files\zlib</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\common\QuickLZ\quicklz.h">
+      <Filter>Header Files\QuickLZ</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -451,6 +460,9 @@
     </ClCompile>
     <ClCompile Include="..\zlib\zutil.c">
       <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\QuickLZ\quicklz.c">
+      <Filter>Source Files\QuickLZ</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

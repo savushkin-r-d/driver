@@ -24,6 +24,8 @@
 #include "SWMRG.h"
 #include "WSA_err_decode.h"
 
+#include "quicklz.h"
+
 extern "C" {
 #include "zlib.h"
     };
@@ -35,6 +37,10 @@ typedef unsigned short int u_int_2;
 class abstract_cmmctr;
 
 #define lua_c
+
+extern const u_int_2 G_QLZ_VERSION;
+extern const u_int_2 G_CURRENT_PROTOCOL_VERSION;
+extern const u_int_2 G_UNKNOWN_PROTOCOL_VERSION;
 
 extern "C"
     {
@@ -223,6 +229,9 @@ class PAC_cmmctr
 
         int get_PAC_errors();
 
+    protected:
+            int PAC_protocol_version;
+
     private: 
         //- Lua.
 
@@ -293,8 +302,6 @@ class PAC_cmmctr
         u_int_2 devices_request_id;            
 
         UCHAR err_retr_count;
-
-        int PAC_protocol_version;
 
         enum SERVICE_IDS
             {
@@ -380,7 +387,10 @@ class abstract_cmmctr
 
         virtual int get_port() const = 0;
 
-    protected:        
+        void set_protocol_version( int version );
+
+    protected:    
+        int PAC_protocol_version = G_UNKNOWN_PROTOCOL_VERSION;
         int id;         ///< Номер.
 
         static int count;
@@ -452,6 +462,7 @@ class tcp_cmmctr : public abstract_cmmctr
         int  recvtimeout( UINT s, char *buf, int len, int timeout, int usec );
 
     private:
+        qlz_state_decompress* state_decompress;
         char buff[ P_MAX_BUFFER_SIZE + 400 ];
     };
 //-----------------------------------------------------------------------------

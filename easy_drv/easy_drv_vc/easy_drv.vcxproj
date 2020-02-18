@@ -25,7 +25,7 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>NotSet</CharacterSet>
-    <PlatformToolset>v141_xp</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -57,7 +57,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
-    <IncludePath>..\..\..\common\tolua++;.;..\zlib;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\common\tolua++;.;..\zlib;..\..\..\common\QuickLZ;$(IncludePath)</IncludePath>
     <ReferencePath />
     <LibraryPath>$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(UniversalCRT_LibraryPath_x86);$(VC_LibraryPath_x86);$(WindowsSdk_71A_LibraryPath_x86);</LibraryPath>
     <SourcePath />
@@ -67,11 +67,11 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\common\tolua++;.;..\zlib;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\common\tolua++;.;..\zlib;..\..\..\common\QuickLZ;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\..\common\tolua++;.;..\zlib;$(IncludePath)</IncludePath>
+    <IncludePath>..\..\..\common\tolua++;.;..\zlib;..\..\..\common\QuickLZ;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -90,7 +90,7 @@
       <AdditionalDependencies>ws2_32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_z.dll"</Command>
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_LZ.dll"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Копирование в папку драйверов</Message>
@@ -119,7 +119,7 @@
     </Link>
     <PostBuildEvent>
       <Message>Копирование в папку драйверов.</Message>
-      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_z.dll"
+      <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_LZ.dll"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -172,6 +172,7 @@
     <ClInclude Include="..\..\..\common\lua\lzio.h" />
     <ClInclude Include="..\..\..\common\PAC-driver\errors.h" />
     <ClInclude Include="..\..\..\common\PAC-driver\g_device.h" />
+    <ClInclude Include="..\..\..\common\QuickLZ\quicklz.h" />
     <ClInclude Include="..\..\..\common\tolua++\tolua++.h" />
     <ClInclude Include="..\..\..\common\win_util\CmnHdr.h" />
     <ClInclude Include="..\..\..\common\win_util\SWMRG.h" />
@@ -426,6 +427,11 @@
       <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CompileAsC</CompileAs>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\QuickLZ\quicklz.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\..\..\common\tolua++\tolua_event.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>

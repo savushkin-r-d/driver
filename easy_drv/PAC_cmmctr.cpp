@@ -15,6 +15,9 @@ extern "C" {
 #ifdef  __cplusplus
     };
 #endif
+const u_int_2 G_QLZ_VERSION = 102;
+const u_int_2 G_CURRENT_PROTOCOL_VERSION = 103;
+const u_int_2 G_UNKNOWN_PROTOCOL_VERSION = 1;
 
 int tcp_cmmctr::instancesCount = 0;
 int tcp_cmmctr::isInitialized = 0;
@@ -23,8 +26,6 @@ int tcp_cmmctr::isInitialized = 0;
 //    1 - базовая версия.
 //    2 - добавлен механизм сохранения параметров и их автоматического
 //    восстановления после сбоя (замены PAC).
-
-u_int_2 G_CURRENT_PROTOCOL_VERSION    = 103;
 
 int abstract_cmmctr::count = 0;
 
@@ -226,7 +227,8 @@ int PAC_cmmctr::get_PAC_info()
         PAC_protocol_version = get_int_param_from_Lua( "protocol_version", 
             "int PAC_cmmctr::get_PAC_info()" );
 
-        if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION )
+        if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION && 
+            !( PAC_protocol_version == G_QLZ_VERSION ) )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
                 "Протокол PAC версии %d - должна быть %u!",
@@ -261,6 +263,8 @@ int PAC_cmmctr::get_PAC_info()
             "int PAC_cmmctr::get_PAC_info()" );
 
         check_PAC_params();
+
+        cmmctr->set_protocol_version( PAC_protocol_version );
 
         return PAC_protocol_version;
         }    
@@ -829,6 +833,11 @@ int abstract_cmmctr::get_timeout() const
     return timeout;
     }
 //-----------------------------------------------------------------------------
+void abstract_cmmctr::set_protocol_version( int version )
+    {
+    PAC_protocol_version = version;
+    }
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 int tcp_cmmctr::InitLib()
     {
@@ -862,6 +871,9 @@ tcp_cmmctr::tcp_cmmctr( const char *PAC_name, const char* sIP,
 
     instancesCount++;
     sprintf_s( ip_address, 20, "%s", sIP );
+
+    state_decompress =
+        (qlz_state_decompress*)malloc( sizeof( qlz_state_decompress ) );
 
     InitLib();
     }
@@ -1060,45 +1072,115 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
 
         tmp_buff += res;      
         tmp_answer_size -= res;   
-        }     
+        }   
 
-    unsigned long r = sizeof( buff );
-    res = uncompress( (u_char*) buff, &r, (u_char*)in_buff + 5, tmp_answer_size - 5 );
-           
-    if ( res != Z_OK )
-    	{
-        char err_str[ 20 ] = "";
-        switch ( res )
+    int buff_req_size = 0;
+    unsigned long r = 0;
+
+    switch ( PAC_protocol_version )
+        {
+        case G_QLZ_VERSION:
+            buff_req_size = qlz_size_decompressed( in_buff + 5 );
+            if ( buff_req_size >= P_MAX_BUFFER_SIZE )
+                {
+                CString tmp;
+                tmp.Format( "Размер после декомпрессии превышает размер буфера (%d>%d)! "
+                    "Данные от PAC потеряны.",
+                    buff_req_size, P_MAX_BUFFER_SIZE );
+                BUG_LOG.add_warning_msg( PAC_name, ip_address, tmp );
+
+                answer_size = 0;
+                }
+            else
+                {
+                r = qlz_decompress( in_buff + 5, buff, state_decompress );
+
+                if ( 0 == r )
+                    {
+                    sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
+                        "Ошибка декомпрессии!" );
+                    BUG_LOG.add_warning_msg( PAC_name, ip_address );
+
+                    answer_size = 0;
+                    }
+                }
+            break;
+
+        case  G_CURRENT_PROTOCOL_VERSION:
             {
-            case Z_ERRNO:
-                sprintf( err_str, "%s", "Z_ERRNO" );
-                break;
-            case Z_STREAM_ERROR:
-                sprintf( err_str, "%s", "Z_STREAM_ERROR" );
-                break;
-            case Z_DATA_ERROR:
-                sprintf( err_str, "%s", "Z_DATA_ERROR" );
-                break;
-            case Z_MEM_ERROR: 
-                sprintf( err_str, "%s", "Z_MEM_ERROR" );
-                break;
-            case Z_BUF_ERROR:
-                sprintf( err_str, "%s", "Z_BUF_ERROR" );
-                break;
-            case Z_VERSION_ERROR:
-                sprintf( err_str, "%s", "Z_VERSION_ERROR" );
-                break;
-            default:
-                sprintf( err_str, "%d", res );
-                break;
-            }
-        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
-            "Ошибка декомпрессии (%s)!", err_str );
-        BUG_LOG.add_warning_msg( PAC_name, ip_address );
+            r = sizeof( buff );
+            res = uncompress( (u_char*)buff, &r, (u_char*)in_buff + 5, tmp_answer_size - 5 );
 
-        answer_size = 0;
+            if ( res != Z_OK )
+                {
+                char err_str[ 20 ] = "";
+                switch ( res )
+                    {
+                    case Z_ERRNO:
+                        sprintf( err_str, "%s", "Z_ERRNO" );
+                        break;
+                    case Z_STREAM_ERROR:
+                        sprintf( err_str, "%s", "Z_STREAM_ERROR" );
+                        break;
+                    case Z_DATA_ERROR:
+                        sprintf( err_str, "%s", "Z_DATA_ERROR" );
+                        break;
+                    case Z_MEM_ERROR:
+                        sprintf( err_str, "%s", "Z_MEM_ERROR" );
+                        break;
+                    case Z_BUF_ERROR:
+                        sprintf( err_str, "%s", "Z_BUF_ERROR" );
+                        break;
+                    case Z_VERSION_ERROR:
+                        sprintf( err_str, "%s", "Z_VERSION_ERROR" );
+                        break;
+                    default:
+                        sprintf( err_str, "%d", res );
+                        break;
+                    }
+                sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
+                    "Ошибка декомпрессии (%s)!", err_str );
+                BUG_LOG.add_warning_msg( PAC_name, ip_address );
+
+                answer_size = 0;
+                }
+                break;
+
+        case G_UNKNOWN_PROTOCOL_VERSION:
+            r = sizeof( buff );
+            res = uncompress( (u_char*)buff, &r, (u_char*)in_buff + 5, tmp_answer_size - 5 );
+
+            if ( res != Z_OK )
+                {
+                buff_req_size = qlz_size_decompressed( in_buff + 5 );
+                if ( buff_req_size >= P_MAX_BUFFER_SIZE )
+                    {
+                    CString tmp;
+                    tmp.Format( "Размер после декомпрессии превышает размер буфера (%d>%d)! "
+                        "Данные от PAC потеряны.",
+                        buff_req_size, P_MAX_BUFFER_SIZE );
+                    BUG_LOG.add_warning_msg( PAC_name, ip_address, tmp );
+
+                    answer_size = 0;
+                    }
+                else
+                    {
+                    r = qlz_decompress( in_buff + 5, buff, state_decompress );
+
+                    if ( 0 == r )
+                        {
+                        sprintf_s( bug_log::msg, bug_log::C_MSG_SIZE,
+                            "Ошибка декомпрессии!" );
+                        BUG_LOG.add_warning_msg( PAC_name, ip_address );
+
+                        answer_size = 0;
+                        }
+                    }
+                }
+            break;
+            }
         }
-    
+
     LeaveCriticalSection( &m_cs );
     return 0;
     }

@@ -1,0 +1,300 @@
+#include "stdafx.h"
+//-----------------------------------------------------------------------------
+alarm_manager::alarm_manager(): lua_synch_access( new CSWMRG )
+    {
+    lua_state = lua_open();  /* create state */
+    if ( lua_state == NULL )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Cannot create Lua state: not enough memory!" );
+
+        BUG_LOG.add_error_msg( "System", "" );
+
+#ifdef DEBUG
+        DebugBreak();
+#endif // DEBUG
+        }
+
+    lua_gc( lua_state, LUA_GCSTOP, 0 );  /* stop collector during initialization */
+    luaL_openlibs( lua_state );          /* open libraries */
+    lua_gc( lua_state, LUA_GCRESTART, 0 );    
+
+    tolua_PAC_dev_open( lua_state );
+
+    memset( g_alarms, 0, sizeof( g_alarms ) );
+    }
+//-----------------------------------------------------------------------------
+alarm_manager::~alarm_manager()
+    {
+    lua_close( lua_state );
+    lua_state = 0;
+    }
+//-----------------------------------------------------------------------------
+int alarm_manager::add_no_PAC_connection_error( const char *PAC_name, 
+    UINT project_description_id )
+    {
+    const int MAX_SIZE   = 2000;
+    char str[ MAX_SIZE ] = { 0 };
+
+    //--alarms[ project_description_id ]
+    sprintf( str, "%s %d %s\n",
+        "alarms[", project_description_id, "] = {}" );
+    sprintf( str + strlen( str ), "%s %d %s\n",
+        "alarms[", project_description_id, "].id = 1" );
+
+    sprintf( str + strlen( str ), "%s %d %s\n",
+        "alarms[", project_description_id, "][ 1 ] = " );
+
+    sprintf( str + strlen( str ), "%s\n", "{" );
+    if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
+        {
+        char PAC_name_utf8[100] = "";
+
+        convert_windows1251_to_utf8(PAC_name_utf8, PAC_name);
+        sprintf(str + strlen(str), "%s%s%s\n",
+            u8"description = \"Нет связи с контроллером проекта '", PAC_name_utf8, "'!\",");
+        sprintf(str + strlen(str), u8"%s\n", "group       = 'Авария',");
+        }
+    else
+        {
+        sprintf(str + strlen(str), "%s%s%s\n",
+            "description = \"Нет связи с контроллером проекта '", PAC_name, "'!\",");
+        sprintf(str + strlen(str), "%s\n", "group       = 'Авария',");
+        }
+
+    sprintf( str + strlen( str ), "%s\n", "type        = AT_SPECIAL," );
+    sprintf( str + strlen( str ), "%s\n", "priority    = 1," );
+    sprintf( str + strlen( str ), "%s\n", "state       = AS_ALARM," );
+    sprintf( str + strlen( str ), "%s\n", "}" );
+
+    lua_synch_access->WaitToWrite();
+
+    int res = luaL_dostring( lua_state, str ); 
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Cannot create ""NO PAC RESPOND"", error - ""%s""!",
+            lua_tostring( lua_state, -1 ) );
+
+        BUG_LOG.add_error_msg( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+
+        lua_synch_access->Done();
+        return 1;
+        }
+
+    lua_synch_access->Done();
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
+    {
+    const int MAX_SIZE   = 200;
+    char str[ MAX_SIZE ] = { 0 };
+
+    //--alarms[ project_description_id ][ object_type ][ object_number ][ alarm_class ]
+    sprintf( str, "%s %d %s\n",
+        "alarms[", project_description_id, "] = {}" );
+    sprintf( str + strlen( str ), "%s %d %s\n",
+        "alarms[", project_description_id, "].id = 2" );
+
+    lua_synch_access->WaitToWrite();
+    int res = luaL_dostring( lua_state, str ); 
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Cannot remove ""NO PAC RESPOND"" error!" );
+        BUG_LOG.add_error_msg( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+        DebugBreak();
+#endif // DEBUG
+
+        lua_synch_access->Done();
+        return 1;
+        }
+
+    lua_synch_access->Done();
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int alarm_manager::get_alarms( unsigned char project_description_id, 
+    all_alarm &project_alarms )
+    {
+#ifdef DEBUG_LUA_MEM
+    static int counter = 0;
+    counter++;
+    if ( counter > 1000 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, "Lua memory (alarms) = %d", 
+            lua_gc( lua_state, LUA_GCCOUNT, 0 ) * 1024 +
+            lua_gc( lua_state, LUA_GCCOUNTB, 0 ) );
+        BUG_LOG.add_msg( "System", "Control thread" );
+
+        counter = 0;
+        }
+#endif // DEBUG_LUA_MEM
+
+    u_int_2 id = 0;
+
+    lua_synch_access->WaitToWrite();
+
+    lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarms_id" );  
+    lua_pushnumber( lua_state, project_description_id );
+    int res = lua_pcall( lua_state, 1, 1, 0 );
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "get_alarms(...) error - '%s'!",
+            lua_tostring( lua_state, -1 ) );
+
+        BUG_LOG.add_error_msg( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+        DebugBreak();
+#endif // DEBUG       
+        }
+    else
+        {
+        id = ( u_int_2 ) tolua_tonumber( lua_state, -1, 0 );
+        lua_remove( lua_state, -1 );
+        }
+
+    unsigned int alarms_cnt = 0;
+
+    lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarms_cnt" );  
+    lua_pushnumber( lua_state, project_description_id );
+    res = lua_pcall( lua_state, 1, 1, 0 );
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "get_alarms(...) error - '%s'!",
+            lua_tostring( lua_state, -1 ) );
+
+        BUG_LOG.add_error_msg( "System", 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+        DebugBreak();
+#endif // DEBUG
+        }
+    else
+        {
+        alarms_cnt = ( unsigned int ) tolua_tonumber( lua_state, -1, 0 );
+        lua_remove( lua_state, -1 );
+        }
+
+    lua_synch_access->Done();
+
+    //Проверка на равенство уже полученных ошибок.
+    if ( g_alarms[ project_description_id ] != 0 )
+        {
+        if ( g_alarms_id[ project_description_id ] == id )
+            {
+            project_alarms.alarms = g_alarms[ project_description_id ];
+            project_alarms.cnt    = alarms_cnt;            
+            project_alarms.id     = id;
+            
+            return 0;
+            }
+        }
+
+    g_alarms_id[ project_description_id ] = id;
+
+    delete [] g_alarms[ project_description_id ];
+    g_alarms[ project_description_id ] = 0;
+    if ( alarms_cnt )
+        {                
+        g_alarms[ project_description_id ] = new alarm[ alarms_cnt ];
+
+        lua_synch_access->WaitToWrite();
+        for ( unsigned int i = 0; i < alarms_cnt; i++ )
+            {
+            lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarm" );  
+            lua_pushnumber( lua_state, project_description_id );
+            lua_pushnumber( lua_state, i + 1 );
+            res = lua_pcall( lua_state, 2, 1, 0 );
+
+            if( res != 0 )
+                {                    
+                snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+                    "get_alarms(...) error - '%s'!",
+                    lua_tostring( lua_state, -1 ) );
+
+                BUG_LOG.add_error_msg( "System", 
+                    g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+                DebugBreak();
+#endif // DEBUG
+                break;
+                }
+            else
+                {
+                alarm *new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
+                lua_remove( lua_state, -1 );
+
+                g_alarms[ project_description_id ][ i ] = *new_alarm;
+
+                static char tmp_str[MAX_DESCR_LEN];
+                memset(tmp_str, 0, MAX_DESCR_LEN);
+                convert_utf8_to_windows1251(new_alarm->description, tmp_str, MAX_DESCR_LEN);
+
+                strcpy(new_alarm->description, tmp_str);
+                }                                
+            }
+        lua_synch_access->Done();
+        }
+
+    project_alarms.alarms = g_alarms[ project_description_id ];
+    project_alarms.cnt    = alarms_cnt;            
+    project_alarms.id     = id;
+
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+int alarm_manager::add_PAC_errors( const char *LUA_str, 
+    unsigned char project_description_id )
+    {
+    lua_synch_access->WaitToWrite();
+
+    static unsigned long int gc_counter = 0;
+    gc_counter++;
+    if ( gc_counter > AM_GARBAGE_CYCLE )
+        {
+        // Полная уборка мусора каждые n итераций.
+        lua_gc( lua_state, LUA_GCCOLLECT, 0 ); 
+        gc_counter = 0;
+        }
+
+    int res = luaL_dostring( lua_state, LUA_str ); 
+
+    if( res != 0 )
+        {
+        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
+            "Cannot process PAC errors, error - ""%s""!",
+            lua_tostring( lua_state, -1 ) );
+
+        BUG_LOG.add_error_msg( 
+            g_PAC_descriptions->get_PAC( project_description_id )->get_name(),
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+
+        BUG_LOG.add_msg_once(
+            g_PAC_descriptions->get_PAC( project_description_id )->get_name(),
+            g_PAC_descriptions->get_PAC( project_description_id )->get_address(),
+            LUA_str );
+#ifdef DEBUG
+        DebugBreak();
+#endif // DEBUG
+
+        lua_synch_access->Done();
+        return 1;
+        }
+
+    lua_synch_access->Done();
+    return 0;
+    }
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------

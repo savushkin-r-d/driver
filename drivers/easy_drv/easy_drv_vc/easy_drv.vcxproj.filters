@@ -1,0 +1,502 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Lua">
+      <UniqueIdentifier>{4148c8c6-15c8-4f4f-a06f-4cdfad5265f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lua">
+      <UniqueIdentifier>{7e111be6-a6e8-492a-9a74-5742b3e61d3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\WTL">
+      <UniqueIdentifier>{25781ebc-a0d0-461a-a0bc-36eb91ab3026}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\bmp">
+      <UniqueIdentifier>{3963af74-24f9-4068-af41-a1c69c81bb2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\cursors">
+      <UniqueIdentifier>{19d17e1e-0928-47bd-8e68-482873ecaccd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\util">
+      <UniqueIdentifier>{b8df07f4-a9a9-47b5-b8e3-0283bd1bc031}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{8c9d6b6d-fa7a-42b2-8c26-1d3eb3a34630}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\win_util">
+      <UniqueIdentifier>{41493a9a-9516-4375-a87d-cfe5e6657bd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Lua\sys">
+      <UniqueIdentifier>{ab8ee373-d480-4932-ab4e-f7acb08e630e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lua\sys">
+      <UniqueIdentifier>{328ff948-54a2-43ef-b784-276e825bbe5a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\PAC-driver">
+      <UniqueIdentifier>{f4cba5fe-1217-4851-ae50-e190e9a664fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tolua++">
+      <UniqueIdentifier>{bc61e5ab-1a67-46f9-931a-ee2ed4897ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tolua++\pkg">
+      <UniqueIdentifier>{7c60b096-1221-4ca9-b208-f5f647f69b1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\tolua++\sys">
+      <UniqueIdentifier>{f1d435ac-13f8-4242-b002-bb7c88cfb0d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\win_util">
+      <UniqueIdentifier>{42ff92e5-26b0-4cc0-9e54-bc6caecabf8c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\tolua++">
+      <UniqueIdentifier>{8e0cd5cc-dfda-4687-9fde-61f1d6fb0fa6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Other">
+      <UniqueIdentifier>{72d610a8-ca97-4deb-b6dd-7a6deb288cb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\zlib">
+      <UniqueIdentifier>{a1f433a1-4253-4112-a645-dcbe57cfb93a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\zlib">
+      <UniqueIdentifier>{203d1eae-78d2-4b97-b853-1238ef6f91cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\QuickLZ">
+      <UniqueIdentifier>{4ede3059-e012-4349-9ae2-0c5f234ccdc8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QuickLZ">
+      <UniqueIdentifier>{ed174ac4-4d85-45bd-baa8-c7cf27feff50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\PAC-driver">
+      <UniqueIdentifier>{00f8fc86-bfe2-45dd-9f8c-f5a87378d124}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\bug_log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlapp.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlcrack.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrls.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlw.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlctrlx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlddx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atldlgs.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlfind.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlframe.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlgdi.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlmisc.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlprint.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlres.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlresce.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlscrl.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlsplit.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atltheme.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atluser.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwince.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\WTL\atlwinx.h">
+      <Filter>Header Files\WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\exchange_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PAC_cmmctr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\SWMRG.h">
+      <Filter>Header Files\win_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\CmnHdr.h">
+      <Filter>Header Files\win_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lzio.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lapi.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lauxlib.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lcode.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\ldebug.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\ldo.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lfunc.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lgc.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\llex.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\llimits.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lmem.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lobject.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lopcodes.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lparser.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lstate.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lstring.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\ltable.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\ltm.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lua.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\luaconf.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lualib.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lundump.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\lua\lvm.h">
+      <Filter>Header Files\Lua\sys</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\win_util\WSA_err_decode.h">
+      <Filter>Header Files\win_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\PAC-driver\g_device.h">
+      <Filter>Header Files\PAC-driver</Filter>
+    </ClInclude>
+    <ClInclude Include="..\errors_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\PAC-driver\errors.h">
+      <Filter>Header Files\PAC-driver</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\tolua++\tolua++.h">
+      <Filter>Header Files\tolua++</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\crc32.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\deflate.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\gzguts.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\inffast.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\inffixed.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\inflate.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\inftrees.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\trees.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\zconf.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\zlib.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\zlib\zutil.h">
+      <Filter>Header Files\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\common\QuickLZ\quicklz.h">
+      <Filter>Header Files\QuickLZ</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utf2cp1251.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="easy_drv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\bug_log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\PAC_cmmctr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\win_util\SWMRG.cpp">
+      <Filter>Source Files\win_util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lapi.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\print.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lauxlib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lbaselib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lcode.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ldblib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ldebug.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ldo.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ldump.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lfunc.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lgc.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\linit.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\liolib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\llex.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lmathlib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lmem.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\loadlib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lobject.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lopcodes.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\loslib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lparser.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lstate.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lstring.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lstrlib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ltable.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ltablib.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\ltm.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lundump.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lvm.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\lua\lzio.c">
+      <Filter>Source Files\Lua\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\win_util\WSA_err_decode.cpp">
+      <Filter>Source Files\win_util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\errors_lua.cpp">
+      <Filter>Source Files\tolua++</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_event.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_is.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_map.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_push.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\tolua++\tolua_to.c">
+      <Filter>Source Files\tolua++\sys</Filter>
+    </ClCompile>
+    <ClCompile Include="..\errors_manager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\adler32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\compress.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\crc32.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\deflate.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzclose.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzlib.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzread.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\gzwrite.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\infback.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inffast.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inflate.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inftrees.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\trees.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\uncompr.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\zutil.c">
+      <Filter>Source Files\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\common\QuickLZ\quicklz.c">
+      <Filter>Source Files\QuickLZ</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utf2cp1251.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="easy_drv.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="res\ListItems.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </None>
+    <None Include="res\message_images.bmp">
+      <Filter>Resource Files\bmp</Filter>
+    </None>
+    <None Include="res\divider.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
+    <None Include="res\hand.cur">
+      <Filter>Resource Files\cursors</Filter>
+    </None>
+    <None Include="..\versions.txt">
+      <Filter>Other</Filter>
+    </None>
+    <None Include="..\tolua++\pkg\errors.hh">
+      <Filter>Source Files\tolua++\pkg</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -31,7 +31,7 @@ alarm_manager::~alarm_manager()
     }
 //-----------------------------------------------------------------------------
 int alarm_manager::add_no_PAC_connection_error( const char *PAC_name, 
-    UINT project_description_id )
+    UINT project_description_id, const char* PAC_IP_address )
     {
     const int MAX_SIZE   = 2000;
     char str[ MAX_SIZE ] = { 0 };
@@ -51,14 +51,17 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
         char PAC_name_utf8[ 100 ] = "";
 
         convert_windows1251_to_utf8(PAC_name_utf8, PAC_name);
-        sprintf(str + strlen(str), "%s%s%s\n",
-            u8"description = \"Нет связи с контроллером проекта '", PAC_name_utf8, "'!\",");
+        sprintf(str + strlen(str), "%s%s%s%s%s\n",
+            u8"description = \"Нет связи с контроллером проекта '", PAC_name_utf8,
+            "' (", PAC_IP_address, ")!\",");
         sprintf(str + strlen(str), u8"%s\n", "group       = 'Авария',");
         }
     else
         {
-        sprintf(str + strlen(str), "%s%s%s\n",
-            "description = \"Нет связи с контроллером проекта '", PAC_name, "'!\",");
+        sprintf(str + strlen(str), "%s%s%s%s%s\n",
+            "description = \"Нет связи с контроллером проекта '", PAC_name,
+            "' (", PAC_IP_address, ")!\",");
+
         sprintf(str + strlen(str), "%s\n", "group       = 'Авария',");
         }
 

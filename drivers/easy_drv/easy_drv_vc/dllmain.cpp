@@ -137,7 +137,7 @@ uintptr_t WINAPI PAC_control_thread( LPVOID lpParameter )
                 if ( 0 == PAC->get_connection_state() )
                     {
                     g_alarm_manager->add_no_PAC_connection_error( PAC->get_name(), 
-                        PAC->get_description_id() );
+                        PAC->get_description_id(), PAC->get_address() );
                     }
                 else
                     {

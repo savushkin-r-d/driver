@@ -61,7 +61,7 @@ class alarm_manager
         /// @return 0 - ок.
         /// @return 1 - ошибка добавления.
         int add_no_PAC_connection_error( const char *PAC_name, 
-            UINT project_description_id );
+            UINT project_description_id, const char* PAC_IP_address );
         
         /// @brief Удаление ошибки отсутствия соединения с PAC.
         ///

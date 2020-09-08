@@ -8,9 +8,9 @@
 /// @c DEBUG - компиляция c дополнительной отладочной информацией.
 /// 
 /// @par Текущая версия:
-/// @$Rev$.\n
-/// @$Author$.\n
-/// @$Date::                     $.
+/// @$Rev: 10544 $.\n
+/// @$Author: id $.\n
+/// @$Date:: 2020-02-18 11:23:35#$.
 
 #ifndef _PAC_CMMCTR_H
 #define _PAC_CMMCTR_H
@@ -39,9 +39,9 @@ class abstract_cmmctr;
 #define lua_c
 
 extern const u_int_2 G_QLZ_VERSION;
-extern const u_int_2 G_NON_UNICODE_VERSION;
 extern const u_int_2 G_CURRENT_PROTOCOL_VERSION;
 extern const u_int_2 G_UNKNOWN_PROTOCOL_VERSION;
+extern const u_int_2 G_NON_UNICODE_VERSION;
 
 extern "C"
     {
@@ -183,14 +183,6 @@ class PAC_cmmctr
         //- Получение значений тегов через Lua.
 
 
-        /// @brief Получение объекта синхронизации.
-        ///
-        /// Объект синхронизации используется для разделяемого доступа к
-        /// экземпляру интерпретатора Lua.
-        ///
-        /// @return Объект синхронизации.
-        CSWMRG* get_dev_synch_access() const;
-
         /// @brief Отсылка команды в PAC через интерпретатор Lua.
         ///
         /// @param cmd [ in ] - строка скрипта для обработки Lua.
@@ -230,8 +222,14 @@ class PAC_cmmctr
 
         int get_PAC_errors();
 
+        int set_alarm_cmd(int count, error_cmd* errors);
+
+        int get_alarms(all_alarm& alarms);
+
     protected:
             int PAC_protocol_version;
+
+            CSWMRG* dev_synch_access; ///< Синхронизация обращений к Lua.
 
     private: 
         //- Lua.
@@ -294,7 +292,6 @@ class PAC_cmmctr
             };
 
         lua_State *PAC_Lua_state;    ///< Экземпляр Lua для PAC.
-        CSWMRG    *dev_synch_access; ///< Синхронизация обращений к Lua.
 
         bool *is_connected;
 

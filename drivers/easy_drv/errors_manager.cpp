@@ -1,6 +1,6 @@
 #include "stdafx.h"
 //-----------------------------------------------------------------------------
-alarm_manager::alarm_manager(): lua_synch_access( new CSWMRG )
+alarm_manager::alarm_manager()
     {
     lua_state = lua_open();  /* create state */
     if ( lua_state == NULL )
@@ -48,7 +48,7 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
     sprintf( str + strlen( str ), "%s\n", "{" );
     if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
         {
-        char PAC_name_utf8[100] = "";
+        char PAC_name_utf8[ 100 ] = "";
 
         convert_windows1251_to_utf8(PAC_name_utf8, PAC_name);
         sprintf(str + strlen(str), "%s%s%s\n",
@@ -62,12 +62,10 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
         sprintf(str + strlen(str), "%s\n", "group       = 'Авария',");
         }
 
-    sprintf( str + strlen( str ), "%s\n", "type        = AT_SPECIAL," );
+    sprintf( str + strlen( str ), "%s\n", "type        = AT_SPECIAL," );   
     sprintf( str + strlen( str ), "%s\n", "priority    = 1," );
     sprintf( str + strlen( str ), "%s\n", "state       = AS_ALARM," );
     sprintf( str + strlen( str ), "%s\n", "}" );
-
-    lua_synch_access->WaitToWrite();
 
     int res = luaL_dostring( lua_state, str ); 
 
@@ -79,12 +77,13 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
 
         BUG_LOG.add_error_msg( "System", 
             g_PAC_descriptions->get_PAC( project_description_id )->get_address() );
+#ifdef DEBUG
+        //DebugBreak();
+#endif // DEBUG
 
-        lua_synch_access->Done();
         return 1;
         }
 
-    lua_synch_access->Done();
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -99,7 +98,6 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
     sprintf( str + strlen( str ), "%s %d %s\n",
         "alarms[", project_description_id, "].id = 2" );
 
-    lua_synch_access->WaitToWrite();
     int res = luaL_dostring( lua_state, str ); 
 
     if( res != 0 )
@@ -112,11 +110,9 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
         DebugBreak();
 #endif // DEBUG
 
-        lua_synch_access->Done();
         return 1;
         }
 
-    lua_synch_access->Done();
     return 0;
     }
 //-----------------------------------------------------------------------------
@@ -138,8 +134,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 #endif // DEBUG_LUA_MEM
 
     u_int_2 id = 0;
-
-    lua_synch_access->WaitToWrite();
 
     lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarms_id" );  
     lua_pushnumber( lua_state, project_description_id );
@@ -187,8 +181,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
         lua_remove( lua_state, -1 );
         }
 
-    lua_synch_access->Done();
-
     //Проверка на равенство уже полученных ошибок.
     if ( g_alarms[ project_description_id ] != 0 )
         {
@@ -210,7 +202,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
         {                
         g_alarms[ project_description_id ] = new alarm[ alarms_cnt ];
 
-        lua_synch_access->WaitToWrite();
         for ( unsigned int i = 0; i < alarms_cnt; i++ )
             {
             lua_getfield( lua_state, LUA_GLOBALSINDEX, "get_alarm" );  
@@ -233,19 +224,21 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
                 }
             else
                 {
-                alarm *new_alarm = ( alarm* ) tolua_tousertype( lua_state, -1, 0 );
-                lua_remove( lua_state, -1 );
+                alarm* new_alarm = (alarm*)tolua_tousertype(lua_state, -1, 0);
+                lua_remove(lua_state, -1);
 
-                g_alarms[ project_description_id ][ i ] = *new_alarm;
+                g_alarms[project_description_id][i] = *new_alarm;
 
-                static char tmp_str[MAX_DESCR_LEN];
-                memset(tmp_str, 0, MAX_DESCR_LEN);
-                convert_utf8_to_windows1251(new_alarm->description, tmp_str, MAX_DESCR_LEN);
+                if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
+                    {
+                    static char tmp_str[MAX_DESCR_LEN];
+                    memset(tmp_str, 0, MAX_DESCR_LEN);
+                    convert_utf8_to_windows1251(new_alarm->description, tmp_str, MAX_DESCR_LEN);
 
-                strcpy(new_alarm->description, tmp_str);
+                    strcpy(new_alarm->description, tmp_str);
+                    }
                 }                                
             }
-        lua_synch_access->Done();
         }
 
     project_alarms.alarms = g_alarms[ project_description_id ];
@@ -258,8 +251,6 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 int alarm_manager::add_PAC_errors( const char *LUA_str, 
     unsigned char project_description_id )
     {
-    lua_synch_access->WaitToWrite();
-
     static unsigned long int gc_counter = 0;
     gc_counter++;
     if ( gc_counter > AM_GARBAGE_CYCLE )
@@ -289,11 +280,9 @@ int alarm_manager::add_PAC_errors( const char *LUA_str,
         DebugBreak();
 #endif // DEBUG
 
-        lua_synch_access->Done();
         return 1;
         }
 
-    lua_synch_access->Done();
     return 0;
     }
 //-----------------------------------------------------------------------------

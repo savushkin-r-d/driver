@@ -197,16 +197,12 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
             "Устройства PAC изменились." );
         BUG_LOG.add_msg( PAC_com->get_name(), PAC_com->get_address() );
 
-        PAC_com->get_dev_synch_access()->WaitToWrite();
         PAC_com->clear_tags(); // Очищаем все теги проекта.
-        PAC_com->get_dev_synch_access()->Done();
 
         //Пытаемся получить все устройства контроллера.
         while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
             {            
-            PAC_com->get_dev_synch_access()->WaitToWrite();
             res = PAC_com->get_PAC_devices();
-            PAC_com->get_dev_synch_access()->Done();
 
             if ( PAC_cmmctr::LOAD_OK == res )
                 {
@@ -223,9 +219,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
         while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )   
             {
             Sleep( sleep_time );
-            PAC_com->get_dev_synch_access()->WaitToWrite();
             res = PAC_com->get_PAC_all_devices_states();
-            PAC_com->get_dev_synch_access()->Done();
 
             if ( PAC_cmmctr::PAC_DEVICES_CHANGING == res )     
                 {   
@@ -241,9 +235,7 @@ uintptr_t WINAPI PAC_communication_thread( LPVOID lpParameter )
                 }
 
             //Получаем ошибки устройств и объектов.
-            PAC_com->get_dev_synch_access()->WaitToWrite();
             PAC_com->get_PAC_errors();
-            PAC_com->get_dev_synch_access()->Done();
 
             } //  while ( !g_thread_is_terminated[ PAC_com->get_description_id() ] )           
         } // !g_thread_is_terminated[ PAC_com->get_description_id() ]
@@ -313,8 +305,6 @@ int get_tag_value( double &res, char* str_res, in_tag_info &tag, TAG_VAL_TYPE ta
         {        
         return 1; //Не получены устройства PAC.
         }
-
-    current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
     bool   is_exist_tag = false;
    
     switch ( tag_type )
@@ -329,14 +319,10 @@ int get_tag_value( double &res, char* str_res, in_tag_info &tag, TAG_VAL_TYPE ta
             tag.tag_id, is_exist_tag, str_res, MAX_STR_RES_LENGTH );
         break;
         }
-    current_PAC_cmmctr->get_dev_synch_access()->Done();
 
     if ( false == is_exist_tag )                                       //7
         {
         if ( use_only_tag_id ) return 1;
-
-        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
-
         switch ( tag_type )
             {
         case T_NUMBER:
@@ -350,13 +336,9 @@ int get_tag_value( double &res, char* str_res, in_tag_info &tag, TAG_VAL_TYPE ta
             break;
             }
 
-        current_PAC_cmmctr->get_dev_synch_access()->Done();
-
         if ( true == is_exist_tag )                                    //8
             {
-            current_PAC_cmmctr->get_dev_synch_access()->WaitToWrite();
             current_PAC_cmmctr->add_exist_tag( tag.tag_name, tag.tag_id );
-            current_PAC_cmmctr->get_dev_synch_access()->Done();
             }
 
         if ( false == is_exist_tag )                                   //9
@@ -367,9 +349,7 @@ int get_tag_value( double &res, char* str_res, in_tag_info &tag, TAG_VAL_TYPE ta
             BUG_LOG.add_msg_once( current_PAC_cmmctr->get_name(), 
                 current_PAC_cmmctr->get_address() );
 
-            current_PAC_cmmctr->get_dev_synch_access()->WaitToWrite();
             current_PAC_cmmctr->add_nill_tag( tag.tag_id );
-            current_PAC_cmmctr->get_dev_synch_access()->Done();
             }
         }
 
@@ -413,9 +393,7 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
             break;
             }      
 
-        current_PAC_cmmctr->get_dev_synch_access()->WaitToRead();
         current_PAC_cmmctr->set_tag_Lua_cmd( cmd );
-        current_PAC_cmmctr->get_dev_synch_access()->Done();
         }
 
     return 0;
@@ -644,10 +622,7 @@ EXPORT int __stdcall get_alarms( unsigned char PAC_id, all_alarm &alarms )
         return 0;
         }
 
-    g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->WaitToRead();
-    g_alarm_manager->get_alarms( PAC_id, alarms );
-    g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->Done();
-
+    g_PAC_descriptions->get_PAC( PAC_id )->get_alarms(alarms);
     return 0;        
     }
 //-----------------------------------------------------------------------------
@@ -656,32 +631,10 @@ EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
     {   
     if ( g_PAC_descriptions->get_PAC( PAC_id ) != 0 )
         {
-        std::string Lua_str = " ";
-        Lua_str[ 0 ] = 104;
-
-        for ( int i = 0; i < count; i++ )
-            {
-            char tmp_str[ 200 ];
-
-            snprintf( tmp_str, sizeof( tmp_str ),
-                "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
-                errors[ i ].cmd, 
-                errors[ i ].object_type, errors[ i ].object_number,
-                errors[ i ].object_alarm_number );
-
-            Lua_str += tmp_str;         
-            }
-
-        const int SERVICE_ID = 1;
-        
-        g_PAC_descriptions->get_PAC( PAC_id )->get_cmmctr()->send_2_PAC( SERVICE_ID, 
-            Lua_str.c_str(), Lua_str.length() );
-        
-        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->WaitToWrite();
-        g_PAC_descriptions->get_PAC( PAC_id )->get_PAC_errors();
-        g_PAC_descriptions->get_PAC( PAC_id )->get_dev_synch_access()->Done();
+        g_PAC_descriptions->get_PAC(PAC_id)->set_alarm_cmd(count, errors);
+        return 0;
         }        
 
-    return 0;
+    return 1;
     }
 //-----------------------------------------------------------------------------

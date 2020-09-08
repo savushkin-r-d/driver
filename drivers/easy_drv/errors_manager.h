@@ -87,7 +87,6 @@ class alarm_manager
 
     private:
         lua_State *lua_state;        ///< Экземпляр Lua для работы с ошибками.
-        CSWMRG    *lua_synch_access; ///< Синхронизация обращений к Lua.
     };
 
 #endif // ERRORS_MANAGER_H

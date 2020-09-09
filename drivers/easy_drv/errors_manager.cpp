@@ -48,13 +48,14 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
     sprintf( str + strlen( str ), "%s\n", "{" );
     if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
         {
-        char PAC_name_utf8[ 100 ] = "";
+        const int MAX_STR_SIZE = 500;
+        char PAC_name_utf8[ MAX_STR_SIZE ] = "";
 
         convert_windows1251_to_utf8(PAC_name_utf8, PAC_name);
         sprintf(str + strlen(str), "%s%s%s%s%s\n",
             u8"description = \"Нет связи с контроллером проекта '", PAC_name_utf8,
             "' (", PAC_IP_address, ")!\",");
-        sprintf(str + strlen(str), u8"%s\n", "group       = 'Авария',");
+        sprintf(str + strlen(str), "%s\n", u8"group       = 'Авария',");
         }
     else
         {

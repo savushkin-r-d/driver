@@ -306,13 +306,13 @@ int PAC_cmmctr::get_PAC_devices()
         { 
         devices_request_id = ( ( u_int_2* ) answer )[ 0 ]; 
 
-        res = exec_Lua_str( answer + 2,
+        res = exec_Lua_str( answer + LUA_STRING_START_POSITION,
             "Ошибка получения объектов PAC" );
 
         if( res != 0 )
             {
             //Сохраняем строку, вызвавшую ошибку.
-            BUG_LOG.bug_log_file.save_msg( answer + 2 );
+            BUG_LOG.bug_log_file.save_msg( answer + LUA_STRING_START_POSITION );
             }
         else
             {
@@ -382,13 +382,13 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
             return PAC_DEVICES_CHANGING;
             }
 
-        res = exec_Lua_str( answer + 2,
+        res = exec_Lua_str( answer + LUA_STRING_START_POSITION,
             "Ошибка получения состояния объектов PAC" );
 
         if ( res != 0 )
             {
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
-                answer + 2 );
+                answer + LUA_STRING_START_POSITION );
 
             dev_synch_access->Done();
             return OTHER_ERROR;
@@ -830,20 +830,26 @@ int PAC_cmmctr::set_alarm_cmd(int count, error_cmd* errors)
     {
     dev_synch_access->WaitToWrite();
 
-    std::string Lua_str = " ";
-    Lua_str[0] = 104;
+    std::string Lua_str = { device_communicator::CMD_GET_PAC_ERRORS };
 
     for (int i = 0; i < count; i++)
         {
-        char cmd_str[200];
-
-        snprintf(cmd_str, sizeof(cmd_str),
+        size_t size = snprintf(nullptr, 0,
             "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
             errors[i].cmd,
             errors[i].object_type, errors[i].object_number,
             errors[i].object_alarm_number);
-
-        Lua_str += cmd_str;
+        if (size > 0)
+            {
+            char* cmd_str = new char[size + 1];
+            snprintf(cmd_str, size + 1,
+                "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+                errors[i].cmd,
+                errors[i].object_type, errors[i].object_number,
+                errors[i].object_alarm_number);
+            Lua_str += cmd_str;
+            delete [] cmd_str;
+            }
         }
 
     const int SERVICE_ID = 1;

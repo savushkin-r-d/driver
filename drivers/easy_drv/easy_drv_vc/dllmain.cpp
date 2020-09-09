@@ -631,10 +631,10 @@ EXPORT int __stdcall set_alarm_cmd( unsigned char PAC_id, int count,
     {   
     if ( g_PAC_descriptions->get_PAC( PAC_id ) != 0 )
         {
-        g_PAC_descriptions->get_PAC(PAC_id)->set_alarm_cmd(count, errors);
-        return 0;
+        g_PAC_descriptions->get_PAC( PAC_id )->set_alarm_cmd( count, errors );
+        return EXIT_SUCCESS;
         }        
 
-    return 1;
+    return EXIT_FAILURE;
     }
 //-----------------------------------------------------------------------------

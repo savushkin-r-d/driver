@@ -322,6 +322,11 @@ class PAC_cmmctr
         bool is_process_PAC_params;
 
         std::string tags_str;
+
+        enum CONSTANTS
+            {
+            LUA_STRING_START_POSITION = 2,
+            };
     };
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

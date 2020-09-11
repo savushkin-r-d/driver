@@ -288,6 +288,9 @@ int PAC_cmmctr::get_PAC_devices()
     {
     if ( !cmmctr ) return -1;
 
+    int res = 0;
+    dev_synch_access->WaitToWrite();
+
     *has_got_PAC_devices = 0;
 
     char buff[ 3 ];
@@ -303,26 +306,29 @@ int PAC_cmmctr::get_PAC_devices()
         { 
         devices_request_id = ( ( u_int_2* ) answer )[ 0 ]; 
 
-        int res = exec_Lua_str( answer + 2,
+        res = exec_Lua_str( answer + LUA_STRING_START_POSITION,
             "Ошибка получения объектов PAC" );
 
         if( res != 0 )
             {
             //Сохраняем строку, вызвавшую ошибку.
-            BUG_LOG.bug_log_file.save_msg( answer + 2 );
-            return -1;
+            BUG_LOG.bug_log_file.save_msg( answer + LUA_STRING_START_POSITION );
             }
-        
-        *has_got_PAC_devices = 1;
-        return res;
+        else
+            {
+            *has_got_PAC_devices = 1;
+            }
         }   
 
-    return -1;
+    dev_synch_access->Done();
+    return res;
     }
 //-----------------------------------------------------------------------------
 PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
     {
     if ( !cmmctr ) return OTHER_ERROR;
+
+    dev_synch_access->WaitToWrite();
 
     static unsigned long int gc_counter = 0;
     gc_counter++;
@@ -372,16 +378,19 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
         { 
         if ( ( ( u_int_2* ) answer )[ 0 ] != devices_request_id )
             {
+            dev_synch_access->Done();
             return PAC_DEVICES_CHANGING;
             }
 
-        res = exec_Lua_str( answer + 2,
+        res = exec_Lua_str( answer + LUA_STRING_START_POSITION,
             "Ошибка получения состояния объектов PAC" );
 
         if ( res != 0 )
             {
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str(),
-                answer + 2 );
+                answer + LUA_STRING_START_POSITION );
+
+            dev_synch_access->Done();
             return OTHER_ERROR;
             }
 
@@ -390,12 +399,15 @@ PAC_cmmctr::LOAD_RESULTS PAC_cmmctr::get_PAC_all_devices_states()
        
         if ( res != 0 )
             {
+            dev_synch_access->Done();
             return OTHER_ERROR;
             }
        
+        dev_synch_access->Done();
         return LOAD_OK;
         }   
 
+    dev_synch_access->Done();
     return OTHER_ERROR;
     }
 //-----------------------------------------------------------------------------
@@ -406,6 +418,8 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
         {
         return;
         }
+
+    dev_synch_access->WaitToRead();
 
     memset(str_value, 0, strlen(str_value));
     is_exist_tag = false;
@@ -433,6 +447,7 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
         }    
     lua_remove( PAC_Lua_state, -1 );
 
+    dev_synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
@@ -442,6 +457,8 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
         {
         return;
         }
+
+    dev_synch_access->WaitToRead();
 
     is_exist_tag = false;    
     str_value[ 0 ] = 0;
@@ -457,13 +474,17 @@ void PAC_cmmctr::get_tag_str_value( const char *tag_name, bool &is_exist_tag,
         if ( res )
             {
             is_exist_tag = true;
-                strncpy(str_value, res, max_length);
-                }
+            strncpy(str_value, res, max_length);
             }
         }
+
+    dev_synch_access->Done();
+    }
 //-----------------------------------------------------------------------------
 double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
     {
+    dev_synch_access->WaitToRead();
+
     is_exist_tag = false;
     double res = 0;
 
@@ -482,11 +503,14 @@ double PAC_cmmctr::get_tag_value( int tag_id, bool &is_exist_tag )
         }
     lua_remove( PAC_Lua_state, -1 );
 
+    dev_synch_access->Done();
     return res;
     }
 //-----------------------------------------------------------------------------
 double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
     {
+    dev_synch_access->WaitToRead();
+
     is_exist_tag = false;
     double res = 0;
 
@@ -499,6 +523,8 @@ double PAC_cmmctr::get_tag_value( const char *tag_name, bool &is_exist_tag )
         res = get_double_param_from_Lua( "res",
             "double PAC_cmmctr::get_tag_value", is_exist_tag );
         }
+
+    dev_synch_access->Done();
 
     return res;
     }
@@ -521,11 +547,14 @@ double PAC_cmmctr::get_double_param_from_Lua( const char *param_name,
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::add_nill_tag( int tag_id )
     { 
+    dev_synch_access->WaitToRead();
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
     snprintf( cmd, MAX_CMD_SIZE, "tags[%d]=0\n", tag_id );
 
-    exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );    
+    exec_Lua_str( cmd, "PAC_cmmctr::add_nill_tag" );  
+
+    dev_synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 bool PAC_cmmctr::is_got_PAC_devices()
@@ -535,6 +564,8 @@ bool PAC_cmmctr::is_got_PAC_devices()
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
     {
+    dev_synch_access->WaitToWrite();
+
     const int MAX_CMD_SIZE = 200;
     char cmd[ MAX_CMD_SIZE ];
 
@@ -552,6 +583,8 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
         {
         tags_str += cmd;
         }
+
+    dev_synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()
@@ -561,6 +594,7 @@ abstract_cmmctr* PAC_cmmctr::get_cmmctr()
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::clear_tags()
     {
+    dev_synch_access->WaitToWrite();
     // Уборка мусора.
     lua_gc( PAC_Lua_state, LUA_GCSTOP, 0 );
     
@@ -572,16 +606,15 @@ int PAC_cmmctr::clear_tags()
     // Уборка мусора.
     lua_gc( PAC_Lua_state, LUA_GCRESTART, 0 );
     lua_gc( PAC_Lua_state, LUA_GCCOLLECT, 0 );
+
+    dev_synch_access->Done();
     return res;
-    }
-//-----------------------------------------------------------------------------
-CSWMRG* PAC_cmmctr::get_dev_synch_access() const
-    {
-    return dev_synch_access;
     }
 //-----------------------------------------------------------------------------
 void PAC_cmmctr::set_tag_Lua_cmd( const char *cmd )
     {
+    dev_synch_access->WaitToWrite();
+
     exec_Lua_str( cmd, "set_value(...)" );
 
     const char* str_res = get_str_param_from_Lua(
@@ -597,6 +630,8 @@ void PAC_cmmctr::set_tag_Lua_cmd( const char *cmd )
         cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, 
             1 + strlen( str_res ) );
         }
+
+    dev_synch_access->Done();
     }
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::backup_PAC_params()
@@ -768,6 +803,8 @@ int PAC_cmmctr::save_to_file( const char* file_name, const char * str )
 
 int PAC_cmmctr::get_PAC_errors()
     {
+    dev_synch_access->WaitToWrite();
+
     char cmd[ 2 ];
     cmd[ 0 ] = device_communicator::CMD_GET_PAC_ERRORS;
     char descr_id = ( char ) get_description_id();
@@ -780,12 +817,59 @@ int PAC_cmmctr::get_PAC_errors()
 
     if ( answer_size > 0 )
         { 
-        return g_alarm_manager->add_PAC_errors( answer, ( u_char ) descr_id );
+        int res = g_alarm_manager->add_PAC_errors( answer, ( u_char ) descr_id );
+        dev_synch_access->Done();
+        return res;
         }
 
+    dev_synch_access->Done();
     return 0;
     }
 
+int PAC_cmmctr::set_alarm_cmd(int count, error_cmd* errors)
+    {
+    dev_synch_access->WaitToWrite();
+
+    std::string Lua_str = { device_communicator::CMD_GET_PAC_ERRORS };
+
+    for (int i = 0; i < count; i++)
+        {
+        size_t size = snprintf(nullptr, 0,
+            "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+            errors[i].cmd,
+            errors[i].object_type, errors[i].object_number,
+            errors[i].object_alarm_number);
+        if (size > 0)
+            {
+            char* cmd_str = new char[size + 1];
+            snprintf(cmd_str, size + 1,
+                "errors_manager:get_instance():set_cmd( %d, %d, %d, %d )\n",
+                errors[i].cmd,
+                errors[i].object_type, errors[i].object_number,
+                errors[i].object_alarm_number);
+            Lua_str += cmd_str;
+            delete [] cmd_str;
+            }
+        }
+
+    const int SERVICE_ID = 1;
+
+    cmmctr->send_2_PAC(SERVICE_ID, Lua_str.c_str(), Lua_str.length());
+
+    dev_synch_access->Done();
+
+    get_PAC_errors();
+    return 0;
+    }
+
+int PAC_cmmctr::get_alarms(all_alarm& alarms)
+    {
+    dev_synch_access->WaitToRead();
+    g_alarm_manager->get_alarms((unsigned char) this->PAC_descr_id, alarms);
+    dev_synch_access->Done();
+
+    return 0;
+    }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 PAC_cmmctr_group::PAC_cmmctr_group()

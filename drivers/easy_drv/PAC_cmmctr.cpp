@@ -186,7 +186,7 @@ const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name,
 
     const char *res = lua_tostring( PAC_Lua_state, -1 );       
 
-    if (PAC_protocol_version > G_NON_UNICODE_VERSION)
+    if ( get_PAC_protocol_version() > G_NON_UNICODE_VERSION)
         {
         memset(tmp_str, 0, MAX_DESCR_LEN);
         convert_utf8_to_windows1251(res, tmp_str, MAX_STR_SIZE);
@@ -235,7 +235,7 @@ int PAC_cmmctr::get_PAC_info()
             return -1;
             }
 
-        PAC_protocol_version = get_int_param_from_Lua( "protocol_version", 
+        int PAC_protocol_version = get_int_param_from_Lua( "protocol_version", 
             "int PAC_cmmctr::get_PAC_info()" );
 
         if ( PAC_protocol_version != G_CURRENT_PROTOCOL_VERSION && 
@@ -434,13 +434,13 @@ void PAC_cmmctr::get_tag_str_value( int tag_id, bool &is_exist_tag,
             {
             is_exist_tag = true;
             const char* val = lua_tostring( PAC_Lua_state, -1 );
-            if (PAC_protocol_version > G_NON_UNICODE_VERSION)
+            if ( get_PAC_protocol_version() > G_NON_UNICODE_VERSION )
                 {
-                convert_utf8_to_windows1251(val, str_value, max_length);
+                convert_utf8_to_windows1251( val, str_value, max_length );
                 }
             else
                 {
-                strncpy(str_value, val, max_length);
+                strncpy( str_value, val, max_length );
                 }
             }
         lua_remove( PAC_Lua_state, -1 );
@@ -590,6 +590,11 @@ void PAC_cmmctr::add_exist_tag( const char *tag_name, int tag_id )
 abstract_cmmctr* PAC_cmmctr::get_cmmctr()
     {
     return cmmctr; 
+    }
+//-----------------------------------------------------------------------------
+int PAC_cmmctr::get_PAC_protocol_version() const
+    {
+    return cmmctr->get_protocol_version();
     }
 //-----------------------------------------------------------------------------
 int PAC_cmmctr::clear_tags()
@@ -865,7 +870,8 @@ int PAC_cmmctr::set_alarm_cmd(int count, error_cmd* errors)
 int PAC_cmmctr::get_alarms(all_alarm& alarms)
     {
     dev_synch_access->WaitToRead();
-    g_alarm_manager->get_alarms((unsigned char) this->PAC_descr_id, alarms);
+    g_alarm_manager->get_alarms((unsigned char) this->PAC_descr_id, alarms,
+        get_PAC_protocol_version() );
     dev_synch_access->Done();
 
     return 0;
@@ -939,6 +945,11 @@ int abstract_cmmctr::get_timeout() const
 void abstract_cmmctr::set_protocol_version( int version )
     {
     PAC_protocol_version = version;
+    }
+//-----------------------------------------------------------------------------
+int abstract_cmmctr::get_protocol_version() const
+    {
+    return PAC_protocol_version;
     }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1209,7 +1220,8 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
                 }
             break;
 
-        case  G_CURRENT_PROTOCOL_VERSION:
+        case G_NON_UNICODE_VERSION:
+        case G_CURRENT_PROTOCOL_VERSION:
             {
             r = sizeof( buff );
             res = uncompress( (u_char*)buff, &r, (u_char*)in_buff + 5, tmp_answer_size - 5 );
@@ -1282,6 +1294,13 @@ int tcp_cmmctr::send_2_PAC( UCHAR Service_ID, const char *data, UINT length )
                 }
             break;
             }
+
+        default:
+            snprintf(bug_log::msg, bug_log::C_MSG_SIZE,
+                "Протокол PAC версии %d - должна быть %u!",
+                PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION);
+            BUG_LOG.add_msg_once( PAC_name, ip_address );
+            break;
         }
 
     LeaveCriticalSection( &m_cs );

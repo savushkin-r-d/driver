@@ -31,7 +31,8 @@ alarm_manager::~alarm_manager()
     }
 //-----------------------------------------------------------------------------
 int alarm_manager::add_no_PAC_connection_error( const char *PAC_name, 
-    UINT project_description_id, const char* PAC_IP_address )
+    UINT project_description_id, const char* PAC_IP_address,
+    int PAC_protocol_version )
     {
     const int MAX_SIZE   = 2000;
     char str[ MAX_SIZE ] = { 0 };
@@ -46,7 +47,7 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
         "alarms[", project_description_id, "][ 1 ] = " );
 
     sprintf( str + strlen( str ), "%s\n", "{" );
-    if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
+    if ( PAC_protocol_version > G_NON_UNICODE_VERSION )
         {
         const int MAX_STR_SIZE = 500;
         char PAC_name_utf8[ MAX_STR_SIZE ] = "";
@@ -121,7 +122,7 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
     }
 //-----------------------------------------------------------------------------
 int alarm_manager::get_alarms( unsigned char project_description_id, 
-    all_alarm &project_alarms )
+    all_alarm &project_alarms, int PAC_protocol_version)
     {
 #ifdef DEBUG_LUA_MEM
     static int counter = 0;
@@ -233,7 +234,7 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 
                 g_alarms[project_description_id][i] = *new_alarm;
 
-                if (G_CURRENT_PROTOCOL_VERSION > G_NON_UNICODE_VERSION)
+                if (PAC_protocol_version > G_NON_UNICODE_VERSION)
                     {
                     static char tmp_str[MAX_DESCR_LEN];
                     memset(tmp_str, 0, MAX_DESCR_LEN);

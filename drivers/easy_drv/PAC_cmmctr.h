@@ -80,6 +80,8 @@ class PAC_cmmctr
 
         abstract_cmmctr  *get_cmmctr();
 
+        int get_PAC_protocol_version() const;
+
         /// @brief Получение номера описания PAC.
         ///
         /// @param PAC_address [ in ]  - IP-адрес PAC.
@@ -227,7 +229,6 @@ class PAC_cmmctr
         int get_alarms(all_alarm& alarms);
 
     protected:
-            int PAC_protocol_version;
 
             CSWMRG* dev_synch_access; ///< Синхронизация обращений к Lua.
 
@@ -391,6 +392,8 @@ class abstract_cmmctr
         virtual int get_port() const = 0;
 
         void set_protocol_version( int version );
+        
+        int get_protocol_version() const;
 
     protected:    
         int PAC_protocol_version = G_UNKNOWN_PROTOCOL_VERSION;

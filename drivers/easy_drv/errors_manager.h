@@ -61,7 +61,8 @@ class alarm_manager
         /// @return 0 - ок.
         /// @return 1 - ошибка добавления.
         int add_no_PAC_connection_error( const char *PAC_name, 
-            UINT project_description_id, const char* PAC_IP_address );
+            UINT project_description_id, const char* PAC_IP_address,
+            int PAC_protocol_version );
         
         /// @brief Удаление ошибки отсутствия соединения с PAC.
         ///
@@ -76,10 +77,11 @@ class alarm_manager
         /// @param project_description_id [ in ] - номер описания в базе 
         /// каналов.
         /// @param project_alarms [ out ] - ошибка для данного описания проекта.
+        /// @param PAC_protocol_version [ in ] - версия протокола.
         ///
         /// @return 0 - ок.
         int get_alarms( unsigned char project_description_id, 
-            all_alarm &project_alarms );
+            all_alarm &project_alarms, int PAC_protocol_version );
 
 
         int add_PAC_errors( const char *LUA_str, 

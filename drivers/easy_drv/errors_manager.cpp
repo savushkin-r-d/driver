@@ -2,32 +2,39 @@
 //-----------------------------------------------------------------------------
 alarm_manager::alarm_manager()
     {
-    lua_state = lua_open();  /* create state */
-    if ( lua_state == NULL )
+    for ( int i = 0; i < MAX_PROJECTS_CNT; i++ )
         {
-        snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Cannot create Lua state: not enough memory!" );
+        ///< Ёкземпл€р Lua дл€ работы с ошибками.)
+        lua_states[ i ] = lua_open();  /* create state */
+        if ( lua_states[ i ] == NULL )
+            {
+            snprintf( bug_log::msg, bug_log::C_MSG_SIZE,
+                "Cannot create Lua state: not enough memory!" );
 
-        BUG_LOG.add_error_msg( "System", "" );
+            BUG_LOG.add_error_msg( "System", "" );
 
 #ifdef DEBUG
-        DebugBreak();
+            DebugBreak();
 #endif // DEBUG
+            }
+
+        lua_gc( lua_states[ i ], LUA_GCSTOP, 0 );  /* stop collector during initialization */
+        luaL_openlibs( lua_states[ i ] );          /* open libraries */
+        lua_gc( lua_states[ i ], LUA_GCRESTART, 0 );
+
+        tolua_PAC_dev_open( lua_states[ i ] );
         }
-
-    lua_gc( lua_state, LUA_GCSTOP, 0 );  /* stop collector during initialization */
-    luaL_openlibs( lua_state );          /* open libraries */
-    lua_gc( lua_state, LUA_GCRESTART, 0 );    
-
-    tolua_PAC_dev_open( lua_state );
 
     memset( g_alarms, 0, sizeof( g_alarms ) );
     }
 //-----------------------------------------------------------------------------
 alarm_manager::~alarm_manager()
     {
-    lua_close( lua_state );
-    lua_state = 0;
+    for ( int i = 0; i < MAX_PROJECTS_CNT; i++ )
+        {
+        lua_close( lua_states[ i ] );
+        lua_states[ i ] = 0;
+        }
     }
 //-----------------------------------------------------------------------------
 int alarm_manager::add_no_PAC_connection_error( const char *PAC_name, 
@@ -72,6 +79,7 @@ int alarm_manager::add_no_PAC_connection_error( const char *PAC_name,
     sprintf( str + strlen( str ), "%s\n", "state       = AS_ALARM," );
     sprintf( str + strlen( str ), "%s\n", "}" );
 
+    lua_State* lua_state = lua_states[ project_description_id ];
     int res = luaL_dostring( lua_state, str ); 
 
     if( res != 0 )
@@ -103,6 +111,7 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
     sprintf( str + strlen( str ), "%s %d %s\n",
         "alarms[", project_description_id, "].id = 2" );
 
+    lua_State* lua_state = lua_states[ project_description_id ];
     int res = luaL_dostring( lua_state, str ); 
 
     if( res != 0 )
@@ -124,6 +133,8 @@ int alarm_manager::remove_no_PAC_connection_error( UINT project_description_id )
 int alarm_manager::get_alarms( unsigned char project_description_id, 
     all_alarm &project_alarms, int PAC_protocol_version)
     {
+    lua_State* lua_state = lua_states[ project_description_id ];
+
 #ifdef DEBUG_LUA_MEM
     static int counter = 0;
     counter++;
@@ -256,13 +267,15 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
 int alarm_manager::add_PAC_errors( const char *LUA_str, 
     unsigned char project_description_id )
     {
-    static unsigned long int gc_counter = 0;
-    gc_counter++;
-    if ( gc_counter > AM_GARBAGE_CYCLE )
+    lua_State* lua_state = lua_states[ project_description_id ];
+
+    static unsigned long int gc_counter[ MAX_PROJECTS_CNT ] = { 0 };
+    gc_counter[ project_description_id ]++;
+    if ( gc_counter[ project_description_id ] > AM_GARBAGE_CYCLE )
         {
         // ѕолна€ уборка мусора каждые n итераций.
         lua_gc( lua_state, LUA_GCCOLLECT, 0 ); 
-        gc_counter = 0;
+        gc_counter[ project_description_id ] = 0;
         }
 
     int res = luaL_dostring( lua_state, LUA_str ); 

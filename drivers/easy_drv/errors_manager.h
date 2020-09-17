@@ -88,7 +88,8 @@ class alarm_manager
             unsigned char project_description_id );
 
     private:
-        lua_State *lua_state;        ///< Ёкземпл€р Lua дл€ работы с ошибками.
+        ///< Ёкземпл€р Lua дл€ работы с ошибками.
+        lua_State *lua_states[ MAX_PROJECTS_CNT ];
     };
 
 #endif // ERRORS_MANAGER_H

@@ -835,7 +835,7 @@ int PAC_cmmctr::set_alarm_cmd(int count, error_cmd* errors)
     {
     dev_synch_access->WaitToWrite();
 
-    std::string Lua_str = { device_communicator::CMD_GET_PAC_ERRORS };
+    std::string Lua_str = { device_communicator::CMD_SET_PAC_ERROR_CMD };
 
     for (int i = 0; i < count; i++)
         {

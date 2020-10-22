@@ -251,32 +251,30 @@ int PAC_cmmctr::get_PAC_info()
             return -2;
             }
 
+        cmmctr->set_protocol_version( PAC_protocol_version );
+
         const char *in_name = get_str_param_from_Lua( "PAC_name", 
             "int PAC_cmmctr::get_PAC_info()" );
         
         if ( strcmp( in_name, PAC_name.c_str() ) != 0 )
             {
             snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-                "Имя PAC [ %s ] - \"%s\", в базе каналов - \"%s\"!",
-                PAC_address.c_str(), in_name, PAC_name.c_str() );
+                "Имя PAC - \"%s\", в базе каналов - \"%s\"!",
+                in_name, PAC_name.c_str() );
             BUG_LOG.add_msg_once( PAC_name.c_str(), PAC_address.c_str() );
             *is_connected = false;
             return -3;
             }
 
         snprintf( bug_log::msg, bug_log::C_MSG_SIZE, 
-            "Версия драйвера: PAC - %d, сервер - %u; имя PAC - \"%s\".",
-            PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION,
-            PAC_name.c_str() );
+            "Версия драйвера: PAC - %d, сервер - %u.",
+            PAC_protocol_version, G_CURRENT_PROTOCOL_VERSION );
         BUG_LOG.add_msg( PAC_name.c_str(), PAC_address.c_str() );
         
         //Проверка на сброс параметров в PAC.
         PAC_params_CRC = get_int_param_from_Lua( "params_CRC", 
             "int PAC_cmmctr::get_PAC_info()" );
-
         check_PAC_params();
-
-        cmmctr->set_protocol_version( PAC_protocol_version );
 
         return PAC_protocol_version;
         }    

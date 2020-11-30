@@ -82,6 +82,7 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
         "	obj_name = obj_name or ''\n"
         "	prop 	 =  prop or ''\n"
         "	n    	 =  n or ''\n"
+
         "	if n == '' then n = '0' end\n"
         "\n"
         "	if 	obj_name == '' or prop == '' then return '' end\n"
@@ -92,10 +93,10 @@ PAC_cmmctr::PAC_cmmctr( const char* PAC_address, char *PAC_name,
         "\n"
         "local cmd\n"
         "if type( val ) == 'string' then\n"
-        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, \"%s\" )',\n" 
+        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, \"%s\" )',\n"
         "        obj_name, prop, n, val )\n"
         "else\n"
-        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, %s )',\n" 
+        "    cmd = string.format( '__%s:set_cmd( \"%s\", %s, %s )',\n"
         "        obj_name, prop, n, val )\n"
         "end\n"
         "\n"
@@ -632,6 +633,23 @@ void PAC_cmmctr::set_tag_Lua_cmd( const char *cmd )
 
         cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff, 
             1 + strlen( str_res ) );
+        }
+
+    dev_synch_access->Done();
+    }
+//-----------------------------------------------------------------------------
+void PAC_cmmctr::set_tag_cmd( const char* cmd )
+    {
+    dev_synch_access->WaitToWrite();
+    const int BUFF_SIZE = 1000;
+    if ( cmd != 0 && strlen( cmd ) < BUFF_SIZE - 1 ) //Корректность строки скрипта.
+        {
+        char buff[ BUFF_SIZE ] = { 0 };
+        buff[ 0 ] = device_communicator::CMD_EXEC_DEVICE_COMMAND;
+        memcpy( buff + 1, cmd, strlen( cmd ) );
+
+        cmmctr->send_2_PAC( PAC_CMMCTR_SERVICE_ID, buff,
+            1 + strlen( cmd ) );
         }
 
     dev_synch_access->Done();

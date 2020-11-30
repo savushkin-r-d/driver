@@ -190,6 +190,11 @@ class PAC_cmmctr
         /// @param cmd [ in ] - строка скрипта для обработки Lua.
         void set_tag_Lua_cmd( const char *cmd );
 
+        /// @brief Отсылка команды в PAC.
+        ///
+        /// @param cmd [ in ] - строка скрипта для отсылки.
+        void set_tag_cmd( const char* cmd );
+
 
         /// @brief Получение флага состояния связи с PAC.
         char get_connection_state() const

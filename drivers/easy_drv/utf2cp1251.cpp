@@ -127,7 +127,7 @@ int convert_utf8_to_windows1251(const char* utf8, char* windows1251, size_t n)
     return 1;
     }
 
-void convert_windows1251_to_utf8(char* out, const char* in) {
+void convert_windows1251_to_utf8(char* utf8, const char* windows1251 ) {
     static const int table[128] = {
         0x82D0,0x83D0,0x9A80E2,0x93D1,0x9E80E2,0xA680E2,0xA080E2,0xA180E2,
         0xAC82E2,0xB080E2,0x89D0,0xB980E2,0x8AD0,0x8CD0,0x8BD0,0x8FD0,
@@ -146,17 +146,18 @@ void convert_windows1251_to_utf8(char* out, const char* in) {
         0x80D1,0x81D1,0x82D1,0x83D1,0x84D1,0x85D1,0x86D1,0x87D1,
         0x88D1,0x89D1,0x8AD1,0x8BD1,0x8CD1,0x8DD1,0x8ED1,0x8FD1
         };
-    while (*in)
-        if (*in & 0x80) {
-            int v = table[(int)(0x7f & *in++)];
+    while (*windows1251 )
+        if (*windows1251 & 0x80) {
+            int v = table[(int)(0x7f & *windows1251++)];
             if (!v)
                 continue;
-            *out++ = (char)v;
-            *out++ = (char)(v >> 8);
+            *utf8++ = (char)v;
+            *utf8++ = (char)(v >> 8);
             if (v >>= 16)
-                *out++ = (char)v;
+                *utf8++ = (char)v;
             }
         else
-            *out++ = *in++;
-    *out = 0;
+            *utf8++ = *windows1251++;
+
+    *utf8 = 0;
     }

@@ -389,8 +389,39 @@ int set_tag( const char *tag_name, UCHAR PAC_description_id, void *value,
             break;
 
         case T_STRING:
-            snprintf( cmd, sizeof( cmd ), "res = make_lua_str( \"%s\", \"%s\" )", 
-                tag_name, ( char* ) value );
+            if ( current_PAC_cmmctr->get_PAC_protocol_version() > G_NON_UNICODE_VERSION )
+                {
+                //Tag example: LIN11.PROPERTY -> __LIN11:set_cmd( "PROPERTY", 0, "value" )
+                string object( tag_name );
+                string property = "";
+                auto index = object.find( "--" );
+                if ( index != std::string::npos )
+                    {
+                    object.erase( index );
+                    }
+                object.erase( std::remove( object.begin(), object.end(), ' ' ), 
+                    object.end() );
+                index = object.find( "." );
+                if ( index != std::string::npos )
+                    {
+                    property = object.substr( index + 1 );
+                    object.erase( index );
+                    }
+
+                char tmp[ MAX_DESCR_LEN ];
+                convert_windows1251_to_utf8( tmp, (char*)value );
+
+                snprintf( cmd, sizeof( cmd ), "__%s:set_cmd( \"%s\", 0, \"%s\" )",
+                    object.c_str(), property.c_str(), tmp );
+
+                current_PAC_cmmctr->set_tag_cmd( cmd );
+                return 0;
+                }
+            else
+                {
+                snprintf( cmd, sizeof( cmd ), "res = make_lua_str( \"%s\", \"%s\" )",
+                    tag_name, (char*)value );
+                }
             break;
             }      
 

@@ -94,6 +94,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <ForcedIncludeFiles>
       </ForcedIncludeFiles>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -120,6 +121,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN_OS;DRIVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\common\lua;..\;..\..\..\common\WTL;..\..\..\common\WTL\list_control;..\..\..\common\win_util;..\..\..\common\util;..\..\..\common\PAC-driver;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -162,6 +164,7 @@
       <PreprocessorDefinitions>WIN_OS;DRIVER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <PostBuildEvent>
       <Command>copy "$(TargetDir)$(TargetFileName)" "p:\Monitor\drivers\PAC_easy_drv_LZ.dll"</Command>

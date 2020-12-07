@@ -151,7 +151,7 @@ enum ERR_CONSTANTS
     MAX_PROJECTS_CNT = 256,
     MAX_ALARMS_CNT   = 200,
 
-    MAX_DESCR_LEN    = 150,
+    MAX_DESCR_LEN    = 200,
     MAX_GROUP_LEN    = 10,
     };
 

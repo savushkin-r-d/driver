@@ -249,16 +249,19 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
                     {
                     static char tmp_str[MAX_DESCR_LEN];
                     memset(tmp_str, 0, MAX_DESCR_LEN);
-                    convert_utf8_to_windows1251(new_alarm->description, tmp_str, MAX_DESCR_LEN);
-
-                    strcpy(new_alarm->description, tmp_str);
+                    int result =
+                        convert_utf8_to_windows1251(new_alarm->description, tmp_str, MAX_DESCR_LEN);
+                    if ( result == 1 )
+                        {
+                        strcpy(new_alarm->description, tmp_str);
+                        }
                     }
-                }                                
+                }
             }
         }
 
     project_alarms.alarms = g_alarms[ project_description_id ];
-    project_alarms.cnt    = alarms_cnt;            
+    project_alarms.cnt    = alarms_cnt;
     project_alarms.id     = id;
 
     return 0;

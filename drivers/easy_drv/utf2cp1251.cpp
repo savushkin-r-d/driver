@@ -78,7 +78,7 @@ int convert_utf8_to_windows1251(const char* utf8, char* windows1251, size_t n)
         if (prefix == '\xE2' && suffix == '\x84' && utf8[i + 2] == '\x96')
             {
             windows1251[j] = '¹';
-            i += 3;
+            i += 2;
             j++;
             continue;
             }

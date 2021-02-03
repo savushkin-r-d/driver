@@ -75,12 +75,12 @@ int convert_utf8_to_windows1251(const char* utf8, char* windows1251, size_t n)
     for (int i = 0; i < (int)n && utf8[i] != 0; ++i) {
         char prefix = utf8[i];
         char suffix = utf8[i + 1];
-        if (prefix == '\xE2' && suffix == '\x84' && utf8[i + 2] == '\x96')
+        char postfix = utf8[i + 2];
+        if (prefix == '\xE2' && suffix == '\x84' && postfix == '\x96')
             {
             windows1251[j] = '¹';
-            i += 3;
-            j++;
-            continue;
+            i++;
+            goto NEXT_LETTER;
             }
 
         if ((prefix & 0x80) == 0) {

@@ -10,3 +10,13 @@ drivers/easy_drv/easy_drv_vc/Release/
 drivers/easy_drv/easy_drv_vc/easy_drv.vcxproj.user
 
 *.log
+
+drivers/easy_drv/build/
+
+drivers/easy_drv/.idea
+
+drivers/easy_drv/easy_drv_vc/.idea
+
+build/
+
+.idea

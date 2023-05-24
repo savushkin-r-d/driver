@@ -170,7 +170,7 @@ int PAC_cmmctr::exec_Lua_str( const char *Lua_str,
     return 0;
     }
 //-----------------------------------------------------------------------------
-const int MAX_STR_SIZE = 500;
+const int MAX_STR_SIZE = 1000;
 char tmp_str[MAX_STR_SIZE];
 
 const char* PAC_cmmctr::get_str_param_from_Lua( const char *param_name, 

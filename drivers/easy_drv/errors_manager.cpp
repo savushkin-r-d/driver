@@ -255,6 +255,13 @@ int alarm_manager::get_alarms( unsigned char project_description_id,
                         {
                         strcpy(new_alarm->description, tmp_str);
                         }
+
+                    result =
+                        convert_utf8_to_windows1251( new_alarm->group, tmp_str, MAX_GROUP_LEN );
+                    if ( result == 1 )
+                        {
+                        strcpy( new_alarm->group, tmp_str );
+                        }
                     }
                 }
             }

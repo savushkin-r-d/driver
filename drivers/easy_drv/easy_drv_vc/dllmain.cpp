@@ -48,7 +48,7 @@ CSWMRG g_sync_PAC;
 // »спользуетс€ дл€ проверки соответстви€ DLL и версии в PAC.
 extern const u_int_2 G_CURRENT_PROTOCOL_VERSION;
 
-const int MAX_STR_RES_LENGTH = 500;
+const int MAX_STR_RES_LENGTH = 2000;
 //-----------------------------------------------------------------------------
 BOOL APIENTRY DllMain( HMODULE hModule,
     DWORD  ul_reason_for_call,

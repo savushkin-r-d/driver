@@ -239,6 +239,11 @@ class bug_log
 
         void hide();
 
+        // If false, the driver log window is created hidden and is never
+        // auto-shown by incoming messages. Loaded from easy_drv.ini at
+        // startup; defaults to true (previous behaviour). See issue #12.
+        static bool show_log_window;
+
         int add_error_msg( CString object_name, CString IP4_address, 
             CString msg = bug_log::msg );
         int commit_error_msg( CString object_name, CString IP4_address, 

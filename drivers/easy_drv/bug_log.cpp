@@ -13,6 +13,7 @@ char         bug_log::is_init_window = 0;
 
 char	 bug_log::msg[ bug_log::C_MSG_SIZE ] = { 0 };
 bug_log* bug_log::instance = 0;
+bool     bug_log::show_log_window = true;
 //-----------------------------------------------------------------------------
 LRESULT bug_log_wnd::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam,
     BOOL& bHandled)
@@ -86,11 +87,19 @@ void bug_log_wnd::create( CString window_title )
 
     message_list.Create( m_hWnd, rect2, "", WS_VISIBLE | WS_CHILD | WS_BORDER );
 
+    if ( !bug_log::show_log_window )
+        {
+        // Config asked to keep the log window hidden (issue #12).
+        ShowWindow( SW_HIDE );
+        }
+    else
+        {
 #ifdef DEBUG
-    ShowWindow( SW_NORMAL );
+        ShowWindow( SW_NORMAL );
 #else
-    ShowWindow( SW_MINIMIZE );
-#endif // DEBUG    
+        ShowWindow( SW_MINIMIZE );
+#endif // DEBUG
+        }
 
     synch_access->Done();
     }
@@ -115,7 +124,7 @@ void bug_log_wnd::clear_log()
 int bug_log_wnd::add_msg_to_grid( CString &object_name, CString &IP4_address,
     CString &msg )
     {
-    if ( IsWindow() )
+    if ( bug_log::show_log_window && IsWindow() )
         {
         ShowWindow( SW_SHOW );
         }
@@ -130,7 +139,7 @@ int bug_log_wnd::add_msg_to_grid( CString &object_name, CString &IP4_address,
 int bug_log_wnd::add_error_to_grid( CString &object_name, 
     CString &IP4_address, CString &msg )
     {
-    if ( IsWindow() )
+    if ( bug_log::show_log_window && IsWindow() )
         {
         ShowWindow( SW_SHOW );
         }
@@ -146,7 +155,7 @@ int bug_log_wnd::add_error_to_grid( CString &object_name,
 int bug_log_wnd::commit_error_msg_to_grid( CString &object_name,
     CString &IP4_address, CString &msg )
     {
-    if ( IsWindow() )
+    if ( bug_log::show_log_window && IsWindow() )
         {
         ShowWindow( SW_SHOW );
         }
@@ -162,7 +171,7 @@ int bug_log_wnd::commit_error_msg_to_grid( CString &object_name,
 int bug_log_wnd::add_warning_msg_to_grid( CString &object_name, 
     CString &IP4_address, CString &msg )
     {
-    if ( IsWindow() )
+    if ( bug_log::show_log_window && IsWindow() )
         {
         ShowWindow( SW_SHOW );
         }
@@ -178,7 +187,7 @@ int bug_log_wnd::add_warning_msg_to_grid( CString &object_name,
 int bug_log_wnd::add_msg_to_grid_once( CString &object_name, 
     CString &IP4_address, CString &msg )
     {
-    if ( IsWindow() )
+    if ( bug_log::show_log_window && IsWindow() )
         {
         ShowWindow( SW_SHOW );
         }
@@ -325,12 +334,50 @@ bug_log& bug_log::get_instance()
     return *instance;
     }
 //-----------------------------------------------------------------------------
+// Reads the "show log window" flag from easy_drv.ini located next to this
+// DLL. Section [log], key show_window: 0 hides the driver log window, 1 (or
+// a missing file/key) shows it. Looking next to the DLL rather than in the
+// current working directory is more reliable for a service host. Issue #12.
+static bool read_show_log_window_flag()
+    {
+    char ini_path[ MAX_PATH ] = { 0 };
+    HMODULE this_module = NULL;
+
+    if ( GetModuleHandleExA(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            (LPCSTR)&read_show_log_window_flag,
+            &this_module ) &&
+        GetModuleFileNameA( this_module, ini_path, MAX_PATH ) )
+        {
+        char* last_slash = strrchr( ini_path, '\\' );
+        if ( last_slash != NULL )
+            {
+            *( last_slash + 1 ) = '\0';
+            }
+        else
+            {
+            ini_path[ 0 ] = '\0';
+            }
+        }
+    else
+        {
+        ini_path[ 0 ] = '\0';
+        }
+
+    strcat_s( ini_path, MAX_PATH, "easy_drv.ini" );
+
+    return GetPrivateProfileIntA( "log", "show_window", 1, ini_path ) != 0;
+    }
+//-----------------------------------------------------------------------------
 bug_log::bug_log()
     {
     const int MAX_PATH_LENGTH = 200;
     char path[ MAX_PATH_LENGTH ];
     GetCurrentDirectory( MAX_PATH_LENGTH, path );
     strcat_s( path, MAX_PATH_LENGTH, "\\drv_buglog2.log" );
+
+    show_log_window = read_show_log_window_flag();
 
     bug_log_window_thread_handle = chBEGINTHREADEX( 0, 0, bug_log_thread, 0, 0, 0 );	
 

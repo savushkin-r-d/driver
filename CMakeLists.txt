@@ -1,10 +1,20 @@
 cmake_minimum_required(VERSION 3.20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+# Рантайм MSVC выбирается через абстракцию CMAKE_MSVC_RUNTIME_LIBRARY (см. ниже).
+set(CMAKE_POLICY_DEFAULT_CMP0091 NEW)
 
 project(easy_drv VERSION 2022.09.27.0)
 
 set(CMAKE_CXX_STANDARD 11)
+
+# Статически линкуем рантайм MSVC (/MT, для Debug — /MTd), чтобы easy_drv.dll была
+# самодостаточной и НЕ требовала установленного Visual C++ Redistributable (issue #17).
+# Значение протягивается и в подпроекты zlib/lua/toluapp (add_subdirectory ниже) —
+# весь статический CRT должен быть единообразным, иначе линкер даёт LNK2038.
+if (MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 set(COMMON_DIR
         ${CMAKE_CURRENT_SOURCE_DIR}/common)
